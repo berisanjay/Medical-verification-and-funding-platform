@@ -1,0 +1,15 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Flask
+flask-backend/temp/
+
+# Node
+node_backend/node_modules/
+node_backend/uploads/
+
+# OS
+.DS_Store
+Thumbs.db

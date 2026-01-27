@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Medical Document Verification</title>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    pre {
+      background: #111;
+      color: #0f0;
+      padding: 15px;
+      min-height: 120px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Upload Medical Documents</h2>
+
+<input type="file" id="docs" multiple />
+<br><br>
+<button id="verifyBtn">Verify</button>
+
+<h3>Verification Response (JSON)</h3>
+<pre id="result">Waiting...</pre>
+
+<script>
+document.getElementById("verifyBtn").addEventListener("click", verify);
+
+async function verify() {
+  const btn = document.getElementById("verifyBtn");
+  const result = document.getElementById("result");
+  const input = document.getElementById("docs");
+
+  if (input.files.length === 0) {
+    alert("Please select at least one document");
+    return;
+  }
+
+  btn.disabled = true;
+  result.textContent = "⏳ Verifying documents...";
+
+  const formData = new FormData();
+  for (const file of input.files) {
+    formData.append("documents", file);
+  }
+
+  try {
+    const response = await fetch("/upload", {
+      method: "POST",
+      body: formData
+    });
+
+    const text = await response.text();
+
+    const data = JSON.parse(text);
+
+    if (data.status === "MISSING_REQUIRED_FIELDS") {
+      alert(
+        "Missing required fields:\n\n" +
+        data.missing_fields.join(", ")
+      );
+      result.textContent = JSON.stringify(data, null, 2);
+      return;
+    }
+
+    result.textContent = JSON.stringify(data, null, 2);
+
+  } catch (err) {
+    result.textContent = "❌ Error: " + err.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+</script>
+
+</body>
+</html>

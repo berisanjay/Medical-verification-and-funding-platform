@@ -1,0 +1,10 @@
+{
+  "endpoint": "/verify",
+  "method": "POST",
+  "input": "multipart/form-data",
+  "output": {
+    "final_status": "VERIFIED | NEEDS_CLARIFICATION | HIGH_RISK",
+    "documents": [],
+    "cross_document_issues": []
+  }
+}
