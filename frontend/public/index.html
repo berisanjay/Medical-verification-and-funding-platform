@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Document Verification System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .upload-section {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-section:hover {
+            border-color: #764ba2;
+            background-color: #f8f9ff;
+        }
+
+        .upload-section.dragover {
+            border-color: #4caf50;
+            background-color: #e8f5e9;
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .file-list {
+            margin-top: 20px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: #f8f9ff;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-icon {
+            font-size: 1.5em;
+        }
+
+        .remove-file {
+            background: #ff5252;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .remove-file:hover {
+            background: #ff1744;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            margin-top: 30px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .status-verified {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status-needs-clarification {
+            background: #ff9800;
+            color: white;
+        }
+
+        .status-high-risk {
+            background: #f44336;
+            color: white;
+        }
+
+        .risk-score {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .risk-score h3 {
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            background: rgba(255,255,255,0.3);
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: white;
+            transition: width 1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .document-card {
+            background: #f8f9ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+        }
+
+        .document-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .entity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .entity-item {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+        }
+
+        .entity-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .entity-value {
+            font-size: 16px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .issues {
+            background: #fff3cd;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .issues h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .issue-item {
+            padding: 8px 0;
+            color: #856404;
+        }
+
+        .cross-issues {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .cross-issues h3 {
+            color: #c62828;
+            margin-bottom: 15px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-error {
+            background: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #f44336;
+        }
+
+        .alert-success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #4caf50;
+        }
+
+        .json-viewer {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .entity-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 Medical Document Verification</h1>
+            <p>Upload medical documents for AI-powered verification and fraud detection</p>
+        </div>
+
+        <div class="card">
+            <div class="upload-section" id="uploadArea">
+                <div class="upload-icon">📄</div>
+                <h2>Drop files here or click to upload</h2>
+                <p style="margin-top: 10px; color: #666;">
+                    Supported formats: PDF, PNG, JPG, JPEG, WEBP (Max 50MB)
+                </p>
+                <input type="file" 
+                       id="fileInput" 
+                       class="file-input" 
+                       multiple 
+                       accept=".pdf,.png,.jpg,.jpeg,.webp">
+                <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                    Select Files
+                </button>
+            </div>
+
+            <div class="file-list" id="fileList"></div>
+
+            <div style="text-align: center; margin-top: 20px;" id="actionButtons">
+                <button class="btn btn-primary" id="uploadBtn" onclick="uploadFiles()" disabled>
+                    🔍 Verify Documents
+                </button>
+                <button class="btn btn-secondary" onclick="clearFiles()">
+                    🗑️ Clear All
+                </button>
+            </div>
+        </div>
+
+        <div id="loadingSection" class="card" style="display: none;">
+            <div class="loading">
+                <div class="spinner"></div>
+                <h3>Processing your documents...</h3>
+                <p style="margin-top: 10px; color: #666;">
+                    Performing OCR, entity extraction, and fraud detection
+                </p>
+            </div>
+        </div>
+
+        <div id="resultsSection" class="card" style="display: none;">
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('summary')">Summary</button>
+                <button class="tab" onclick="showTab('documents')">Documents</button>
+                <button class="tab" onclick="showTab('json')">Raw JSON</button>
+            </div>
+
+            <div id="summaryTab" class="tab-content active">
+                <!-- Summary content will be inserted here -->
+            </div>
+
+            <div id="documentsTab" class="tab-content">
+                <!-- Document details will be inserted here -->
+            </div>
+
+            <div id="jsonTab" class="tab-content">
+                <div class="json-viewer" id="jsonViewer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFiles = [];
+        const API_URL = 'http://localhost:3000';
+
+        // Setup drag and drop
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = Array.from(e.dataTransfer.files);
+            addFiles(files);
+        });
+
+        uploadArea.addEventListener('click', (e) => {
+            if (e.target === uploadArea || e.target.closest('.upload-icon') || e.target.closest('h2')) {
+                fileInput.click();
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            addFiles(files);
+            fileInput.value = '';
+        });
+
+        function addFiles(files) {
+            files.forEach(file => {
+                if (!selectedFiles.find(f => f.name === file.name)) {
+                    selectedFiles.push(file);
+                }
+            });
+            updateFileList();
+        }
+
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            updateFileList();
+        }
+
+        function updateFileList() {
+            const fileList = document.getElementById('fileList');
+            const uploadBtn = document.getElementById('uploadBtn');
+
+            if (selectedFiles.length === 0) {
+                fileList.innerHTML = '';
+                uploadBtn.disabled = true;
+                return;
+            }
+
+            uploadBtn.disabled = false;
+
+            fileList.innerHTML = `
+                <h3 style="margin-bottom: 15px;">Selected Files (${selectedFiles.length})</h3>
+                ${selectedFiles.map((file, index) => `
+                    <div class="file-item">
+                        <div class="file-info">
+                            <span class="file-icon">${getFileIcon(file.name)}</span>
+                            <div>
+                                <div style="font-weight: 600;">${file.name}</div>
+                                <div style="font-size: 12px; color: #666;">
+                                    ${formatFileSize(file.size)}
+                                </div>
+                            </div>
+                        </div>
+                        <button class="remove-file" onclick="removeFile(${index})">✕</button>
+                    </div>
+                `).join('')}
+            `;
+        }
+
+        function clearFiles() {
+            selectedFiles = [];
+            updateFileList();
+            document.getElementById('resultsSection').style.display = 'none';
+        }
+
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            if (ext === 'pdf') return '📄';
+            if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) return '🖼️';
+            return '📎';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        async function uploadFiles() {
+            if (selectedFiles.length === 0) {
+                showAlert('Please select at least one file', 'error');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loadingSection').style.display = 'block';
+            document.getElementById('resultsSection').style.display = 'none';
+
+            const formData = new FormData();
+            selectedFiles.forEach(file => {
+                formData.append('files', file);
+            });
+
+            try {
+                const response = await fetch(`${API_URL}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Upload failed');
+                }
+
+                // Hide loading
+                document.getElementById('loadingSection').style.display = 'none';
+
+                // Show results
+                displayResults(data);
+
+            } catch (error) {
+                console.error('Upload error:', error);
+                document.getElementById('loadingSection').style.display = 'none';
+                showAlert(error.message || 'An error occurred during verification', 'error');
+            }
+        }
+
+        function displayResults(data) {
+            // Show results section
+            document.getElementById('resultsSection').style.display = 'block';
+
+            // Display summary
+            displaySummary(data);
+
+            // Display documents
+            displayDocuments(data);
+
+            // Display JSON
+            document.getElementById('jsonViewer').textContent = JSON.stringify(data, null, 2);
+
+            // Scroll to results
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function displaySummary(data) {
+            const summaryTab = document.getElementById('summaryTab');
+
+            const statusClass = 
+                data.final_status === 'VERIFIED' ? 'status-verified' :
+                data.final_status === 'NEEDS_CLARIFICATION' ? 'status-needs-clarification' :
+                'status-high-risk';
+
+            let html = `
+                <div style="text-align: center;">
+                    <span class="status-badge ${statusClass}">
+                        ${getStatusIcon(data.final_status)} ${data.final_status.replace(/_/g, ' ')}
+                    </span>
+                </div>
+
+                <div class="risk-score">
+                    <h3>Risk Score: ${data.risk_score}/100</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${data.risk_score}%">
+                            ${data.risk_score}%
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div class="entity-item">
+                        <div class="entity-label">Total Documents</div>
+                        <div class="entity-value">${data.total_documents}</div>
+                    </div>
+                    <div class="entity-item">
+                        <div class="entity-label">Processed</div>
+                        <div class="entity-value">${data.processed_documents}</div>
+                    </div>
+                    <div class="entity-item">
+                        <div class="entity-label">Cross-Document Issues</div>
+                        <div class="entity-value">${data.cross_document_issues.length}</div>
+                    </div>
+                    ${data.verification_id ? `
+                    <div class="entity-item">
+                        <div class="entity-label">Verification ID</div>
+                        <div class="entity-value" style="font-size: 12px;">${data.verification_id}</div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+
+            // Cross-document issues
+            if (data.cross_document_issues.length > 0) {
+                html += `
+                    <div class="cross-issues">
+                        <h3>⚠️ Cross-Document Issues</h3>
+                        ${data.cross_document_issues.map(issue => `
+                            <div class="issue-item">
+                                <strong>[${issue.severity || 'MEDIUM'}]</strong> ${issue.description || issue}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
+            summaryTab.innerHTML = html;
+        }
+
+        function displayDocuments(data) {
+            const documentsTab = document.getElementById('documentsTab');
+
+            let html = '';
+
+            data.documents.forEach((doc, index) => {
+                html += `
+                    <div class="document-card">
+                        <div class="document-header">
+                            <h3>📄 ${doc.filename}</h3>
+                            <span style="background: #667eea; color: white; padding: 5px 15px; border-radius: 15px; font-size: 12px;">
+                                ${doc.document_type || 'UNKNOWN'}
+                            </span>
+                        </div>
+
+                        ${doc.error ? `
+                            <div class="alert alert-error">
+                                <strong>Error:</strong> ${doc.error}
+                            </div>
+                        ` : ''}
+
+                        ${doc.entities && Object.keys(doc.entities).length > 0 ? `
+                            <div class="entity-grid">
+                                ${Object.entries(doc.entities).map(([key, value]) => {
+                                    if (!value || (Array.isArray(value) && value.length === 0)) return '';
+                                    
+                                    const displayValue = Array.isArray(value) ? value.join(', ') : value;
+                                    
+                                    return `
+                                        <div class="entity-item">
+                                            <div class="entity-label">${key.replace(/_/g, ' ')}</div>
+                                            <div class="entity-value">${displayValue}</div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        ` : '<p style="color: #666; font-style: italic;">No entities extracted</p>'}
+
+                        ${doc.issues && doc.issues.length > 0 ? `
+                            <div class="issues">
+                                <h4>⚠️ Issues Found</h4>
+                                ${doc.issues.map(issue => `
+                                    <div class="issue-item">• ${issue}</div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+
+            documentsTab.innerHTML = html || '<p>No documents to display</p>';
+        }
+
+        function getStatusIcon(status) {
+            if (status === 'VERIFIED') return '✅';
+            if (status === 'NEEDS_CLARIFICATION') return '⚠️';
+            return '🚨';
+        }
+
+        function showTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName + 'Tab').classList.add('active');
+        }
+
+        function showAlert(message, type) {
+            const alertClass = type === 'error' ? 'alert-error' : 'alert-success';
+            const alert = document.createElement('div');
+            alert.className = `alert ${alertClass}`;
+            alert.textContent = message;
+            
+            document.querySelector('.container').insertBefore(
+                alert, 
+                document.querySelector('.container').firstChild.nextSibling
+            );
+
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        // Check API health on load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                if (response.ok) {
+                    console.log('✅ API is healthy');
+                } else {
+                    showAlert('Warning: Backend API may not be available', 'error');
+                }
+            } catch (error) {
+                showAlert('Warning: Could not connect to backend API. Please ensure the server is running.', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

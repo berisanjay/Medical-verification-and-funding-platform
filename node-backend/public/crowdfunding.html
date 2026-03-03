@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Crowdfunding Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        nav {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #667eea;
+        }
+
+        .btn {
+            padding: 0.5rem 1.5rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 2px solid #667eea;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 4rem 2rem;
+            text-align: center;
+            color: white;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        /* Campaigns Section */
+        .campaigns-section {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: white;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .campaign-filters {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+
+        .campaign-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .campaign-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .campaign-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .campaign-image {
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3rem;
+        }
+
+        .campaign-content {
+            padding: 1.5rem;
+        }
+
+        .campaign-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .campaign-condition {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .campaign-description {
+            color: #777;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .campaign-progress {
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar {
+            background: #e0e0e0;
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .campaign-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        .campaign-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .urgency-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .urgency-low { background: #e8f5e9; color: #2e7d32; }
+        .urgency-medium { background: #fff3e0; color: #f57c00; }
+        .urgency-high { background: #ffebee; color: #c62828; }
+        .urgency-critical { background: #fce4ec; color: #ad1457; }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+            font-size: 2rem;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: white;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .campaign-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <div class="logo">🏥 Medical Crowdfunding</div>
+            <div class="nav-links">
+                <a href="#home">Home</a>
+                <a href="#campaigns">Campaigns</a>
+                <a href="#about">About</a>
+                <a href="#" onclick="showLoginModal()">Login</a>
+                <a href="#" onclick="showRegisterModal()" class="btn btn-primary">Sign Up</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <h1>Help Save Lives Today</h1>
+        <p>Support patients in need of critical medical treatment. Every donation counts.</p>
+        <div>
+            <a href="#campaigns" class="btn btn-primary" style="margin: 0.5rem;">Browse Campaigns</a>
+            <a href="#" onclick="showRegisterModal()" class="btn btn-secondary" style="margin: 0.5rem;">Start Campaign</a>
+        </div>
+    </section>
+
+    <!-- Campaigns Section -->
+    <section class="campaigns-section" id="campaigns">
+        <div class="section-header">
+            <h2>Active Campaigns</h2>
+            <p>Help patients reach their medical treatment goals</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="campaign-filters">
+            <div class="filter-controls">
+                <input type="text" class="search-box" id="searchBox" placeholder="Search campaigns...">
+                <select class="search-box" id="urgencyFilter" style="flex: 0.2;">
+                    <option value="">All Urgency</option>
+                    <option value="critical">Critical</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                </select>
+                <button class="btn btn-primary" onclick="searchCampaigns()">Search</button>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Loading campaigns...</p>
+        </div>
+
+        <!-- Campaign Grid -->
+        <div class="campaign-grid" id="campaignGrid">
+            <!-- Campaigns will be loaded here -->
+        </div>
+    </section>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('loginModal')">&times;</span>
+            <h2>Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Password:</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+            </form>
+            <p style="text-align: center; margin-top: 1rem;">
+                Don't have an account? <a href="#" onclick="switchToRegister()">Sign up</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="registerModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('registerModal')">&times;</span>
+            <h2>Register</h2>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label>I am a:</label>
+                    <select id="userType" required>
+                        <option value="">Select user type</option>
+                        <option value="patient">Patient seeking funds</option>
+                        <option value="donor">Donor</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Full Name:</label>
+                    <input type="text" id="fullName" required>
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password:</label>
+                    <input type="password" id="password" required>
+                    <small style="color: #666; font-size: 0.8rem;">Min 8 chars: 1 uppercase, 1 lowercase, 1 digit, 1 symbol</small>
+                </div>
+                <div class="form-group">
+                    <label>Confirm Password:</label>
+                    <input type="password" id="confirmPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Register</button>
+            </form>
+            <p style="text-align: center; margin-top: 1rem;">
+                Already have an account? <a href="#" onclick="switchToLogin()">Login</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Donation Modal -->
+    <div id="donationModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('donationModal')">&times;</span>
+            <h2>Make a Donation</h2>
+            <div id="donationCampaignInfo"></div>
+            <form id="donationForm">
+                <div class="form-group">
+                    <label>Donation Amount ($):</label>
+                    <input type="number" id="donationAmount" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="anonymousDonation"> Make this donation anonymous
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>Card Number (Test: 4242424242424242):</label>
+                    <input type="text" id="cardNumber" placeholder="4242424242424242" required>
+                </div>
+                <div class="form-group">
+                    <label>Expiry (MM/YY):</label>
+                    <input type="text" id="cardExpiry" placeholder="12/25" required>
+                </div>
+                <div class="form-group">
+                    <label>CVC:</label>
+                    <input type="text" id="cardCvc" placeholder="123" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Donate Now</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+        let currentUser = null;
+        let currentCampaignId = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCampaigns();
+            
+            // Form submissions
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('registerForm').addEventListener('submit', handleRegister);
+            document.getElementById('donationForm').addEventListener('submit', handleDonation);
+        });
+
+        // Load campaigns
+        async function loadCampaigns() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                
+                const response = await fetch(`${API_URL}/api/campaigns/active`);
+                const campaigns = await response.json();
+                
+                displayCampaigns(campaigns);
+                document.getElementById('loading').style.display = 'none';
+                
+            } catch (error) {
+                console.error('Error loading campaigns:', error);
+                document.getElementById('loading').innerHTML = '<p>Error loading campaigns. Please try again.</p>';
+            }
+        }
+
+        // Display campaigns
+        function displayCampaigns(campaigns) {
+            const grid = document.getElementById('campaignGrid');
+            
+            if (campaigns.length === 0) {
+                grid.innerHTML = '<p style="text-align: center; color: white; grid-column: 1/-1;">No active campaigns found.</p>';
+                return;
+            }
+            
+            grid.innerHTML = campaigns.map(campaign => `
+                <div class="campaign-card">
+                    <div class="campaign-image">
+                        ${campaign.urgency_level === 'critical' ? '🚨' : 
+                          campaign.urgency_level === 'high' ? '⚡' : 
+                          campaign.urgency_level === 'medium' ? '💊' : '💙'}
+                    </div>
+                    <div class="campaign-content">
+                        <h3 class="campaign-title">${campaign.title}</h3>
+                        <p class="campaign-condition">🏥 ${campaign.medical_condition}</p>
+                        <p class="campaign-description">${campaign.description.substring(0, 150)}...</p>
+                        
+                        <div class="campaign-progress">
+                            <div class="campaign-stats">
+                                <div class="stat-item">
+                                    <div class="stat-value">$${campaign.current_amount.toLocaleString()}</div>
+                                    <div class="stat-label">Raised</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">${campaign.progress_percentage.toFixed(1)}%</div>
+                                    <div class="stat-label">Progress</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">$${campaign.target_amount.toLocaleString()}</div>
+                                    <div class="stat-label">Goal</div>
+                                </div>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${campaign.progress_percentage}%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="campaign-footer">
+                            <span class="urgency-badge urgency-${campaign.urgency_level}">
+                                ${campaign.urgency_level.toUpperCase()}
+                            </span>
+                            <button class="btn btn-primary" onclick="showDonationModal('${campaign._id}', '${campaign.title}', '${campaign.target_amount}')">
+                                Donate Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Search campaigns
+        async function searchCampaigns() {
+            try {
+                const query = document.getElementById('searchBox').value;
+                const urgency = document.getElementById('urgencyFilter').value;
+                
+                let url = `${API_URL}/api/campaigns/search?q=${encodeURIComponent(query)}`;
+                if (urgency) {
+                    url += `&urgency=${urgency}`;
+                }
+                
+                const response = await fetch(url);
+                const campaigns = await response.json();
+                
+                displayCampaigns(campaigns);
+                
+            } catch (error) {
+                console.error('Error searching campaigns:', error);
+            }
+        }
+
+        // Modal functions
+        function showLoginModal() {
+            document.getElementById('loginModal').style.display = 'block';
+        }
+
+        function showRegisterModal() {
+            document.getElementById('registerModal').style.display = 'block';
+        }
+
+        function showDonationModal(campaignId, campaignTitle, targetAmount) {
+            currentCampaignId = campaignId;
+            document.getElementById('donationCampaignInfo').innerHTML = `
+                <p><strong>Campaign:</strong> ${campaignTitle}</p>
+                <p><strong>Goal:</strong> $${Number(targetAmount).toLocaleString()}</p>
+            `;
+            document.getElementById('donationModal').style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function switchToRegister() {
+            closeModal('loginModal');
+            showRegisterModal();
+        }
+
+        function switchToLogin() {
+            closeModal('registerModal');
+            showLoginModal();
+        }
+
+        // Handle login
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentUser = result.user;
+                    localStorage.setItem('token', result.token);
+                    closeModal('loginModal');
+                    alert('Login successful!');
+                    // Update UI to show logged-in state
+                } else {
+                    alert(result.error || 'Login failed');
+                }
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Login failed. Please try again.');
+            }
+        }
+
+        // Handle registration
+        async function handleRegister(e) {
+            e.preventDefault();
+            
+            const userType = document.getElementById('userType').value;
+            const fullName = document.getElementById('fullName').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            // Validate passwords match
+            if (password !== confirmPassword) {
+                alert('Passwords do not match');
+                return;
+            }
+            
+            // Basic email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                alert('Please enter a valid email address');
+                return;
+            }
+            
+            // Basic password validation
+            if (password.length < 8) {
+                alert('Password must be at least 8 characters');
+                return;
+            }
+            
+            // Check password requirements
+            const hasUpper = /[A-Z]/.test(password);
+            const hasLower = /[a-z]/.test(password);
+            const hasDigit = /\d/.test(password);
+            const hasSpecial = /[!@#$%^&*()_+\-=\[\]{}|;:'",.<>?/]/.test(password);
+            
+            if (!hasUpper || !hasLower || !hasDigit || !hasSpecial) {
+                alert('Password must contain: 1 uppercase, 1 lowercase, 1 digit, and 1 special character');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/api/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email,
+                        password,
+                        confirm_password: confirmPassword,
+                        user_type: userType,
+                        profile_data: { name: fullName }
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    closeModal('registerModal');
+                    alert('Registration successful! Please login.');
+                    showLoginModal();
+                } else {
+                    alert(result.error || 'Registration failed');
+                }
+                
+            } catch (error) {
+                console.error('Registration error:', error);
+                alert('Registration failed. Please try again.');
+            }
+        }
+
+        // Handle donation
+        async function handleDonation(e) {
+            e.preventDefault();
+            
+            if (!currentUser) {
+                alert('Please login to make a donation');
+                showLoginModal();
+                return;
+            }
+            
+            const amount = document.getElementById('donationAmount').value;
+            const anonymous = document.getElementById('anonymousDonation').checked;
+            const cardNumber = document.getElementById('cardNumber').value;
+            const cardExpiry = document.getElementById('cardExpiry').value;
+            const cardCvc = document.getElementById('cardCvc').value;
+            
+            try {
+                // In a real implementation, you'd use Stripe.js to create a payment method
+                // For now, we'll simulate it
+                const response = await fetch(`${API_URL}/api/donations/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        campaign_id: currentCampaignId,
+                        amount: amount,
+                        anonymous: anonymous,
+                        payment_method_id: 'mock_payment_method'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    closeModal('donationModal');
+                    alert(`Thank you! Your donation of $${amount} has been processed successfully.`);
+                    // Reset form
+                    document.getElementById('donationForm').reset();
+                    // Reload campaigns to show updated progress
+                    loadCampaigns();
+                } else {
+                    alert(result.error || 'Donation failed');
+                }
+                
+            } catch (error) {
+                console.error('Donation error:', error);
+                alert('Donation failed. Please try again.');
+            }
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target.className === 'modal') {
+                event.target.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

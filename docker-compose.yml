@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:6
+    container_name: medical-verification-db
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: medical_verification
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - medical-network
+
+  # Flask API Backend
+  flask-api:
+    build:
+      context: ./flask-backend
+      dockerfile: Dockerfile
+    container_name: medical-verification-flask
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+    environment:
+      - FLASK_ENV=production
+      - MONGO_URI=mongodb://mongodb:27017/
+      - DB_NAME=medical_verification
+    volumes:
+      - ./flask-backend/uploads:/app/uploads
+    ports:
+      - "5000:5000"
+    networks:
+      - medical-network
+
+  # Node.js Server
+  node-server:
+    build:
+      context: ./node-backend
+      dockerfile: Dockerfile
+    container_name: medical-verification-node
+    restart: unless-stopped
+    depends_on:
+      - flask-api
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - FLASK_API_URL=http://flask-api:5000
+    volumes:
+      - ./node-backend/uploads:/app/uploads
+    ports:
+      - "3000:3000"
+    networks:
+      - medical-network
+
+  # Nginx Web Server
+  nginx:
+    image: nginx:alpine
+    container_name: medical-verification-nginx
+    restart: unless-stopped
+    depends_on:
+      - node-server
+    volumes:
+      - ./frontend/public:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+    networks:
+      - medical-network
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  medical-network:
+    driver: bridge
