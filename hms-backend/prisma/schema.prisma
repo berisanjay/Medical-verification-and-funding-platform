@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Hospital {
+  id           Int       @id @default(autoincrement())
+  name         String
+  city         String
+  state        String
+  pincode      String
+  address      String
+  phone        String?
+  email        String?
+  patients     Patient[]
+  created_at   DateTime  @default(now())
+}
+
+model Patient {
+  id             Int           @id @default(autoincrement())
+  patient_name   String
+  age            Int
+  gender         String
+  aadhaar_number String        @unique
+  disease        String
+  admission_date DateTime?
+  status         PatientStatus @default(ADMITTED)
+  hospital       Hospital      @relation(fields: [hospital_id], references: [id])
+  hospital_id    Int
+  ledger         Ledger?
+  documents      HmsDocument[]
+  payments       Payment[]
+  created_at     DateTime      @default(now())
+  updated_at     DateTime      @updatedAt
+}
+
+model Ledger {
+  id                 Int      @id @default(autoincrement())
+  patient            Patient  @relation(fields: [patient_hms_id], references: [id])
+  patient_hms_id     Int      @unique
+  total_estimate     Decimal  @db.Decimal(10, 2)
+  amount_paid        Decimal  @default(0) @db.Decimal(10, 2)
+  outstanding_amount Decimal  @db.Decimal(10, 2)
+  last_updated       DateTime @updatedAt
+}
+
+model HmsDocument {
+  id              Int      @id @default(autoincrement())
+  patient         Patient  @relation(fields: [patient_hms_id], references: [id])
+  patient_hms_id  Int
+  document_type   String
+  file_url   String  @db.LongText
+  verified_status Boolean  @default(false)
+  created_at      DateTime @default(now())
+}
+
+model Payment {
+  id             Int      @id @default(autoincrement())
+  patient        Patient  @relation(fields: [patient_hms_id], references: [id])
+  patient_hms_id Int
+  amount         Decimal  @db.Decimal(10, 2)
+  source         String
+  notes          String?
+  paid_at        DateTime @default(now())
+}
+
+enum PatientStatus {
+  ADMITTED
+  TREATMENT_PENDING
+  RECOVERY
+  DISCHARGED
+}

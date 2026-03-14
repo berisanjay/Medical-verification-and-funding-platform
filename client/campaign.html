@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediTrust — Campaign</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --orange      : #F97316;
+      --orange-dark : #EA580C;
+      --orange-light: #FFF7ED;
+      --orange-mid  : #FFEDD5;
+      --white       : #FFFFFF;
+      --gray-100    : #F9FAFB;
+      --gray-200    : #F3F4F6;
+      --gray-400    : #9CA3AF;
+      --gray-600    : #4B5563;
+      --gray-800    : #1F2937;
+      --green       : #22C55E;
+      --red         : #EF4444;
+      --blue        : #3B82F6;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background : var(--gray-100);
+      color      : var(--gray-800);
+    }
+
+    /* ── NAVBAR ── */
+    .navbar {
+      background     : var(--white);
+      padding        : 0 60px;
+      height         : 64px;
+      display        : flex;
+      align-items    : center;
+      justify-content: space-between;
+      border-bottom  : 1px solid var(--gray-200);
+      position       : sticky;
+      top            : 0;
+      z-index        : 100;
+    }
+
+    .nav-logo {
+      display    : flex;
+      align-items: center;
+      gap        : 10px;
+      cursor     : pointer;
+    }
+
+    .nav-logo-icon {
+      width          : 36px;
+      height         : 36px;
+      background     : var(--orange);
+      border-radius  : 10px;
+      display        : flex;
+      align-items    : center;
+      justify-content: center;
+      font-size      : 16px;
+    }
+
+    .nav-logo h1   { font-size: 18px; font-weight: 800; }
+    .nav-logo small{ display: block; font-size: 10px; color: var(--gray-400); }
+
+    .nav-back {
+      display    : flex;
+      align-items: center;
+      gap        : 8px;
+      font-size  : 14px;
+      color      : var(--gray-600);
+      cursor     : pointer;
+      padding    : 8px 16px;
+      border-radius: 8px;
+      transition : background 0.15s;
+    }
+
+    .nav-back:hover { background: var(--gray-100); color: var(--orange); }
+
+    /* ── LAYOUT ── */
+    .page {
+      max-width: 1100px;
+      margin   : 0 auto;
+      padding  : 32px 24px;
+      display  : grid;
+      grid-template-columns: 1fr 380px;
+      gap      : 28px;
+      align-items: start;
+    }
+
+    /* ── LEFT COLUMN ── */
+    .left-col {}
+
+    /* ── CAMPAIGN HEADER ── */
+    .campaign-header {
+      background   : var(--white);
+      border-radius: 18px;
+      overflow     : hidden;
+      margin-bottom: 20px;
+      box-shadow   : 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    .campaign-banner {
+      background     : linear-gradient(135deg, var(--orange-light) 0%, var(--orange-mid) 100%);
+      padding        : 40px 32px;
+      display        : flex;
+      align-items    : center;
+      gap            : 20px;
+    }
+
+    .campaign-banner-icon {
+      width          : 72px;
+      height         : 72px;
+      background     : white;
+      border-radius  : 18px;
+      display        : flex;
+      align-items    : center;
+      justify-content: center;
+      font-size      : 36px;
+      box-shadow     : 0 4px 16px rgba(0,0,0,0.08);
+      flex-shrink    : 0;
+    }
+
+    .campaign-banner-info h1 {
+      font-size    : 24px;
+      font-weight  : 800;
+      margin-bottom: 6px;
+      color        : var(--gray-800);
+    }
+
+    .campaign-banner-info p {
+      font-size: 14px;
+      color    : var(--gray-600);
+    }
+
+    .campaign-banner-badges {
+      display  : flex;
+      gap      : 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display      : inline-flex;
+      align-items  : center;
+      padding      : 4px 12px;
+      border-radius: 20px;
+      font-size    : 12px;
+      font-weight  : 600;
+      gap          : 4px;
+    }
+
+    .b-verified { background: #DCFCE7; color: #15803D; }
+    .b-live     { background: #DBEAFE; color: #1D4ED8; }
+    .b-hospital { background: var(--orange-mid); color: var(--orange-dark); }
+
+    .campaign-body { padding: 24px 32px; }
+
+    /* ── PROGRESS ── */
+    .progress-section {
+      margin-bottom: 24px;
+    }
+
+    .progress-numbers {
+      display        : flex;
+      justify-content: space-between;
+      align-items    : flex-end;
+      margin-bottom  : 10px;
+    }
+
+    .amount-raised {
+      font-size  : 32px;
+      font-weight: 900;
+      color      : var(--orange);
+    }
+
+    .amount-target {
+      font-size: 14px;
+      color    : var(--gray-400);
+    }
+
+    .progress-percent {
+      font-size  : 20px;
+      font-weight: 800;
+      color      : var(--gray-800);
+    }
+
+    .progress-bar {
+      height       : 12px;
+      background   : var(--gray-200);
+      border-radius: 12px;
+      overflow     : hidden;
+      margin-bottom: 12px;
+    }
+
+    .progress-fill {
+      height    : 100%;
+      background: linear-gradient(90deg, var(--orange), var(--orange-dark));
+      border-radius: 12px;
+      transition: width 0.8s ease;
+    }
+
+    .progress-meta {
+      display  : flex;
+      gap      : 24px;
+      font-size: 13px;
+      color    : var(--gray-400);
+    }
+
+    .progress-meta span { display: flex; align-items: center; gap: 5px; }
+    .progress-meta strong { color: var(--gray-800); }
+
+    /* ── STORY ── */
+    .story-card {
+      background   : var(--white);
+      border-radius: 18px;
+      padding      : 28px 32px;
+      margin-bottom: 20px;
+      box-shadow   : 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    .story-card h3 {
+      font-size    : 16px;
+      font-weight  : 700;
+      margin-bottom: 16px;
+      display      : flex;
+      align-items  : center;
+      gap          : 8px;
+    }
+
+    .story-text {
+      font-size  : 15px;
+      line-height: 1.8;
+      color      : var(--gray-600);
+    }
+
+    /* ── VERIFICATION INFO ── */
+    .verification-card {
+      background   : var(--white);
+      border-radius: 18px;
+      padding      : 24px 32px;
+      margin-bottom: 20px;
+      box-shadow   : 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    .verification-card h3 {
+      font-size    : 16px;
+      font-weight  : 700;
+      margin-bottom: 16px;
+      display      : flex;
+      align-items  : center;
+      gap          : 8px;
+    }
+
+    .verification-grid {
+      display              : grid;
+      grid-template-columns: 1fr 1fr;
+      gap                  : 14px;
+    }
+
+    .verification-item {
+      display      : flex;
+      align-items  : center;
+      gap          : 10px;
+      padding      : 12px 14px;
+      background   : var(--gray-100);
+      border-radius: 10px;
+    }
+
+    .v-icon { font-size: 20px; }
+
+    .v-info p     { font-size: 12px; color: var(--gray-400); margin-bottom: 2px; }
+    .v-info strong{ font-size: 13px; color: var(--gray-800); }
+
+    /* ── UPDATES ── */
+    .updates-card {
+      background   : var(--white);
+      border-radius: 18px;
+      padding      : 24px 32px;
+      margin-bottom: 20px;
+      box-shadow   : 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    .updates-card h3 {
+      font-size    : 16px;
+      font-weight  : 700;
+      margin-bottom: 16px;
+      display      : flex;
+      align-items  : center;
+      gap          : 8px;
+    }
+
+    .update-item {
+      padding      : 14px 0;
+      border-bottom: 1px solid var(--gray-200);
+      display      : flex;
+      gap          : 14px;
+    }
+
+    .update-item:last-child { border-bottom: none; }
+
+    .update-dot {
+      width          : 32px;
+      height         : 32px;
+      border-radius  : 50%;
+      background     : var(--orange-mid);
+      display        : flex;
+      align-items    : center;
+      justify-content: center;
+      font-size      : 14px;
+      flex-shrink    : 0;
+    }
+
+    .update-content h4 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .update-content p  { font-size: 13px; color: var(--gray-600); line-height: 1.6; }
+    .update-time       { font-size: 11px; color: var(--gray-400); margin-top: 4px; }
+
+    /* ── DONORS ── */
+    .donors-card {
+      background   : var(--white);
+      border-radius: 18px;
+      padding      : 24px 32px;
+      box-shadow   : 0 2px 12px rgba(0,0,0,0.06);
+    }
+
+    .donors-card h3 {
+      font-size    : 16px;
+      font-weight  : 700;
+      margin-bottom: 16px;
+      display      : flex;
+      align-items  : center;
+      gap          : 8px;
+    }
+
+    .donor-item {
+      display      : flex;
+      align-items  : center;
+      gap          : 12px;
+      padding      : 10px 0;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .donor-item:last-child { border-bottom: none; }
+
+    .donor-avatar {
+      width          : 36px;
+      height         : 36px;
+      border-radius  : 50%;
+      background     : var(--orange-mid);
+      display        : flex;
+      align-items    : center;
+      justify-content: center;
+      font-size      : 14px;
+      font-weight    : 700;
+      color          : var(--orange-dark);
+      flex-shrink    : 0;
+    }
+
+    .donor-info span  { display: block; font-size: 13px; font-weight: 600; }
+    .donor-info small { font-size: 12px; color: var(--gray-400); }
+    .donor-amount     { margin-left: auto; font-size: 14px; font-weight: 700; color: var(--orange); }
+
+    /* ── RIGHT COLUMN (STICKY DONATE BOX) ── */
+    .donate-box {
+      background   : var(--white);
+      border-radius: 18px;
+      padding      : 28px;
+      box-shadow   : 0 4px 24px rgba(0,0,0,0.1);
+      position     : sticky;
+      top          : 84px;
+    }
+
+    .donate-box h3 {
+      font-size    : 18px;
+      font-weight  : 800;
+      margin-bottom: 6px;
+    }
+
+    .donate-box p {
+      font-size    : 13px;
+      color        : var(--gray-400);
+      margin-bottom: 20px;
+    }
+
+    /* ── AMOUNT PRESETS ── */
+    .amount-presets {
+      display              : grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap                  : 8px;
+      margin-bottom        : 14px;
+    }
+
+    .preset-btn {
+      padding      : 10px 8px;
+      border       : 1.5px solid var(--gray-200);
+      border-radius: 10px;
+      background   : var(--white);
+      font-size    : 13px;
+      font-weight  : 600;
+      cursor       : pointer;
+      text-align   : center;
+      transition   : all 0.15s;
+      color        : var(--gray-800);
+    }
+
+    .preset-btn:hover,
+    .preset-btn.active {
+      border-color: var(--orange);
+      background  : var(--orange-light);
+      color       : var(--orange-dark);
+    }
+
+    .amount-input-wrap {
+      position     : relative;
+      margin-bottom: 16px;
+    }
+
+    .amount-prefix {
+      position   : absolute;
+      left       : 14px;
+      top        : 50%;
+      transform  : translateY(-50%);
+      font-size  : 16px;
+      font-weight: 700;
+      color      : var(--gray-800);
+    }
+
+    .amount-input {
+      width        : 100%;
+      padding      : 13px 14px 13px 34px;
+      border       : 1.5px solid var(--gray-200);
+      border-radius: 10px;
+      font-size    : 18px;
+      font-weight  : 700;
+      outline      : none;
+      transition   : border 0.15s;
+    }
+
+    .amount-input:focus { border-color: var(--orange); }
+
+    /* ── DONOR DETAILS ── */
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display      : block;
+      font-size    : 12px;
+      font-weight  : 600;
+      color        : var(--gray-600);
+      margin-bottom: 5px;
+    }
+
+    .form-group input {
+      width        : 100%;
+      padding      : 10px 14px;
+      border       : 1.5px solid var(--gray-200);
+      border-radius: 8px;
+      font-size    : 13px;
+      outline      : none;
+      transition   : border 0.15s;
+    }
+
+    .form-group input:focus { border-color: var(--orange); }
+
+    .anon-check {
+      display    : flex;
+      align-items: center;
+      gap        : 8px;
+      font-size  : 13px;
+      color      : var(--gray-600);
+      margin-bottom: 16px;
+      cursor     : pointer;
+    }
+
+    /* ── DONATE BUTTON ── */
+    .btn-donate {
+      width        : 100%;
+      padding      : 15px;
+      background   : var(--orange);
+      color        : white;
+      border       : none;
+      border-radius: 12px;
+      font-size    : 16px;
+      font-weight  : 800;
+      cursor       : pointer;
+      transition   : all 0.15s;
+      display      : flex;
+      align-items  : center;
+      justify-content: center;
+      gap          : 8px;
+      margin-bottom: 12px;
+    }
+
+    .btn-donate:hover {
+      background: var(--orange-dark);
+      transform : translateY(-2px);
+      box-shadow: 0 8px 24px rgba(249,115,22,0.3);
+    }
+
+    .btn-donate:disabled {
+      background: var(--gray-400);
+      cursor    : not-allowed;
+      transform : none;
+      box-shadow: none;
+    }
+
+    .donate-note {
+      font-size : 12px;
+      color     : var(--gray-400);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    /* ── DIVIDER ── */
+    .divider {
+      display    : flex;
+      align-items: center;
+      gap        : 10px;
+      margin     : 16px 0;
+    }
+
+    .divider::before,
+    .divider::after {
+      content   : '';
+      flex      : 1;
+      height    : 1px;
+      background: var(--gray-200);
+    }
+
+    .divider span { font-size: 12px; color: var(--gray-400); }
+
+    /* ── QR DONATE ── */
+    .qr-section { text-align: center; }
+
+    .qr-section img {
+      width        : 140px;
+      height       : 140px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+
+    .upi-id {
+      font-size  : 14px;
+      font-weight: 700;
+      color      : var(--orange);
+      margin-bottom: 4px;
+    }
+
+    .qr-section p { font-size: 12px; color: var(--gray-400); }
+
+    .copy-upi-btn {
+      background   : var(--orange-light);
+      color        : var(--orange-dark);
+      border       : none;
+      padding      : 8px 16px;
+      border-radius: 8px;
+      font-size    : 12px;
+      font-weight  : 600;
+      cursor       : pointer;
+      margin-top   : 8px;
+    }
+
+    /* ── SHARE BOX ── */
+    .share-box {
+      background   : var(--gray-100);
+      border-radius: 12px;
+      padding      : 16px;
+      margin-top   : 16px;
+      text-align   : center;
+    }
+
+    .share-box p {
+      font-size    : 13px;
+      font-weight  : 600;
+      color        : var(--gray-800);
+      margin-bottom: 12px;
+    }
+
+    .share-buttons { display: flex; gap: 8px; justify-content: center; }
+
+    .share-btn {
+      padding      : 8px 16px;
+      border-radius: 8px;
+      font-size    : 12px;
+      font-weight  : 600;
+      cursor       : pointer;
+      border       : none;
+      transition   : opacity 0.15s;
+    }
+
+    .share-btn:hover { opacity: 0.85; }
+    .share-whatsapp  { background: #25D366; color: white; }
+    .share-copy      { background: var(--gray-200); color: var(--gray-800); }
+    .share-twitter   { background: #1DA1F2; color: white; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      display        : none;
+      position       : fixed;
+      inset          : 0;
+      background     : rgba(0,0,0,0.5);
+      z-index        : 200;
+      align-items    : center;
+      justify-content: center;
+    }
+
+    .modal-overlay.show { display: flex; }
+
+    .modal {
+      background   : var(--white);
+      border-radius: 20px;
+      padding      : 32px;
+      width        : 460px;
+      max-width    : 90vw;
+      box-shadow   : 0 20px 60px rgba(0,0,0,0.2);
+      text-align   : center;
+    }
+
+    .modal-icon { font-size: 56px; margin-bottom: 16px; }
+
+    .modal h3 {
+      font-size    : 22px;
+      font-weight  : 800;
+      margin-bottom: 8px;
+    }
+
+    .modal p {
+      font-size    : 14px;
+      color        : var(--gray-600);
+      margin-bottom: 24px;
+      line-height  : 1.6;
+    }
+
+    .modal-actions { display: flex; gap: 10px; justify-content: center; }
+
+    .btn-modal-primary {
+      padding      : 11px 28px;
+      background   : var(--orange);
+      color        : white;
+      border       : none;
+      border-radius: 10px;
+      font-size    : 14px;
+      font-weight  : 700;
+      cursor       : pointer;
+    }
+
+    .btn-modal-primary:hover { background: var(--orange-dark); }
+
+    .btn-modal-outline {
+      padding      : 11px 28px;
+      background   : var(--white);
+      color        : var(--gray-600);
+      border       : 1.5px solid var(--gray-200);
+      border-radius: 10px;
+      font-size    : 14px;
+      font-weight  : 600;
+      cursor       : pointer;
+    }
+
+    /* ── TOAST ── */
+    .toast {
+      position     : fixed;
+      bottom       : 24px;
+      right        : 24px;
+      background   : var(--gray-800);
+      color        : white;
+      padding      : 14px 20px;
+      border-radius: 10px;
+      font-size    : 13px;
+      font-weight  : 600;
+      z-index      : 999;
+      transform    : translateY(80px);
+      opacity      : 0;
+      transition   : all 0.3s;
+      box-shadow   : 0 4px 20px rgba(0,0,0,0.2);
+    }
+
+    .toast.show    { transform: translateY(0); opacity: 1; }
+    .toast.success { border-left: 4px solid var(--green); }
+    .toast.error   { border-left: 4px solid var(--red);   }
+    .toast.info    { border-left: 4px solid var(--orange); }
+
+    /* ── LOADING ── */
+    .loading {
+      display        : flex;
+      flex-direction : column;
+      align-items    : center;
+      justify-content: center;
+      padding        : 80px 20px;
+      gap            : 14px;
+    }
+
+    .spinner {
+      width        : 36px;
+      height       : 36px;
+      border       : 4px solid var(--gray-200);
+      border-top   : 4px solid var(--orange);
+      border-radius: 50%;
+      animation    : spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── ERROR STATE ── */
+    .error-state {
+      text-align: center;
+      padding   : 80px 20px;
+    }
+
+    .error-state .icon { font-size: 56px; margin-bottom: 16px; }
+    .error-state h3    { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .error-state p     { font-size: 15px; color: var(--gray-400); }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="nav-logo" onclick="window.location.href='index.html'">
+    <div class="nav-logo-icon">🏥</div>
+    <div>
+      <h1>MediTrust</h1>
+      <small>Verified Medical Crowdfunding</small>
+    </div>
+  </div>
+  <div class="nav-back" onclick="window.location.href='index.html'">
+    ← Back to Campaigns
+  </div>
+</nav>
+
+<!-- PAGE -->
+<div id="pageContent">
+  <div class="loading">
+    <div class="spinner"></div>
+    <p style="color:var(--gray-400); font-size:14px;">Loading campaign...</p>
+  </div>
+</div>
+
+<!-- SUCCESS MODAL -->
+<div class="modal-overlay" id="successModal">
+  <div class="modal">
+    <div class="modal-icon">🎉</div>
+    <h3>Thank You!</h3>
+    <p id="successMsg">
+      Your donation has been received successfully.<br/>
+      A receipt has been sent to your email.
+    </p>
+    <div class="modal-actions">
+      <button class="btn-modal-primary" onclick="closeModal()">
+        Continue
+      </button>
+      <button class="btn-modal-outline" onclick="window.location.href='index.html'">
+        Browse More
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = 'http://localhost:3000/api';
+  let campaign     = null;
+  let campaignId   = null;
+  let donationId   = null;
+  let selectedAmt  = 500;
+
+  // ─────────────────────────────────────────
+  // INIT
+  // ─────────────────────────────────────────
+  window.onload = async () => {
+    const params = new URLSearchParams(window.location.search);
+    campaignId   = params.get('id');
+
+    if (!campaignId) {
+      showError('No campaign ID provided');
+      return;
+    }
+
+    await loadCampaign();
+  };
+
+  // ─────────────────────────────────────────
+  // LOAD CAMPAIGN
+  // ─────────────────────────────────────────
+  async function loadCampaign() {
+    try {
+      const res  = await fetch(`${API}/campaigns/${campaignId}`);
+      const data = await res.json();
+
+      if (!data.success || !data.campaign) {
+        showError('Campaign not found');
+        return;
+      }
+
+      campaign = data.campaign;
+      renderPage();
+
+    } catch (err) {
+      showError('Failed to load campaign');
+    }
+  }
+
+  // ─────────────────────────────────────────
+  // RENDER PAGE
+  // ─────────────────────────────────────────
+  function renderPage() {
+    const c         = campaign;
+    const collected = parseFloat(c.collected_amount || 0);
+    const target    = parseFloat(c.verified_amount  || 0);
+    const percent   = target > 0
+      ? Math.min(100, Math.round((collected / target) * 100))
+      : 0;
+    const isLive    = c.status === 'LIVE_CAMPAIGN';
+
+    document.title  = `MediTrust — ${c.title}`;
+
+    document.getElementById('pageContent').innerHTML = `
+      <div class="page">
+
+        <!-- ── LEFT COLUMN ── -->
+        <div class="left-col">
+
+          <!-- Campaign Header -->
+          <div class="campaign-header">
+            <div class="campaign-banner">
+              <div class="campaign-banner-icon">🏥</div>
+              <div class="campaign-banner-info">
+                <h1>${c.title}</h1>
+                <p>Patient: ${c.patient_full_name}
+                  ${c.hospital ? ` • ${c.hospital.name}, ${c.hospital.city}` : ''}
+                </p>
+                <div class="campaign-banner-badges">
+                  <span class="badge b-verified">✅ AI Verified</span>
+                  <span class="badge b-live">🟢 ${c.status.replace('_', ' ')}</span>
+                  ${c.hospital
+                    ? `<span class="badge b-hospital">🏥 ${c.hospital.name}</span>`
+                    : ''}
+                </div>
+              </div>
+            </div>
+
+            <div class="campaign-body">
+              <!-- Progress -->
+              <div class="progress-section">
+                <div class="progress-numbers">
+                  <div>
+                    <div class="amount-raised">₹${formatAmount(collected)}</div>
+                    <div class="amount-target">
+                      raised of ₹${formatAmount(target)} goal
+                    </div>
+                  </div>
+                  <div class="progress-percent">${percent}%</div>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width:${percent}%"></div>
+                </div>
+                <div class="progress-meta">
+                  <span>❤️ <strong>${c.donations?.length || 0}</strong> donors</span>
+                  <span>💸 ₹<strong>${formatAmount(c.released_amount || 0)}</strong> released to hospital</span>
+                  ${c.expires_at
+                    ? `<span>⏰ Expires <strong>${formatDate(c.expires_at)}</strong></span>`
+                    : ''}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Story -->
+          ${c.story_gemini ? `
+            <div class="story-card">
+              <h3>📖 Campaign Story</h3>
+              <div class="story-text">${c.story_gemini}</div>
+            </div>
+          ` : ''}
+
+          <!-- Verification Info -->
+          <div class="verification-card">
+            <h3>🤖 Verification Details</h3>
+            <div class="verification-grid">
+              <div class="verification-item">
+                <div class="v-icon">✅</div>
+                <div class="v-info">
+                  <p>Document Status</p>
+                  <strong>AI Verified</strong>
+                </div>
+              </div>
+              <div class="verification-item">
+                <div class="v-icon">🛡️</div>
+                <div class="v-info">
+                  <p>Tampering Check</p>
+                  <strong>No Issues Found</strong>
+                </div>
+              </div>
+              <div class="verification-item">
+                <div class="v-icon">🏥</div>
+                <div class="v-info">
+                  <p>Hospital Verified</p>
+                  <strong>${c.hospital?.name || 'Verified Hospital'}</strong>
+                </div>
+              </div>
+              <div class="verification-item">
+                <div class="v-icon">💸</div>
+                <div class="v-info">
+                  <p>Fund Release</p>
+                  <strong>Direct to Hospital</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Updates -->
+          ${c.updates?.length > 0 ? `
+            <div class="updates-card">
+              <h3>📢 Campaign Updates</h3>
+              ${c.updates.map(u => `
+                <div class="update-item">
+                  <div class="update-dot">
+                    ${u.is_milestone ? '🏆' : '📢'}
+                  </div>
+                  <div class="update-content">
+                    <h4>${u.is_milestone ? 'Milestone Update' : 'Update'}</h4>
+                    <p>${u.update_text}</p>
+                    <div class="update-time">${formatDate(u.created_at)}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+
+          <!-- Recent Donors -->
+          ${c.donations?.length > 0 ? `
+            <div class="donors-card">
+              <h3>❤️ Recent Donors</h3>
+              ${c.donations.slice(0, 8).map(d => `
+                <div class="donor-item">
+                  <div class="donor-avatar">
+                    ${d.is_anonymous ? '?' : d.donor_name.charAt(0).toUpperCase()}
+                  </div>
+                  <div class="donor-info">
+                    <span>${d.donor_name}</span>
+                    <small>${formatDate(d.donated_at)}</small>
+                  </div>
+                  <div class="donor-amount">₹${formatAmount(d.amount)}</div>
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+
+        </div>
+
+        <!-- ── RIGHT COLUMN ── -->
+        <div class="right-col">
+          <div class="donate-box">
+
+            ${isLive ? `
+              <h3>❤️ Make a Donation</h3>
+              <p>Your donation goes directly to the hospital</p>
+
+              <!-- Amount Presets -->
+              <div class="amount-presets">
+                <div class="preset-btn" onclick="setAmount(100, this)">₹100</div>
+                <div class="preset-btn active" onclick="setAmount(500, this)">₹500</div>
+                <div class="preset-btn" onclick="setAmount(1000, this)">₹1,000</div>
+                <div class="preset-btn" onclick="setAmount(2000, this)">₹2,000</div>
+                <div class="preset-btn" onclick="setAmount(5000, this)">₹5,000</div>
+                <div class="preset-btn" onclick="setAmount(10000, this)">₹10,000</div>
+              </div>
+
+              <!-- Custom Amount -->
+              <div class="amount-input-wrap">
+                <span class="amount-prefix">₹</span>
+                <input type="number" class="amount-input" id="donationAmount"
+                       value="500" min="10"
+                       oninput="clearPresets()" />
+              </div>
+
+              <!-- Donor Details -->
+              <div class="form-group">
+                <label>Your Name *</label>
+                <input type="text" id="donorName" placeholder="Full name" />
+              </div>
+
+              <div class="form-group">
+                <label>Your Email *</label>
+                <input type="email" id="donorEmail" placeholder="For receipt" />
+              </div>
+
+              <label class="anon-check">
+                <input type="checkbox" id="isAnonymous" />
+                Donate anonymously
+              </label>
+
+              <!-- Donate Button -->
+              <button class="btn-donate" id="donateBtn" onclick="initiateDonation()">
+                ❤️ Donate ₹<span id="donateAmountDisplay">500</span>
+              </button>
+
+              <p class="donate-note">
+                🔒 Secured by Razorpay<br/>
+                Funds released directly to hospital after verification
+              </p>
+
+              ${c.qr_code_url ? `
+                <div class="divider"><span>or donate via UPI</span></div>
+                <div class="qr-section">
+                  <img src="${c.qr_code_url}" alt="UPI QR Code" />
+                  <div class="upi-id">${c.upi_id}</div>
+                  <p>Scan QR or use UPI ID</p>
+                  <button class="copy-upi-btn" onclick="copyUPI('${c.upi_id}')">
+                    📋 Copy UPI ID
+                  </button>
+                </div>
+              ` : ''}
+
+            ` : `
+              <div style="text-align:center; padding:20px 0;">
+                <div style="font-size:48px; margin-bottom:14px;">⏳</div>
+                <h3 style="margin-bottom:8px;">Campaign Not Live Yet</h3>
+                <p style="font-size:13px; color:var(--gray-400); line-height:1.6;">
+                  This campaign is currently being verified.<br/>
+                  Please check back soon.
+                </p>
+              </div>
+            `}
+
+            <!-- Share -->
+            <div class="share-box">
+              <p>📣 Help spread the word</p>
+              <div class="share-buttons">
+                <button class="share-btn share-whatsapp" onclick="shareWhatsApp()">
+                  📱 WhatsApp
+                </button>
+                <button class="share-btn share-copy" onclick="shareLink()">
+                  🔗 Copy Link
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    `;
+
+    // Update donate button amount dynamically
+    document.getElementById('donationAmount')?.addEventListener('input', function() {
+      const display = document.getElementById('donateAmountDisplay');
+      if (display) display.textContent = this.value || '0';
+    });
+  }
+
+  // ─────────────────────────────────────────
+  // SET AMOUNT
+  // ─────────────────────────────────────────
+  function setAmount(amount, el) {
+    selectedAmt = amount;
+    document.getElementById('donationAmount').value = amount;
+
+    const display = document.getElementById('donateAmountDisplay');
+    if (display) display.textContent = amount.toLocaleString('en-IN');
+
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function clearPresets() {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    const val     = document.getElementById('donationAmount').value;
+    const display = document.getElementById('donateAmountDisplay');
+    if (display) display.textContent = val || '0';
+  }
+
+  // ─────────────────────────────────────────
+  // INITIATE DONATION
+  // ─────────────────────────────────────────
+  async function initiateDonation() {
+    const amount      = parseFloat(document.getElementById('donationAmount').value);
+    const donorName   = document.getElementById('donorName').value.trim();
+    const donorEmail  = document.getElementById('donorEmail').value.trim();
+    const isAnonymous = document.getElementById('isAnonymous').checked;
+    const btn         = document.getElementById('donateBtn');
+
+    if (!amount || amount < 10) {
+      showToast('Minimum donation is ₹10', 'error');
+      return;
+    }
+
+    if (!donorName) {
+      showToast('Please enter your name', 'error');
+      return;
+    }
+
+    if (!donorEmail || !donorEmail.includes('@')) {
+      showToast('Please enter a valid email', 'error');
+      return;
+    }
+
+    btn.disabled    = true;
+    btn.textContent = 'Processing...';
+
+    try {
+      // Step 1 — Create Razorpay order
+      const res  = await fetch(`${API}/donations/initiate`, {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify({
+          campaign_id : campaignId,
+          donor_name  : isAnonymous ? 'Anonymous' : donorName,
+          donor_email : donorEmail,
+          amount,
+          is_anonymous: isAnonymous
+        })
+      });
+
+      const data = await res.json();
+
+      if (!data.success) {
+        showToast(data.error || 'Failed to initiate donation', 'error');
+        btn.disabled = false;
+        btn.innerHTML = `❤️ Donate ₹${amount}`;
+        return;
+      }
+
+      donationId = data.donation_id;
+
+      // Step 2 — Open Razorpay
+      const options = {
+        key         : data.key_id,
+        amount      : data.amount,
+        currency    : data.currency,
+        name        : 'MediTrust',
+        description : `Donation to: ${campaign.title}`,
+        order_id    : data.order_id,
+        prefill     : {
+          name    : donorName,
+          email   : donorEmail
+        },
+        theme       : { color: '#F97316' },
+        handler     : async function(response) {
+          await verifyPayment(response);
+        },
+        modal: {
+          ondismiss: function() {
+            btn.disabled  = false;
+            btn.innerHTML = `❤️ Donate ₹${formatAmount(amount)}`;
+          }
+        }
+      };
+
+      const rzp = new Razorpay(options);
+      rzp.open();
+
+    } catch (err) {
+      showToast('Server error. Please try again.', 'error');
+      btn.disabled  = false;
+      btn.innerHTML = `❤️ Donate ₹${amount}`;
+    }
+  }
+
+  // ─────────────────────────────────────────
+  // VERIFY PAYMENT
+  // ─────────────────────────────────────────
+  async function verifyPayment(response) {
+    try {
+      const res  = await fetch(`${API}/donations/verify`, {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify({
+          donation_id          : donationId,
+          razorpay_order_id    : response.razorpay_order_id,
+          razorpay_payment_id  : response.razorpay_payment_id,
+          razorpay_signature   : response.razorpay_signature
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        const isAnon = document.getElementById('isAnonymous')?.checked;
+        document.getElementById('successMsg').innerHTML = `
+          Your donation of <strong>₹${formatAmount(
+            parseFloat(document.getElementById('donationAmount').value)
+          )}</strong>
+          has been received!<br/>
+          ${!isAnon ? 'A receipt has been sent to your email.' : ''}
+          <br/><br/>
+          <small style="color:var(--gray-400)">
+            Funds will be released directly to the hospital.
+          </small>
+        `;
+        document.getElementById('successModal').classList.add('show');
+        await loadCampaign();
+      } else {
+        showToast(data.error || 'Payment verification failed', 'error');
+      }
+
+    } catch (err) {
+      showToast('Verification failed. Contact support.', 'error');
+    }
+  }
+
+  // ─────────────────────────────────────────
+  // SHARE
+  // ─────────────────────────────────────────
+  function shareWhatsApp() {
+    const text = `Help ${campaign.patient_full_name} fight their illness! Every donation goes directly to the hospital. ${window.location.href}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  }
+
+  function shareLink() {
+    navigator.clipboard.writeText(window.location.href);
+    showToast('✅ Link copied to clipboard!', 'success');
+  }
+
+  function copyUPI(upiId) {
+    navigator.clipboard.writeText(upiId);
+    showToast('✅ UPI ID copied!', 'success');
+  }
+
+  // ─────────────────────────────────────────
+  // HELPERS
+  // ─────────────────────────────────────────
+  function closeModal() {
+    document.getElementById('successModal').classList.remove('show');
+  }
+
+  function showError(msg) {
+    document.getElementById('pageContent').innerHTML = `
+      <div class="error-state">
+        <div class="icon">😕</div>
+        <h3>Something went wrong</h3>
+        <p>${msg}</p>
+      </div>`;
+  }
+
+  function showToast(msg, type = 'info') {
+    const toast       = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.className   = `toast ${type} show`;
+    setTimeout(() => toast.classList.remove('show'), 3500);
+  }
+
+  function formatAmount(n) {
+    return parseFloat(n || 0).toLocaleString('en-IN');
+  }
+
+  function formatDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-IN', {
+      day: 'numeric', month: 'short', year: 'numeric'
+    });
+  }
+</script>
+
+<!-- Razorpay SDK -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+</body>
+</html>

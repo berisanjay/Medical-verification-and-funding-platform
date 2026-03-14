@@ -1,0 +1,355 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────
+// USERS
+// ─────────────────────────────────────────
+
+model User {
+  id                 Int              @id @default(autoincrement())
+  name               String
+  email              String           @unique
+  password_hash      String
+  role               UserRole         @default(PATIENT)
+  phone              String?
+  native_languages   Json?
+  aadhaar_number     String?          @unique
+  otp_verified       Boolean          @default(false)
+  is_blacklisted     Boolean          @default(false)
+  blacklist_reason   String?
+  created_at         DateTime         @default(now())
+  updated_at         DateTime         @updatedAt
+
+  campaigns          Campaign[]
+  otps               OTP[]
+  audit_logs         AdminAuditLog[]
+}
+
+// ─────────────────────────────────────────
+// OTP
+// ─────────────────────────────────────────
+
+model OTP {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  email      String
+  otp_code   String
+  purpose    OTPPurpose
+  is_used    Boolean   @default(false)
+  expires_at DateTime
+  created_at DateTime  @default(now())
+
+  user       User      @relation(fields: [user_id], references: [id])
+}
+
+// ─────────────────────────────────────────
+// HOSPITALS
+// ─────────────────────────────────────────
+
+model Hospital {
+  id         Int        @id @default(autoincrement())
+  name       String
+  city       String
+  state      String
+  pincode    String
+  address    String
+  phone      String?
+  email      String?
+  created_at DateTime   @default(now())
+
+  campaigns  Campaign[]
+}
+
+// ─────────────────────────────────────────
+// CAMPAIGNS
+// ─────────────────────────────────────────
+
+model Campaign {
+  id                      Int            @id @default(autoincrement())
+  patient_id              Int
+  patient_hms_id          Int?
+  hospital_id             Int?
+
+  // Patient details
+  patient_full_name       String
+  patient_age             Int
+  patient_gender          String
+  patient_aadhaar         String
+  patient_city            String
+  patient_state           String
+  patient_languages       Json?
+  relationship_to_fundraiser String       @default("SELF")
+
+  // Campaign details
+  title                   String
+  story_original          String?        @db.Text
+  story_gemini            String?        @db.Text
+  story_language          String?
+  story_approved          Boolean        @default(false)
+
+  // Financial
+  verified_amount         Decimal?       @db.Decimal(10, 2)
+  collected_amount        Decimal        @default(0) @db.Decimal(10, 2)
+  released_amount         Decimal        @default(0) @db.Decimal(10, 2)
+
+  // Status
+  status                  CampaignStatus @default(DRAFT)
+
+  // Public URLs
+  public_url              String?        @unique
+  qr_code_url             String?
+  upi_id                  String?        @unique
+
+  // Timestamps
+  created_at              DateTime       @default(now())
+  updated_at              DateTime       @updatedAt
+  expires_at              DateTime?
+
+  // Relations
+  patient                 User           @relation(fields: [patient_id], references: [id])
+  hospital                Hospital?      @relation(fields: [hospital_id], references: [id])
+  verification_records    VerificationRecord[]
+  documents               CampaignDocument[]
+  donations               Donation[]
+  fund_releases           FundRelease[]
+  updates                 CampaignUpdate[]
+  ngo_matches             NGOMatch[]
+}
+
+// ─────────────────────────────────────────
+// CAMPAIGN DOCUMENTS
+// ─────────────────────────────────────────
+
+model CampaignDocument {
+  id            Int      @id @default(autoincrement())
+  campaign_id   Int
+  document_type String
+  file_url      String   @db.LongText
+  file_name     String
+  uploaded_at   DateTime @default(now())
+
+  campaign      Campaign @relation(fields: [campaign_id], references: [id])
+}
+
+// ─────────────────────────────────────────
+// VERIFICATION RECORDS
+// ─────────────────────────────────────────
+
+model VerificationRecord {
+  id              Int                @id @default(autoincrement())
+  campaign_id     Int
+  status          VerificationStatus
+  extracted_data  Json?
+  issues          Json?
+  tampered_docs   Json?
+  risk_score      Int                @default(0)
+  has_expired     Boolean            @default(false)
+  has_tampering   Boolean            @default(false)
+  admin_notes     String?
+  verified_by     Int?
+  verified_at     DateTime           @default(now())
+
+  campaign        Campaign           @relation(fields: [campaign_id], references: [id])
+}
+
+// ─────────────────────────────────────────
+// DONATIONS
+// ─────────────────────────────────────────
+
+model Donation {
+  id              Int           @id @default(autoincrement())
+  campaign_id     Int
+  donor_name      String
+  donor_email     String
+  is_anonymous    Boolean       @default(false)
+  amount          Decimal       @db.Decimal(10, 2)
+  payment_id      String?
+  order_id        String?
+  status          PaymentStatus @default(PENDING)
+  receipt_sent    Boolean       @default(false)
+  donated_at      DateTime      @default(now())
+
+  campaign        Campaign      @relation(fields: [campaign_id], references: [id])
+}
+
+// ─────────────────────────────────────────
+// FUND RELEASES
+// ─────────────────────────────────────────
+
+model FundRelease {
+  id                  Int           @id @default(autoincrement())
+  campaign_id         Int
+  amount              Decimal       @db.Decimal(10, 2)
+  hms_payment_id      String?
+  hospital_confirmed  Boolean       @default(false)
+  triggered_by        ReleaseType   @default(MILESTONE)
+  status              ReleaseStatus @default(PENDING)
+  block_reason        String?
+  released_at         DateTime      @default(now())
+
+  campaign            Campaign      @relation(fields: [campaign_id], references: [id])
+}
+
+// ─────────────────────────────────────────
+// CAMPAIGN UPDATES
+// ─────────────────────────────────────────
+
+model CampaignUpdate {
+  id            Int      @id @default(autoincrement())
+  campaign_id   Int
+  update_text   String   @db.Text
+  is_milestone  Boolean  @default(false)
+  notify_donors Boolean  @default(false)
+  created_at    DateTime @default(now())
+
+  campaign      Campaign @relation(fields: [campaign_id], references: [id])
+}
+
+// ─────────────────────────────────────────
+// SUGGESTIONS (Hospital recommendations from donors)
+// ─────────────────────────────────────────
+
+model Suggestion {
+  id                      Int      @id @default(autoincrement())
+  campaign_id             Int
+  disease                 String
+  suggestion_text         String   @db.Text
+  hospital_name           String?
+  hospital_address        String?
+  google_places_verified  Boolean  @default(false)
+  created_at              DateTime @default(now())
+}
+
+// ─────────────────────────────────────────
+// NGOs
+// ─────────────────────────────────────────
+
+model NGO {
+  id              Int        @id @default(autoincrement())
+  name            String
+  email           String     @unique
+  phone           String?
+  city            String?
+  state           String?
+  specializations Json?
+  is_verified     Boolean    @default(true)
+  created_at      DateTime   @default(now())
+
+  ngo_matches     NGOMatch[]
+}
+
+model NGOMatch {
+  id          Int           @id @default(autoincrement())
+  campaign_id Int
+  ngo_id      Int
+  status      NGOMatchStatus @default(NOTIFIED)
+  notified_at DateTime      @default(now())
+  responded_at DateTime?
+
+  campaign    Campaign      @relation(fields: [campaign_id], references: [id])
+  ngo         NGO           @relation(fields: [ngo_id], references: [id])
+}
+
+// ─────────────────────────────────────────
+// ADMIN AUDIT LOG
+// ─────────────────────────────────────────
+
+model AdminAuditLog {
+  id           Int      @id @default(autoincrement())
+  admin_id     Int
+  action       String
+  target_type  String
+  target_id    Int
+  notes        String?  @db.Text
+  performed_at DateTime @default(now())
+
+  admin        User     @relation(fields: [admin_id], references: [id])
+}
+
+// ─────────────────────────────────────────
+// BLACKLIST
+// ─────────────────────────────────────────
+
+model Blacklist {
+  id             Int      @id @default(autoincrement())
+  aadhaar_number String   @unique
+  phone          String?
+  reason         String
+  blacklisted_at DateTime @default(now())
+  blacklisted_by Int
+}
+
+// ─────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────
+
+enum UserRole {
+  PATIENT
+  ADMIN
+  NGO
+}
+
+enum OTPPurpose {
+  REGISTRATION
+  CAMPAIGN_CREATION
+  HOSPITAL_CHANGE
+  ADMIN_LOGIN
+}
+
+enum CampaignStatus {
+  DRAFT
+  PENDING_VERIFICATION
+  VERIFIED
+  PENDING
+  VERIFICATION_NEEDED
+  UPDATE_NEEDED
+  CANCELLED
+  LIVE_CAMPAIGN
+  HOSPITAL_CHANGE_REQUESTED
+  REVERIFYING
+  LIVE_UPDATED
+  COMPLETED
+  CLOSED
+  EXPIRED
+}
+
+enum VerificationStatus {
+  VERIFIED
+  PENDING
+  VERIFICATION_NEEDED
+  UPDATE_NEEDED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum ReleaseType {
+  MILESTONE
+  MANUAL
+  ADMIN
+}
+
+enum ReleaseStatus {
+  PENDING
+  APPROVED
+  BLOCKED
+  COMPLETED
+}
+
+enum NGOMatchStatus {
+  NOTIFIED
+  ACCEPTED
+  REJECTED
+  PENDING
+}

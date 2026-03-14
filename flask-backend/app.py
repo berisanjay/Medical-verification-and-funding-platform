@@ -1,768 +1,515 @@
 """
-Medical Document Verification API
-Flask backend for OCR, NLP, and fraud detection
+MediTrust AI Verification Service
+Flask backend for OCR + NLP + Tampering Detection + Cross-Document Validation
+Pure verification service — no auth, no campaigns, no donations
+Those are handled by Node.js MediTrust backend
 """
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
+from datetime import datetime
 import os
 import logging
-from datetime import datetime
-from pymongo import MongoClient
-from bson import ObjectId
 import traceback
+import base64
 
-# Import custom modules
+load_dotenv()
+
+# Import core AI modules only
 from nlp.entity_extractor import MedicalEntityExtractor
 from nlp.bert_authenticator import BERTDocumentAuthenticator
 from ocr.pdf_ocr import DocumentOCR
 from validation.cross_document import CrossDocumentValidator
-from auth.auth_manager import AuthManager
-from campaigns.campaign_manager import CampaignManager
-from donations.donation_manager import DonationManager
 from notifications.notification_manager import NotificationManager
-from automation.fulfillment_manager import CampaignFulfillmentManager
-from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
+from automation.fulfillment_manager import FulfillmentManager
+from nlp.disease_mapper import build_ngo_query_conditions, get_disease_label
 
-# Configure logging
+# ─────────────────────────────────────────
+# LOGGING
+# ─────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
-# Initialize Flask app
+# ─────────────────────────────────────────
+# FLASK APP
+# ─────────────────────────────────────────
 app = Flask(__name__)
 CORS(app)
 
-# Configuration
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
-app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB
+app.config['UPLOAD_FOLDER']      = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'pdf', 'png', 'jpg', 'jpeg', 'webp'}
 
-# Load environment variables first
-from dotenv import load_dotenv
-load_dotenv()
-
-# MongoDB Configuration
-MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/')
-DB_NAME = os.getenv('DB_NAME', 'medical_crowdfunding')
-
-try:
-    mongo_client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
-    db = mongo_client[DB_NAME]
-    # Test connection
-    mongo_client.server_info()
-    logger.info(f"Connected to MongoDB: {DB_NAME}")
-except Exception as e:
-    logger.warning(f"MongoDB connection failed: {e}. Running without database.")
-    db = None
-
-# Initialize components
-ocr_processor = DocumentOCR()
-entity_extractor = MedicalEntityExtractor()
-bert_authenticator = BERTDocumentAuthenticator()
-validator = CrossDocumentValidator()
-auth_manager = AuthManager(db)
-campaign_manager = CampaignManager(db)
-donation_manager = DonationManager(db)
-notification_manager = NotificationManager(db)
-fulfillment_manager = CampaignFulfillmentManager(campaign_manager, notification_manager)
-
-# Initialize JWT
-jwt = JWTManager(app)
-app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'your-secret-key-change-in-production')
-
-# Ensure upload folder exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+# ─────────────────────────────────────────
+# INTERNAL SECRET — only Node.js can call us
+# ─────────────────────────────────────────
+FLASK_INTERNAL_SECRET = os.getenv("FLASK_INTERNAL_SECRET", "")
+
+def verify_internal_secret():
+    """Check that request is coming from MediTrust Node.js backend"""
+    secret = request.headers.get("x-flask-secret", "")
+    if FLASK_INTERNAL_SECRET and secret != FLASK_INTERNAL_SECRET:
+        return False
+    return True
+
+# ─────────────────────────────────────────
+# INITIALIZE AI COMPONENTS
+# ─────────────────────────────────────────
+logger.info("Loading AI components...")
+
+ocr_processor      = DocumentOCR()
+entity_extractor   = MedicalEntityExtractor()
+bert_authenticator = BERTDocumentAuthenticator()
+validator          = CrossDocumentValidator()
+notification       = NotificationManager()
+fulfillment        = FulfillmentManager(notification)
+
+logger.info("All AI components loaded successfully")
+
+# ─────────────────────────────────────────
+# HELPERS
+# ─────────────────────────────────────────
 
 def allowed_file(filename):
-    """Check if file extension is allowed"""
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 
-def save_to_database(verification_result):
-    """Save verification result to MongoDB"""
-    if db is None:
-        logger.warning("Database not available, skipping save")
-        return None
-    
-    try:
-        collection = db.verifications
-        
-        # Add metadata
-        verification_result['created_at'] = datetime.utcnow()
-        verification_result['updated_at'] = datetime.utcnow()
-        
-        # Insert document
-        result = collection.insert_one(verification_result)
-        logger.info(f"Saved verification to database: {result.inserted_id}")
-        
-        return str(result.inserted_id)
-    except Exception as e:
-        logger.error(f"Database save error: {e}")
-        return None
-
-
-def get_verification_by_id(verification_id):
-    """Retrieve verification result from MongoDB"""
-    if db is None:
-        return None
-    
-    try:
-        collection = db.verifications
-        result = collection.find_one({'_id': ObjectId(verification_id)})
-        
-        if result:
-            # Convert ObjectId to string for JSON serialization
-            result['_id'] = str(result['_id'])
-            return result
-        return None
-    except Exception as e:
-        logger.error(f"Database retrieval error: {e}")
-        return None
-
-
-@app.route('/health', methods=['GET'])
-def health_check():
-    """Health check endpoint"""
-    return jsonify({
-        'status': 'healthy',
-        'timestamp': datetime.utcnow().isoformat(),
-        'services': {
-            'ocr': 'available',
-            'nlp': 'available',
-            'database': 'available' if db is not None else 'unavailable'
-        }
-    })
-
-
-@app.route('/verify', methods=['POST'])
-def verify_documents():
-    """
-    Main verification endpoint
-    Accepts multiple document files and performs complete verification
-    """
-    try:
-        # Check if files are present
-        if 'files' not in request.files:
-            return jsonify({
-                'error': 'No files provided',
-                'message': 'Please upload at least one document'
-            }), 400
-        
-        files = request.files.getlist('files')
-        
-        if not files or len(files) == 0:
-            return jsonify({
-                'error': 'Empty file list',
-                'message': 'Please upload at least one document'
-            }), 400
-        
-        logger.info(f"Processing {len(files)} documents")
-        
-        # Process each document
-        processed_documents = []
-        all_extracted_data = []
-        
-        for idx, file in enumerate(files):
-            if file and allowed_file(file.filename):
-                try:
-                    # Save file temporarily
-                    filename = secure_filename(file.filename)
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    unique_filename = f"{timestamp}_{idx}_{filename}"
-                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-                    file.save(filepath)
-                    
-                    logger.info(f"Processing document: {filename}")
-                    
-                    # Step 1: OCR - Extract text from document
-                    extracted_text = ocr_processor.extract_text(filepath)
-                    
-                    if not extracted_text or len(extracted_text.strip()) < 10:
-                        logger.warning(f"Insufficient text extracted from {filename}")
-                        processed_documents.append({
-                            'filename': filename,
-                            'status': 'FAILED',
-                            'error': 'Unable to extract text from document',
-                            'entities': {},
-                            'issues': ['No readable text found in document']
-                        })
-                        # Clean up
-                        os.remove(filepath)
-                        continue
-                    
-                    # Step 2: NLP - Extract medical entities
-                    entities = entity_extractor.extract_entities(extracted_text)
-                    
-                    # Step 3: Determine document type based on content
-                    document_type = determine_document_type(extracted_text, entities)
-                    
-                    # Step 4: Validate mandatory fields
-                    issues = validate_mandatory_fields(entities)
-                    
-                    # Store extracted data for cross-document validation
-                    doc_data = {
-                        'filename': filename,
-                        'document_type': document_type,
-                        'entities': entities,
-                        'issues': issues,
-                        'raw_text': extracted_text[:500]  # Store snippet for debugging
-                    }
-                    
-                    all_extracted_data.append(doc_data)
-                    processed_documents.append(doc_data)
-                    
-                    # Clean up uploaded file
-                    os.remove(filepath)
-                    
-                except Exception as e:
-                    logger.error(f"Error processing {file.filename}: {str(e)}")
-                    logger.error(traceback.format_exc())
-                    processed_documents.append({
-                        'filename': file.filename,
-                        'status': 'FAILED',
-                        'error': str(e),
-                        'entities': {},
-                        'issues': [f'Processing error: {str(e)}']
-                    })
-            else:
-                logger.warning(f"Invalid file: {file.filename}")
-                processed_documents.append({
-                    'filename': file.filename,
-                    'status': 'FAILED',
-                    'error': 'Invalid file type',
-                    'entities': {},
-                    'issues': ['Only PDF, PNG, JPG, JPEG, WEBP files are allowed']
-                })
-        
-        # Step 5: Cross-document validation
-        cross_document_issues = validator.validate_documents(all_extracted_data)
-        
-        # Step 6: Calculate final risk score and status
-        final_status, risk_score = calculate_final_status(
-            processed_documents, 
-            cross_document_issues
-        )
-        
-        # Prepare final response
-        verification_result = {
-            'final_status': final_status,
-            'risk_score': risk_score,
-            'total_documents': len(files),
-            'processed_documents': len(processed_documents),
-            'cross_document_issues': cross_document_issues,
-            'documents': processed_documents,
-            'timestamp': datetime.utcnow().isoformat()
-        }
-        
-        # Save to database
-        verification_id = save_to_database(verification_result.copy())
-        if verification_id:
-            verification_result['verification_id'] = verification_id
-        
-        logger.info(f"Verification complete: {final_status}")
-        
-        return jsonify(verification_result), 200
-        
-    except Exception as e:
-        logger.error(f"Verification error: {str(e)}")
-        logger.error(traceback.format_exc())
-        return jsonify({
-            'error': 'Internal server error',
-            'message': str(e)
-        }), 500
-
-
-@app.route('/verification/<verification_id>', methods=['GET'])
-def get_verification(verification_id):
-    """Retrieve a past verification by ID"""
-    try:
-        result = get_verification_by_id(verification_id)
-        
-        if result:
-            return jsonify(result), 200
-        else:
-            return jsonify({
-                'error': 'Not found',
-                'message': 'Verification record not found'
-            }), 404
-    except Exception as e:
-        logger.error(f"Retrieval error: {str(e)}")
-        return jsonify({
-            'error': 'Invalid ID',
-            'message': str(e)
-        }), 400
-
-
-@app.route('/verifications', methods=['GET'])
-def list_verifications():
-    """List all verifications with pagination"""
-    if db is None:
-        return jsonify({
-            'error': 'Database unavailable',
-            'message': 'Database is not connected'
-        }), 503
-    
-    try:
-        # Pagination parameters
-        page = int(request.args.get('page', 1))
-        limit = int(request.args.get('limit', 10))
-        skip = (page - 1) * limit
-        
-        collection = db.verifications
-        
-        # Get total count
-        total = collection.count_documents({})
-        
-        # Get paginated results
-        results = list(collection.find()
-                      .sort('created_at', -1)
-                      .skip(skip)
-                      .limit(limit))
-        
-        # Convert ObjectId to string
-        for result in results:
-            result['_id'] = str(result['_id'])
-        
-        return jsonify({
-            'total': total,
-            'page': page,
-            'limit': limit,
-            'results': results
-        }), 200
-        
-    except Exception as e:
-        logger.error(f"List error: {str(e)}")
-        return jsonify({
-            'error': 'Internal error',
-            'message': str(e)
-        }), 500
-
-
 def determine_document_type(text, entities):
-    """Determine the type of medical document"""
+    """Determine medical document type from content"""
     text_lower = text.lower()
-    
-    if 'estimate' in text_lower or 'estimated' in text_lower:
-        return 'ESTIMATE'
-    elif 'bill' in text_lower or 'invoice' in text_lower or 'payable' in text_lower:
-        return 'BILL'
-    elif 'prescription' in text_lower:
-        return 'PRESCRIPTION'
-    elif 'discharge' in text_lower or 'summary' in text_lower:
-        return 'DISCHARGE_SUMMARY'
-    elif 'report' in text_lower or 'test' in text_lower:
-        return 'MEDICAL_REPORT'
-    else:
-        return 'UNKNOWN'
+    if 'estimate'   in text_lower: return 'ESTIMATE'
+    if 'discharge'  in text_lower: return 'DISCHARGE_SUMMARY'
+    if 'bill'       in text_lower or 'invoice' in text_lower: return 'BILL'
+    if 'prescription' in text_lower: return 'PRESCRIPTION'
+    if 'report'     in text_lower or 'test' in text_lower: return 'MEDICAL_REPORT'
+    if 'aadhaar'    in text_lower or 'aadhar' in text_lower: return 'AADHAAR'
+    if 'ration'     in text_lower: return 'RATION_CARD'
+    if 'income'     in text_lower: return 'INCOME_CERTIFICATE'
+    if 'admission'  in text_lower: return 'ADMISSION_SUMMARY'
+    return 'UNKNOWN'
 
 
-def validate_mandatory_fields(entities):
-    """Validate that mandatory fields are present"""
+def validate_mandatory_fields(entities, document_type):
+    """
+    Validate mandatory fields based on document type.
+    Returns list of issues found.
+    """
     issues = []
-    
-    mandatory_fields = {
-        'patient_name': 'Patient name',
-        'diseases': 'Disease/Diagnosis',
-        'date': 'Date',
-        'amount': 'Amount'
-    }
-    
-    for field, label in mandatory_fields.items():
-        if field not in entities or not entities[field]:
-            issues.append(f"Missing mandatory field: {label}")
-        elif field == 'diseases' and len(entities[field]) == 0:
-            issues.append(f"Missing mandatory field: {label}")
-    
-    # At least hospital name OR pincode required
-    if not entities.get('hospital_name') and not entities.get('hospital_pincode'):
-        issues.append("Missing mandatory field: Hospital name or pincode")
-    
+
+    # All documents must have patient name
+    if not entities.get('patient_name'):
+        issues.append("Missing: Patient name")
+
+    # Medical documents must have disease and date
+    medical_types = ['ESTIMATE', 'BILL', 'DISCHARGE_SUMMARY',
+                     'PRESCRIPTION', 'MEDICAL_REPORT', 'ADMISSION_SUMMARY']
+
+    if document_type in medical_types:
+        if not entities.get('diseases') or len(entities['diseases']) == 0:
+            issues.append("Missing: Disease / Diagnosis")
+        if not entities.get('date'):
+            issues.append("Missing: Date")
+        if not entities.get('hospital_name') and not entities.get('hospital_pincode'):
+            issues.append("Missing: Hospital name or pincode")
+
+    # Financial documents must have amount
+    financial_types = ['ESTIMATE', 'BILL']
+    if document_type in financial_types:
+        if not entities.get('amount'):
+            issues.append("Missing: Amount")
+
     return issues
 
 
-def calculate_final_status(documents, cross_document_issues):
+def check_document_expiry(entities, document_type):
     """
-    Calculate final verification status and risk score
-    
-    Returns: (status, risk_score)
-    Status: VERIFIED, NEEDS_CLARIFICATION, HIGH_RISK
-    Risk Score: 0-100
+    Check if hospital estimate or bill is expired.
+    Estimates are valid for 90 days.
+    Returns (is_expired, days_old)
+    """
+    if document_type not in ['ESTIMATE', 'BILL']:
+        return False, 0
+
+    try:
+        date_str = entities.get('date')
+        if not date_str:
+            return False, 0
+
+        # Try common Indian date formats
+        for fmt in ['%d/%m/%Y', '%d-%m-%Y', '%Y-%m-%d', '%d %B %Y']:
+            try:
+                doc_date = datetime.strptime(date_str.strip(), fmt)
+                days_old = (datetime.now() - doc_date).days
+                if days_old > 90:
+                    return True, days_old
+                return False, days_old
+            except ValueError:
+                continue
+        return False, 0
+
+    except Exception as e:
+        logger.warning(f"Date check error: {e}")
+        return False, 0
+
+
+def calculate_final_status(documents, cross_document_issues, has_expired_docs, has_tampering):
+    """
+    Calculate final verification status and risk score.
+ate final verification status and risk score.
+
+    Status mapping:
+        VERIFIED            → risk < 30, no tampering, no expiry
+        PENDING             → risk 30-69, minor issues
+        VERIFICATION_NEEDED → risk >= 70 OR tampering detected
+        UPDATE_NEEDED       → expired documents found
     """
     risk_score = 0
-    
-    # Check for documents with issues
-    docs_with_issues = sum(1 for doc in documents if len(doc.get('issues', [])) > 0)
-    failed_docs = sum(1 for doc in documents if doc.get('status') == 'FAILED')
-    
-    # Risk scoring
-    if failed_docs > 0:
-        risk_score += failed_docs * 20
-    
-    if docs_with_issues > 0:
-        risk_score += docs_with_issues * 15
-    
-    if len(cross_document_issues) > 0:
-        risk_score += len(cross_document_issues) * 10
-        
-        # High severity issues
-        for issue in cross_document_issues:
-            if 'patient name mismatch' in issue.lower():
-                risk_score += 30
-            elif 'conflicting dates' in issue.lower():
-                risk_score += 20
-            elif 'missing hospital' in issue.lower():
-                risk_score += 15
-    
-    # Cap at 100
+
+    failed_docs      = sum(1 for d in documents if d.get('status') == 'FAILED')
+    docs_with_issues = sum(1 for d in documents if len(d.get('issues', [])) > 0)
+
+    # Base scoring
+    risk_score += failed_docs * 20
+    risk_score += docs_with_issues * 15
+    risk_score += len(cross_document_issues) * 10
+
+    # Cross-document issue severity
+    for issue in cross_document_issues:
+        issue_lower = issue.lower()
+        if 'patient name mismatch' in issue_lower:
+            risk_score += 30
+        elif 'conflicting dates'   in issue_lower:
+            risk_score += 20
+        elif 'missing hospital'    in issue_lower:
+            risk_score += 15
+        elif 'bill exceeds'        in issue_lower:
+            risk_score += 25
+
+    # Tampering detected — serious
+    if has_tampering:
+        risk_score += 50
+
     risk_score = min(risk_score, 100)
-    
-    # Determine status
-    if risk_score >= 70:
-        status = 'HIGH_RISK'
+
+    # Status decision
+    if has_expired_docs:
+        return 'UPDATE_NEEDED', risk_score
+    elif has_tampering or risk_score >= 70:
+        return 'VERIFICATION_NEEDED', risk_score
     elif risk_score >= 30:
-        status = 'NEEDS_CLARIFICATION'
+        return 'PENDING', risk_score
     else:
-        status = 'VERIFIED'
-    
-    return status, risk_score
+        return 'VERIFIED', risk_score
 
 
-# ==================== CROWDFUNDING API ENDPOINTS ====================
+# ─────────────────────────────────────────
+# ROUTES
+# ─────────────────────────────────────────
 
-@app.route('/api/auth/register', methods=['POST'])
-def register():
-    """Register new user"""
-    try:
-        data = request.get_json()
-        
-        # Validate required fields
-        required_fields = ['email', 'password', 'user_type', 'confirm_password']
-        for field in required_fields:
-            if not data.get(field):
-                return jsonify({'success': False, 'error': f'Missing field: {field}'}), 400
-        
-        # Validate passwords match
-        if data.get('password') != data.get('confirm_password'):
-            return jsonify({'success': False, 'error': 'Passwords do not match'}), 400
-        
-        result = auth_manager.register_user(
-            email=data.get('email'),
-            password=data.get('password'),
-            user_type=data.get('user_type'),
-            profile_data=data.get('profile_data', {})
-        )
-        return jsonify(result), 201 if result['success'] else 400
-    except Exception as e:
-        logger.error(f"Registration error: {e}")
-        return jsonify({'success': False, 'error': 'Registration failed'}), 500
-
-
-@app.route('/api/auth/login', methods=['POST'])
-def login():
-    """Login user"""
-    try:
-        data = request.get_json()
-        result = auth_manager.login_user(
-            email=data.get('email'),
-            password=data.get('password')
-        )
-        return jsonify(result), 200 if result['success'] else 401
-    except Exception as e:
-        logger.error(f"Login error: {e}")
-        return jsonify({'success': False, 'error': 'Login failed'}), 500
-
-
-@app.route('/api/campaigns/create', methods=['POST'])
-@jwt_required()
-def create_campaign():
-    """Create new campaign"""
-    try:
-        data = request.get_json()
-        user_id = get_jwt_identity()
-        
-        result = campaign_manager.create_campaign(
-            patient_id=user_id,
-            campaign_data=data,
-            verification_id=data.get('verification_id')
-        )
-        return jsonify(result), 201 if result['success'] else 400
-    except Exception as e:
-        logger.error(f"Campaign creation error: {e}")
-        return jsonify({'success': False, 'error': 'Campaign creation failed'}), 500
-
-
-@app.route('/api/campaigns/active', methods=['GET'])
-def get_active_campaigns():
-    """Get all active campaigns"""
-    try:
-        limit = int(request.args.get('limit', 20))
-        campaigns = campaign_manager.get_active_campaigns(limit=limit)
-        return jsonify(campaigns), 200
-    except Exception as e:
-        logger.error(f"Error getting active campaigns: {e}")
-        return jsonify([]), 500
-
-
-@app.route('/api/campaigns/search', methods=['GET'])
-def search_campaigns():
-    """Search campaigns"""
-    try:
-        query = request.args.get('q', '')
-        urgency = request.args.get('urgency', '')
-        limit = int(request.args.get('limit', 20))
-        
-        campaigns = campaign_manager.search_campaigns(query, limit)
-        
-        # Filter by urgency if specified
-        if urgency:
-            campaigns = [c for c in campaigns if c.get('urgency_level') == urgency]
-        
-        return jsonify(campaigns), 200
-    except Exception as e:
-        logger.error(f"Error searching campaigns: {e}")
-        return jsonify([]), 500
-
-
-@app.route('/api/campaigns/<campaign_id>', methods=['GET'])
-def get_campaign(campaign_id):
-    """Get specific campaign details"""
-    try:
-        campaign = campaign_manager.get_campaign(campaign_id)
-        if campaign:
-            return jsonify(campaign), 200
-        else:
-            return jsonify({'error': 'Campaign not found'}), 404
-    except Exception as e:
-        logger.error(f"Error getting campaign: {e}")
-        return jsonify({'error': 'Failed to get campaign'}), 500
-
-
-@app.route('/api/donations/create', methods=['POST'])
-@jwt_required()
-def create_donation():
-    """Create donation"""
-    try:
-        data = request.get_json()
-        donor_id = get_jwt_identity()
-        
-        result = donation_manager.create_donation(
-            donor_id=donor_id,
-            campaign_id=data.get('campaign_id'),
-            amount=data.get('amount'),
-            payment_method_id=data.get('payment_method_id'),
-            anonymous=data.get('anonymous', False)
-        )
-        return jsonify(result), 201 if result['success'] else 400
-    except Exception as e:
-        logger.error(f"Donation creation error: {e}")
-        return jsonify({'success': False, 'error': 'Donation failed'}), 500
-
-
-@app.route('/api/donations/history/<donor_id>', methods=['GET'])
-@jwt_required()
-def get_donation_history(donor_id):
-    """Get donor's donation history"""
-    try:
-        current_user_id = get_jwt_identity()
-        # Users can only see their own donation history
-        if current_user_id != donor_id:
-            return jsonify({'error': 'Unauthorized'}), 403
-        
-        donations = donation_manager.get_donor_donations(donor_id)
-        return jsonify(donations), 200
-    except Exception as e:
-        logger.error(f"Error getting donation history: {e}")
-        return jsonify([]), 500
-
-
-@app.route('/api/campaigns/<campaign_id>/donations', methods=['GET'])
-def get_campaign_donations(campaign_id):
-    """Get donations for a specific campaign"""
-    try:
-        donations = donation_manager.get_campaign_donations(campaign_id)
-        return jsonify(donations), 200
-    except Exception as e:
-        logger.error(f"Error getting campaign donations: {e}")
-        return jsonify([]), 500
-
-
-@app.route('/api/verify-enhanced', methods=['POST'])
-def verify_documents_enhanced():
-    """Enhanced verification with BERT"""
-    try:
-        # Check if files are present
-        if 'files' not in request.files:
-            return jsonify({
-                'error': 'No files provided',
-                'message': 'Please upload at least one document'
-            }), 400
-        
-        files = request.files.getlist('files')
-        
-        if not files or len(files) == 0:
-            return jsonify({
-                'error': 'Empty file list',
-                'message': 'Please upload at least one document'
-            }), 400
-        
-        logger.info(f"Processing {len(files)} documents with enhanced verification")
-        
-        # Process each document
-        processed_documents = []
-        all_extracted_data = []
-        
-        for idx, file in enumerate(files):
-            if file and allowed_file(file.filename):
-                try:
-                    # Save file temporarily
-                    filename = secure_filename(file.filename)
-                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                    unique_filename = f"{timestamp}_{idx}_{filename}"
-                    filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-                    file.save(filepath)
-                    
-                    logger.info(f"Processing document: {filename}")
-                    
-                    # Step 1: OCR - Extract text from document
-                    extracted_text = ocr_processor.extract_text(filepath)
-                    
-                    if not extracted_text or len(extracted_text.strip()) < 10:
-                        logger.warning(f"Insufficient text extracted from {filename}")
-                        processed_documents.append({
-                            'filename': filename,
-                            'status': 'FAILED',
-                            'error': 'Unable to extract text from document',
-                            'entities': {},
-                            'issues': ['No readable text found in document']
-                        })
-                        os.remove(filepath)
-                        continue
-                    
-                    # Step 2: NLP - Extract medical entities
-                    entities = entity_extractor.extract_entities(extracted_text)
-                    
-                    # Step 3: BERT - Document authenticity
-                    authenticity = bert_authenticator.predict_authenticity(extracted_text, entities)
-                    
-                    # Step 4: Determine document type
-                    document_type = determine_document_type(extracted_text, entities)
-                    
-                    # Step 5: Validate mandatory fields
-                    issues = validate_mandatory_fields(entities)
-                    
-                    # Add authenticity check to issues
-                    if authenticity['prediction'] == 'FORGED':
-                        issues.append(f"Document appears to be forged (confidence: {authenticity['confidence']:.2f})")
-                    
-                    # Store extracted data
-                    doc_data = {
-                        'filename': filename,
-                        'document_type': document_type,
-                        'entities': entities,
-                        'authenticity': authenticity,
-                        'issues': issues,
-                        'raw_text': extracted_text[:500]
-                    }
-                    
-                    all_extracted_data.append(doc_data)
-                    processed_documents.append(doc_data)
-                    
-                    # Clean up uploaded file
-                    os.remove(filepath)
-                    
-                except Exception as e:
-                    logger.error(f"Error processing {file.filename}: {e}")
-                    processed_documents.append({
-                        'filename': file.filename,
-                        'status': 'FAILED',
-                        'error': str(e),
-                        'entities': {},
-                        'issues': ['Processing error']
-                    })
-        
-        # Step 6: Cross-document validation
-        cross_document_issues = validator.validate_documents(all_extracted_data)
-        
-        # Step 7: Calculate final status and risk score
-        final_status, risk_score = calculate_final_status(processed_documents, cross_document_issues)
-        
-        # Step 8: Prepare response
-        verification_result = {
-            'final_status': final_status,
-            'risk_score': risk_score,
-            'total_documents': len(files),
-            'processed_documents': len(processed_documents),
-            'cross_document_issues': cross_document_issues,
-            'documents': processed_documents,
-            'enhanced_verification': True,
-            'timestamp': datetime.utcnow().isoformat()
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Health check — called by Node.js to confirm Flask is running"""
+    return jsonify({
+        'status'    : 'healthy',
+        'service'   : 'MediTrust AI Verification Service',
+        'timestamp' : datetime.utcnow().isoformat(),
+        'components': {
+            'ocr'      : 'ready',
+            'nlp'      : 'ready',
+            'bert'     : 'ready',
+            'validator': 'ready'
         }
-        
-        # Step 9: Save to database
-        verification_id = save_to_database(verification_result)
-        if verification_id:
-            verification_result['verification_id'] = verification_id
-        
-        return jsonify(verification_result), 200
-        
-    except Exception as e:
-        logger.error(f"Enhanced verification error: {e}")
+    })
+
+@app.route('/verify', methods=['POST'])
+def verify_documents():
+    """AI Document Verification Endpoint"""
+    try:
+        # Check internal secret
+        """ secret = request.headers.get('x-flask-secret')
+        EXPECTED = 'meditrust_flask_internal_2026'
+        if secret != EXPECTED:
+            logger.warning(f"Auth failed. Got: '{secret}' Expected: '{EXPECTED}'")
+            return jsonify({'error': 'Unauthorized'}), 403 """
+            # Auth check temporarily disabled for debugging
+# secret = request.headers.get('x-flask-secret')
+
+        data         = request.get_json()
+        documents    = data.get('documents', [])
+        patient_name = data.get('patient_name', '')
+
+        if not documents:
+            return jsonify({'error': 'No documents provided'}), 400
+
+        logger.info(f"Verifying {len(documents)} documents for {patient_name}")
+
+        all_extracted  = {}
+        all_issues     = []
+        has_tampering  = False
+        has_expired    = False
+        risk_score     = 0
+        doc_results    = []
+
+        for doc in documents:
+            doc_type    = doc.get('document_type', 'UNKNOWN')
+            file_content= doc.get('file_content', '')
+            mime_type   = doc.get('mime_type', 'application/pdf')
+            file_name   = doc.get('file_name', '')
+
+            logger.info(f"Processing document: {file_name} ({doc_type})")
+
+            try:
+                # Decode base64 content
+                import tempfile
+                file_bytes = base64.b64decode(file_content)
+
+                # Determine extension
+                if mime_type == 'application/pdf' or file_name.endswith('.pdf'):
+                    ext = '.pdf'
+                elif mime_type == 'image/png':
+                    ext = '.png'
+                else:
+                    ext = '.jpg'
+
+                # Write to temp file
+                tmp = tempfile.NamedTemporaryFile(
+                    delete=False, suffix=ext,
+                    dir=app.config['UPLOAD_FOLDER']
+                )
+                tmp.write(file_bytes)
+                tmp.flush()
+                tmp.close()
+
+                # Extract text using OCR
+                extracted_text = ocr_processor.extract_text(tmp.name)
+
+                # Cleanup temp file
+                try:
+                    os.remove(tmp.name)
+                except:
+                    pass
+
+                logger.info(f"Extracted {len(extracted_text)} chars from {file_name}")
+
+                # Extract medical entities
+                entities = entity_extractor.extract_entities(extracted_text)
+                
+                # Log detailed extraction for this document
+                logger.info(f" === ENTITY EXTRACTION FOR {file_name} ===")
+                logger.info(f"Patient Name: {entities.get('patient_name')}")
+                logger.info(f"Doctor Name: {entities.get('doctor_name')}")
+                logger.info(f"Hospital Name: {entities.get('hospital_name')}")
+                logger.info(f"Hospital Pincode: {entities.get('hospital_pincode')}")
+                logger.info(f"Diseases: {entities.get('diseases')}")
+                logger.info(f"Date: {entities.get('date')}")
+                logger.info(f"Amount: {entities.get('amount')}")
+                logger.info(f"Raw Text Length: {len(extracted_text)} chars")
+                logger.info(f"Raw Text Sample: {extracted_text[:200]}...")
+                logger.info("=========================================")
+
+                # Authenticate document with BERT
+                auth_result = bert_authenticator.predict_authenticity(extracted_text, entities)
+                if auth_result.get('is_tampered'):
+                    has_tampering = True
+                    risk_score   += 30
+                    all_issues.append(f"Tampering detected in {file_name}")
+
+                # Check expiry
+                is_expired, days_old = check_document_expiry(entities, doc_type)
+                if is_expired:
+                    has_expired = True
+                    risk_score += 20
+                    all_issues.append(f"Expired document: {file_name}")
+
+                # Merge extracted data
+                logger.info(f" === MERGING DATA FOR {file_name} ===")
+                
+                if entities.get('hospital_name'):
+                    if not all_extracted.get('hospital_name'):
+                        all_extracted['hospital_name'] = entities.get('hospital_name')
+                        logger.info(f"Set hospital: {entities.get('hospital_name')}")
+                    else:
+                        logger.info(f"Hospital already exists: {all_extracted.get('hospital_name')}, skipping: {entities.get('hospital_name')}")
+                
+                if entities.get('diseases') and entities.get('diseases') != []:
+                    if not all_extracted.get('disease'):
+                        all_extracted['disease'] = ', '.join(entities.get('diseases', []))
+                        logger.info(f"Set disease: {entities.get('diseases')}")
+                    else:
+                        logger.info(f"Disease already exists: {all_extracted.get('disease')}, skipping: {entities.get('diseases')}")
+                        
+                if entities.get('amount'):
+                    if not all_extracted.get('amount'):
+                        all_extracted['amount'] = entities.get('amount')
+                        logger.info(f"Set amount: {entities.get('amount')}")
+                    else:
+                        logger.info(f"Amount already exists: {all_extracted.get('amount')}, skipping: {entities.get('amount')}")
+                        
+                if entities.get('patient_name'):
+                    if not all_extracted.get('patient_name'):
+                        all_extracted['patient_name'] = entities.get('patient_name')
+                        logger.info(f"Set patient: {entities.get('patient_name')}")
+                    else:
+                        logger.info(f"Patient already exists: {all_extracted.get('patient_name')}, skipping: {entities.get('patient_name')}")
+                        
+                if entities.get('date'):
+                    if not all_extracted.get('admission_date'):
+                        all_extracted['admission_date'] = entities.get('date')
+                        logger.info(f"Set date: {entities.get('date')}")
+                    else:
+                        logger.info(f"Date already exists: {all_extracted.get('admission_date')}, skipping: {entities.get('date')}")
+
+                doc_results.append({
+                    'document_type': doc_type,
+                    'file_name'    : file_name,
+                    'status'       : 'PROCESSED',
+                    'entities'     : entities
+                })
+
+            except Exception as e:
+                logger.error(f"Error processing {file_name}: {str(e)}")
+                risk_score += 10
+                all_issues.append(f"Could not process {file_name}: {str(e)}")
+                doc_results.append({
+                    'document_type': doc_type,
+                    'file_name'    : file_name,
+                    'status'       : 'ERROR',
+                    'error'        : str(e)
+                })
+
+        # Determine final status
+        if risk_score == 0 and not has_tampering and not has_expired:
+            final_status = 'VERIFIED'
+        elif risk_score >= 60 or has_tampering:
+            final_status = 'VERIFICATION_NEEDED'
+        elif has_expired:
+            final_status = 'UPDATE_NEEDED'
+        else:
+            final_status = 'PENDING'
+
+        logger.info(f"Verification complete: {final_status}, risk: {risk_score}")
+
         return jsonify({
-            'error': 'Verification failed',
-            'message': str(e)
+            'final_status'          : final_status,
+            'risk_score'            : risk_score,
+            'total_documents'       : len(documents),
+            'processed_documents'   : len(doc_results),
+            'cross_document_issues' : all_issues,
+            'has_expired_docs'      : has_expired,
+            'has_tampering'         : has_tampering,
+            'document_results'      : doc_results,
+            'documents'             : doc_results,
+            'extracted_data'        : all_extracted,
+            'timestamp'             : datetime.utcnow().isoformat()
+        })
+
+    except Exception as e:
+        logger.error(f"Verification error: {str(e)}")
+        return jsonify({
+            'error'       : str(e),
+            'final_status': 'PENDING',
+            'risk_score'  : 50,
+            'has_expired_docs': False,
+            'has_tampering'   : False,
+            'document_results' : [],
+            'extracted_data': {}
         }), 500
 
 
-@app.route('/api/admin/fulfillment/start', methods=['POST'])
-@jwt_required()
-def start_fulfillment_monitoring():
-    """Start campaign fulfillment monitoring (admin only)"""
+@app.route('/map-disease', methods=['POST'])
+def map_disease():
+    """Map disease text to NGO capability columns"""
     try:
-        user_id = get_jwt_identity()
-        # Check if user is admin (you'd implement proper admin check)
-        user = auth_manager.users_collection.find_one({"_id": ObjectId(user_id)})
-        if not user or user.get("user_type") != "admin":
-            return jsonify({'error': 'Admin access required'}), 403
-        
-        fulfillment_manager.start_monitoring()
-        return jsonify({'success': True, 'message': 'Fulfillment monitoring started'}), 200
+        secret = request.headers.get('x-flask-secret')
+        if secret != 'meditrust_flask_internal_2026':
+            return jsonify({'error': 'Unauthorized'}), 403
+
+        data         = request.get_json()
+        disease_text = data.get('disease_text', '')
+        patient_age  = data.get('patient_age', 30)
+
+        conditions = build_ngo_query_conditions(disease_text, patient_age)
+        label      = get_disease_label(disease_text)
+
+        return jsonify({
+            'success'   : True,
+            'label'     : label,
+            'conditions': conditions
+        })
+
     except Exception as e:
-        logger.error(f"Error starting fulfillment monitoring: {e}")
-        return jsonify({'error': 'Failed to start monitoring'}), 500
+        logger.error(f"Disease mapping error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/admin/fulfillment/check/<campaign_id>', methods=['POST'])
-@jwt_required()
-def check_campaign_fulfillment(campaign_id):
-    """Manually check campaign fulfillment (admin only)"""
-    try:
-        user_id = get_jwt_identity()
-        # Check if user is admin
-        user = auth_manager.users_collection.find_one({"_id": ObjectId(user_id)})
-        if not user or user.get("user_type") != "admin":
-            return jsonify({'error': 'Admin access required'}), 403
-        
-        result = fulfillment_manager.check_campaign_manually(campaign_id)
-        return jsonify(result), 200 if result['success'] else 400
-    except Exception as e:
-        logger.error(f"Error checking campaign fulfillment: {e}")
-        return jsonify({'error': 'Failed to check campaign'}), 500
+# ─────────────────────────────────────────
+# HELPER — Merge entities from all docs
+# ─────────────────────────────────────────
 
+def merge_extracted_entities(all_docs):
+    """
+    Merge extracted entities from all documents into one clean object.
+    Node.js backend uses this to pre-fill campaign fields.
+    """
+    merged = {
+        'patient_name'     : None,
+        'hospital_name'    : None,
+        'hospital_pincode' : None,
+        'diseases'         : [],
+        'doctor_name'      : None,
+        'admission_date'   : None,
+        'amount'           : None,
+    }
+
+    for doc in all_docs:
+        entities = doc.get('entities', {})
+
+        if not merged['patient_name'] and entities.get('patient_name'):
+            merged['patient_name'] = entities['patient_name']
+
+        if not merged['hospital_name'] and entities.get('hospital_name'):
+            merged['hospital_name'] = entities['hospital_name']
+
+        if not merged['hospital_pincode'] and entities.get('hospital_pincode'):
+            merged['hospital_pincode'] = entities['hospital_pincode']
+
+        if not merged['doctor_name'] and entities.get('doctor_name'):
+            merged['doctor_name'] = entities['doctor_name']
+
+        if not merged['admission_date'] and entities.get('date'):
+            merged['admission_date'] = entities['date']
+
+        # Amount — prefer ESTIMATE over BILL
+        if doc.get('document_type') == 'ESTIMATE' and entities.get('amount'):
+            merged['amount'] = entities['amount']
+        elif not merged['amount'] and entities.get('amount'):
+            merged['amount'] = entities['amount']
+
+        # Merge diseases
+        for disease in entities.get('diseases', []):
+            if disease not in merged['diseases']:
+                merged['diseases'].append(disease)
+
+    return merged
+
+
+# ─────────────────────────────────────────
+# STARTUP
+# ─────────────────────────────────────────
 
 if __name__ == '__main__':
-    logger.info("Starting Medical Document Verification API")
-    logger.info(f"Upload folder: {app.config['UPLOAD_FOLDER']}")
-    
-    # Start automated fulfillment monitoring
-    try:
-        fulfillment_manager.start_monitoring()
-        logger.info("Campaign fulfillment monitoring started")
-    except Exception as e:
-        logger.error(f"Failed to start fulfillment monitoring: {e}")
-    
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    logger.info("Starting MediTrust AI Verification Service")
+
+    # Start background fulfillment thread
+    fulfillment.start()
+    logger.info("Fulfillment manager started")
+
+    app.run(host='0.0.0.0', port=5000, debug=False)

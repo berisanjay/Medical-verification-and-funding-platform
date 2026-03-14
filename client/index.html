@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediTrust — Verified Medical Crowdfunding</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --orange      : #F97316;
+      --orange-dark : #EA580C;
+      --orange-light: #FFF7ED;
+      --orange-mid  : #FFEDD5;
+      --white       : #FFFFFF;
+      --gray-100    : #F9FAFB;
+      --gray-200    : #F3F4F6;
+      --gray-400    : #9CA3AF;
+      --gray-600    : #4B5563;
+      --gray-800    : #1F2937;
+      --green       : #22C55E;
+      --red         : #EF4444;
+      --blue        : #3B82F6;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      color      : var(--gray-800);
+      background : var(--white);
+    }
+
+    a { text-decoration: none; color: inherit; }
+
+    /* ── NAVBAR ── */
+    .navbar {
+      position       : sticky;
+      top            : 0;
+      z-index        : 100;
+      background     : rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-bottom  : 1px solid var(--gray-200);
+      padding        : 0 60px;
+      height         : 64px;
+      display        : flex;
+      align-items    : center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      display    : flex;
+      align-items: center;
+      gap        : 10px;
+    }
+
+    .nav-logo-icon {
+      width          : 38px;
+      height         : 38px;
+      background     : var(--orange);
+      border-radius  : 10px;
+      display        : flex;
+      align-items    : center;
+      justify-content: center;
+      font-size      : 18px;
+    }
+
+    .nav-logo h1 {
+      font-size  : 20px;
+      font-weight: 800;
+      color      : var(--gray-800);
+    }
+
+    .nav-logo small {
+      display   : block;
+      font-size : 10px;
+      color     : var(--gray-400);
+      font-weight: 400;
+    }
+
+    .nav-links {
+      display    : flex;
+      align-items: center;
+      gap        : 32px;
+    }
+
+    .nav-links a {
+      font-size  : 14px;
+      font-weight: 500;
+      color      : var(--gray-600);
+      transition : color 0.15s;
+    }
+
+    .nav-links a:hover { color: var(--orange); }
+
+    .nav-actions {
+      display    : flex;
+      align-items: center;
+      gap        : 12px;
+    }
+
+    .btn-login {
+      padding      : 8px 20px;
+      border-radius: 8px;
+      font-size    : 14px;
+      font-weight  : 600;
+      cursor       : pointer;
+      border       : 1.5px solid var(--gray-200);
+      background   : var(--white);
+      color        : var(--gray-600);
+      transition   : all 0.15s;
+    }
+
+    .btn-login:hover { border-color: var(--orange); color: var(--orange); }
+
+    .btn-start {
+      padding      : 8px 20px;
+      border-radius: 8px;
+      font-size    : 14px;
+      font-weight  : 600;
+      cursor       : pointer;
+      border       : none;
+      background   : var(--orange);
+      color        : white;
+      transition   : background 0.15s;
+    }
+
+    .btn-start:hover { background: var(--orange-dark); }
+
+    /* ── HERO ── */
+    .hero {
+      background     : linear-gradient(160deg, #FFF7ED 0%, #FFFFFF 50%, #FFEDD5 100%);
+      padding        : 90px 60px 80px;
+      display        : flex;
+      align-items    : center;
+      justify-content: space-between;
+      gap            : 60px;
+      overflow       : hidden;
+      position       : relative;
+    }
+
+    .hero::before {
+      content      : '';
+      position     : absolute;
+      width        : 600px;
+      height       : 600px;
+      background   : radial-gradient(circle, rgba(249,115,22,0.08) 0%, transparent 70%);
+      top          : -100px;
+      right        : -100px;
+      border-radius: 50%;
+    }
+
+    .hero-content { max-width: 560px; position: relative; z-index: 1; }
+
+    .hero-pill {
+      display      : inline-flex;
+      align-items  : center;
+      gap          : 8px;
+      background   : var(--orange-mid);
+      color        : var(--orange-dark);
+      padding      : 6px 14px;
+      border-radius: 20px;
+      font-size    : 13px;
+      font-weight  : 600;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 {
+      font-size    : 50px;
+      font-weight  : 900;
+      line-height  : 1.15;
+      margin-bottom: 20px;
+      color        : var(--gray-800);
+    }
+
+    .hero h1 span { color: var(--orange); }
+
+    .hero p {
+      font-size    : 18px;
+      color        : var(--gray-600);
+      line-height  : 1.7;
+      margin-bottom: 36px;
+    }
+
+    .hero-actions {
+      display    : flex;
+      align-items: center;
+      gap        : 16px;
+      flex-wrap  : wrap;
+    }
+
+    .btn-hero-primary {
+      padding      : 14px 32px;
+      background   : var(--orange);
+      color        : white;
+      border       : none;
+      border-radius: 12px;
+      font-size    : 16px;
+      font-weight  : 700;
+      cursor       : pointer;
+      transition   : all 0.15s;
+      display      : flex;
+      align-items  : center;
+      gap          : 8px;
+    }
+
+    .btn-hero-primary:hover {
+      background  : var(--orange-dark);
+      transform   : translateY(-2px);
+      box-shadow  : 0 8px 24px rgba(249,115,22,0.3);
+    }
+
+    .btn-hero-secondary {
+      padding      : 14px 32px;
+      background   : var(--white);
+      color        : var(--gray-800);
+      border       : 2px solid var(--gray-200);
+      border-radius: 12px;
+      font-size    : 16px;
+      font-weight  : 600;
+      cursor       : pointer;
+      transition   : all 0.15s;
+    }
+
+    .btn-hero-secondary:hover {
+      border-color: var(--orange);
+      color       : var(--orange);
+    }
+
+    .hero-trust {
+      display    : flex;
+      align-items: center;
+      gap        : 20px;
+      margin-top : 36px;
+      flex-wrap  : wrap;
+    }
+
+    .trust-item {
+      display    : flex;
+      align-items: center;
+      gap        : 6px;
+      font-size  : 13px;
+      color      : var(--gray-400);
+    }
+
+    .trust-item span:first-child { color: var(--green); font-size: 16px; }
+
+    /* ── HERO VISUAL ── */
+    .hero-visual {
+      flex-shrink: 0;
+      position   : relative;
+      z-index    : 1;
+    }
+
+    .hero-card {
+      background   : var(--white);
+      border-radius: 20px;
+      padding      : 24px;
+      box-shadow   : 0 20px 60px rgba(0,0,0,0.1);
+      width        : 340px;
+    }
+
+    .hero-card-header {
+      display      : flex;
+      align-items  : center;
+      gap          : 12px;
+      margin-bottom: 16px;
+    }
+
+    .hero-card-avatar {
+      width          : 44px;
+      height         : 44px;
+      background     : var(--orange-mid);
+      border-radius  : 12px;
+      display        : flex;
+      align-items    : center;
+      justify-content: center;
+      font-size      : 20px;
+    }
+
+    .hero-card-info h4 { font-size: 15px; font-weight: 700; }
+    .hero-card-info p  { font-size: 12px; color: var(--gray-400); }
+
+    .hero-card-badge {
+      margin-left  : auto;
+      background   : #DCFCE7;
+      color        : #15803D;
+      padding      : 4px 10px;
+      border-radius: 20px;
+      font-size    : 11px;
+      font-weight  : 700;
+    }
+
+    .hero-progress-label {
+      display        : flex;
+      justify-content: space-between;
+      font-size      : 13px;
+      margin-bottom  : 8px;
+    }
+
+    .hero-progress-label strong { color: var(--orange); }
+
+    .hero-progress-bar {
+      height       : 10px;
+      background   : var(--gray-200);
+      border-radius: 10px;
+      overflow     : hidden;
+      margin-bottom: 16px;
+    }
+
+    .hero-progress-fill {
+      height    : 100%;
+      background: linear-gradient(90deg, var(--orange), var(--orange-dark));
+      width     : 73%;
+    }
+
+    .hero-donors {
+      display    : flex;
+      align-items: center;
+      gap        : 10px;
+      font-size  : 13px;
+      color      : var(--gray-400);
+    }
+
+    .donor-avatars { display: flex; }
+
+    .donor-avatar {
+      width          : 28px;
+      height         : 28px;
+      border-radius  : 50%;
+      background     : var(--orange);
+      border         : 2px solid white;
+      margin-left    : -8px;
+      display        : flex;
+      align-items    : center;
+      justify-content: center;
+      color          : white;
+      font-size      : 10px;
+      font-weight    : 700;
+    }
+
+    .donor-avatar:first-child { margin-left: 0; }
+
+    .hero-card-footer {
+      margin-top     : 16px;
+      padding-top    : 16px;
+      border-top     : 1px solid var(--gray-200);
+      display        : flex;
+      align-items    : center;
+      justify-content: space-between;
+    }
+
+    .verified-badge {
+      display    : flex;
+      align-items: center;
+      gap        : 6px;
+      font-size  : 12px;
+      color      : var(--green);
+      font-weight: 600;
+    }
+
+    .donate-mini-btn {
+      background   : var(--orange);
+      color        : white;
+      border       : none;
+      padding      : 8px 16px;
+      border-radius: 8px;
+      font-size    : 13px;
+      font-weight  : 600;
+      cursor       : pointer;
+    }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      background: var(--gray-800);
+      padding   : 24px 60px;
+      display   : flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+
+    .stats-bar-item { text-align: center; }
+
+    .stats-bar-item h3 {
+      font-size  : 28px;
+      font-weight: 900;
+      color      : var(--orange);
+    }
+
+    .stats-bar-item p {
+      font-size: 13px;
+      color    : #9CA3AF;
+      margin-top: 4px;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .section {
+      padding: 80px 60px;
+    }
+
+    .section-header {
+      text-align   : center;
+      margin-bottom: 56px;
+    }
+
+    .section-pill {
+      display      : inline-block;
+      background   : var(--orange-mid);
+      color        : var(--orange-dark);
+      padding      : 6px 16px;
+      border-radius: 20px;
+      font-size    : 13px;
+      font-weight  : 600;
+      margin-bottom: 14px;
+    }
+
+    .section-header h2 {
+      font-size  : 36px;
+      font-weight: 900;
+      margin-bottom: 12px;
+    }
+
+    .section-header p {
+      font-size: 17px;
+      color    : var(--gray-400);
+      max-width: 560px;
+      margin   : 0 auto;
+      line-height: 1.6;
+    }
+
+    .steps-grid {
+      display              : grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap                  : 28px;
+    }
+
+    .step-card {
+      background   : var(--white);
+      border       : 1.5px solid var(--gray-200);
+      border-radius: 18px;
+      padding      : 30px 24px;
+      transition   : all 0.2s;
+      position     : relative;
+    }
+
+    .step-card:hover {
+      border-color: var(--orange);
+      transform   : translateY(-4px);
+      box-shadow  : 0 12px 32px rgba(249,115,22,0.1);
+    }
+
+    .step-number {
+      position     : absolute;
+      top          : -14px;
+      left         : 24px;
+      width        : 28px;
+      height       : 28px;
+      background   : var(--orange);
+      color        : white;
+      border-radius: 50%;
+      display      : flex;
+      align-items  : center;
+      justify-content: center;
+      font-size    : 13px;
+      font-weight  : 700;
+    }
+
+    .step-icon {
+      font-size    : 36px;
+      margin-bottom: 16px;
+      margin-top   : 8px;
+    }
+
+    .step-card h3 {
+      font-size    : 17px;
+      font-weight  : 700;
+      margin-bottom: 10px;
+    }
+
+    .step-card p {
+      font-size  : 14px;
+      color      : var(--gray-400);
+      line-height: 1.7;
+    }
+
+    /* ── CAMPAIGNS SECTION ── */
+    .campaigns-section {
+      background: var(--gray-100);
+      padding   : 80px 60px;
+    }
+
+    .campaigns-grid {
+      display              : grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap                  : 24px;
+      margin-bottom        : 40px;
+    }
+
+    .campaign-card {
+      background   : var(--white);
+      border-radius: 18px;
+      overflow     : hidden;
+      box-shadow   : 0 2px 12px rgba(0,0,0,0.06);
+      transition   : all 0.2s;
+      cursor       : pointer;
+    }
+
+    .campaign-card:hover {
+      transform : translateY(-4px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+    }
+
+    .campaign-card-top {
+      background     : linear-gradient(135deg, var(--orange-light), var(--orange-mid));
+      padding        : 28px 22px 20px;
+      display        : flex;
+      align-items    : flex-start;
+      justify-content: space-between;
+    }
+
+    .campaign-disease-icon { font-size: 40px; }
+
+    .campaign-verified {
+      background   : white;
+      color        : var(--green);
+      padding      : 4px 10px;
+      border-radius: 20px;
+      font-size    : 11px;
+      font-weight  : 700;
+      display      : flex;
+      align-items  : center;
+      gap          : 4px;
+    }
+
+    .campaign-card-body { padding: 20px 22px; }
+
+    .campaign-card-body h3 {
+      font-size    : 16px;
+      font-weight  : 700;
+      margin-bottom: 6px;
+      line-height  : 1.4;
+    }
+
+    .campaign-card-body p {
+      font-size    : 13px;
+      color        : var(--gray-400);
+      margin-bottom: 16px;
+      line-height  : 1.5;
+      display      : -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow     : hidden;
+    }
+
+    .campaign-progress-bar {
+      height       : 6px;
+      background   : var(--gray-200);
+      border-radius: 6px;
+      overflow     : hidden;
+      margin-bottom: 10px;
+    }
+
+    .campaign-progress-fill {
+      height    : 100%;
+      background: linear-gradient(90deg, var(--orange), var(--orange-dark));
+      border-radius: 6px;
+    }
+
+    .campaign-card-footer {
+      display        : flex;
+      justify-content: space-between;
+      font-size      : 13px;
+      color          : var(--gray-400);
+      margin-bottom  : 16px;
+    }
+
+    .campaign-card-footer strong { color: var(--orange); }
+
+    .btn-donate {
+      width        : 100%;
+      padding      : 11px;
+      background   : var(--orange);
+      color        : white;
+      border       : none;
+      border-radius: 10px;
+      font-size    : 14px;
+      font-weight  : 700;
+      cursor       : pointer;
+      transition   : background 0.15s;
+    }
+
+    .btn-donate:hover { background: var(--orange-dark); }
+
+    .view-all-btn {
+      display        : flex;
+      align-items    : center;
+      justify-content: center;
+      gap            : 8px;
+      padding        : 14px 40px;
+      background     : var(--white);
+      color          : var(--orange);
+      border         : 2px solid var(--orange);
+      border-radius  : 12px;
+      font-size      : 15px;
+      font-weight    : 700;
+      cursor         : pointer;
+      margin         : 0 auto;
+      transition     : all 0.15s;
+    }
+
+    .view-all-btn:hover {
+      background: var(--orange);
+      color     : white;
+    }
+
+    /* ── TRUST SECTION ── */
+    .trust-section {
+      padding   : 80px 60px;
+      background: var(--white);
+    }
+
+    .trust-grid {
+      display              : grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap                  : 24px;
+    }
+
+    .trust-card {
+      text-align   : center;
+      padding      : 32px 24px;
+      border-radius: 18px;
+      background   : var(--gray-100);
+      transition   : transform 0.15s;
+    }
+
+    .trust-card:hover { transform: translateY(-4px); }
+
+    .trust-card .icon { font-size: 40px; margin-bottom: 14px; }
+
+    .trust-card h3 {
+      font-size    : 16px;
+      font-weight  : 700;
+      margin-bottom: 8px;
+    }
+
+    .trust-card p {
+      font-size  : 13px;
+      color      : var(--gray-400);
+      line-height: 1.6;
+    }
+
+    /* ── CTA ── */
+    .cta-section {
+      background     : linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+      padding        : 80px 60px;
+      text-align     : center;
+      color          : white;
+    }
+
+    .cta-section h2 {
+      font-size    : 38px;
+      font-weight  : 900;
+      margin-bottom: 14px;
+    }
+
+    .cta-section p {
+      font-size    : 17px;
+      opacity      : 0.9;
+      margin-bottom: 36px;
+      max-width    : 500px;
+      margin-left  : auto;
+      margin-right : auto;
+      line-height  : 1.6;
+    }
+
+    .cta-actions {
+      display        : flex;
+      gap            : 16px;
+      justify-content: center;
+      flex-wrap      : wrap;
+    }
+
+    .btn-cta-white {
+      padding      : 14px 36px;
+      background   : white;
+      color        : var(--orange);
+      border       : none;
+      border-radius: 12px;
+      font-size    : 16px;
+      font-weight  : 700;
+      cursor       : pointer;
+      transition   : all 0.15s;
+    }
+
+    .btn-cta-white:hover {
+      transform : translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+
+    .btn-cta-outline {
+      padding      : 14px 36px;
+      background   : transparent;
+      color        : white;
+      border       : 2px solid rgba(255,255,255,0.5);
+      border-radius: 12px;
+      font-size    : 16px;
+      font-weight  : 700;
+      cursor       : pointer;
+      transition   : all 0.15s;
+    }
+
+    .btn-cta-outline:hover { border-color: white; }
+
+    /* ── FOOTER ── */
+    .footer {
+      background: var(--gray-800);
+      padding   : 48px 60px 28px;
+      color     : #D1D5DB;
+    }
+
+    .footer-grid {
+      display              : grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap                  : 40px;
+      margin-bottom        : 40px;
+    }
+
+    .footer-brand h3 { font-size: 18px; font-weight: 800; color: white; margin-bottom: 10px; }
+    .footer-brand p  { font-size: 13px; line-height: 1.7; color: #9CA3AF; }
+
+    .footer-col h4    { font-size: 13px; font-weight: 700; color: white; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .footer-col a     { display: block; font-size: 13px; color: #9CA3AF; margin-bottom: 8px; transition: color 0.15s; }
+    .footer-col a:hover { color: var(--orange); }
+
+    .footer-bottom {
+      border-top : 1px solid #374151;
+      padding-top: 20px;
+      display    : flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size  : 13px;
+      color      : #6B7280;
+    }
+
+    /* ── SEARCH BAR ── */
+    .search-bar {
+      display      : flex;
+      align-items  : center;
+      gap          : 12px;
+      max-width    : 540px;
+      margin       : 0 auto 48px;
+    }
+
+    .search-bar input {
+      flex         : 1;
+      padding      : 13px 18px;
+      border       : 1.5px solid var(--gray-200);
+      border-radius: 12px;
+      font-size    : 14px;
+      outline      : none;
+      background   : var(--white);
+    }
+
+    .search-bar input:focus { border-color: var(--orange); }
+
+    .search-bar button {
+      padding      : 13px 24px;
+      background   : var(--orange);
+      color        : white;
+      border       : none;
+      border-radius: 12px;
+      font-size    : 14px;
+      font-weight  : 600;
+      cursor       : pointer;
+      white-space  : nowrap;
+    }
+
+    /* ── LOADING ── */
+    .loading {
+      text-align: center;
+      padding   : 40px;
+      color     : var(--gray-400);
+    }
+
+    .spinner {
+      width        : 32px;
+      height       : 32px;
+      border       : 3px solid var(--gray-200);
+      border-top   : 3px solid var(--orange);
+      border-radius: 50%;
+      animation    : spin 0.8s linear infinite;
+      margin       : 0 auto 12px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── EMPTY ── */
+    .empty {
+      text-align: center;
+      padding   : 60px 20px;
+      color     : var(--gray-400);
+    }
+
+    .empty-icon { font-size: 48px; margin-bottom: 14px; }
+    .empty h3   { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--gray-800); }
+    .empty p    { font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<nav class="navbar">
+  <a class="nav-logo" href="index.html">
+    <div class="nav-logo-icon">🏥</div>
+    <div>
+      <h1>MediTrust</h1>
+      <small>Verified Medical Crowdfunding</small>
+    </div>
+  </a>
+
+  <div class="nav-links">
+    <a href="#campaigns">Browse Campaigns</a>
+    <a href="#how-it-works">How It Works</a>
+    <a href="#trust">Why MediTrust</a>
+  </div>
+
+  <div class="nav-actions">
+    <button class="btn-login" onclick="window.location.href='login.html'">
+      Sign In
+    </button>
+    <button class="btn-start" onclick="window.location.href='login.html'">
+      Start Campaign →
+    </button>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-pill">
+      🛡️ AI-Verified • 100% Transparent
+    </div>
+    <h1>
+      Real Help for<br/>
+      <span>Real Medical</span><br/>
+      Emergencies
+    </h1>
+    <p>
+      Every campaign is verified by AI and reviewed by humans before going live.
+      Funds go directly to hospitals — never to patients. Zero fraud. Zero doubt.
+    </p>
+    <div class="hero-actions">
+      <button class="btn-hero-primary"
+        onclick="window.location.href='login.html'">
+        🏥 Start a Campaign
+      </button>
+      <button class="btn-hero-secondary"
+        onclick="document.getElementById('campaigns').scrollIntoView({behavior:'smooth'})">
+        Browse Campaigns
+      </button>
+    </div>
+    <div class="hero-trust">
+      <div class="trust-item"><span>✅</span> AI Document Verification</div>
+      <div class="trust-item"><span>✅</span> Direct Hospital Payments</div>
+      <div class="trust-item"><span>✅</span> Real-time Tracking</div>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <div class="hero-card">
+      <div class="hero-card-header">
+        <div class="hero-card-avatar">👧</div>
+        <div class="hero-card-info">
+          <h4>Help Priya fight Cancer</h4>
+          <p>Apollo Hospital, Hyderabad</p>
+        </div>
+        <div class="hero-card-badge">✅ Verified</div>
+      </div>
+
+      <div class="hero-progress-label">
+        <span>₹3,65,000 raised</span>
+        <strong>73%</strong>
+      </div>
+      <div class="hero-progress-bar">
+        <div class="hero-progress-fill"></div>
+      </div>
+
+      <div class="hero-donors">
+        <div class="donor-avatars">
+          <div class="donor-avatar">R</div>
+          <div class="donor-avatar">S</div>
+          <div class="donor-avatar">A</div>
+          <div class="donor-avatar">+</div>
+        </div>
+        <span>247 donors • 23 days left</span>
+      </div>
+
+      <div class="hero-card-footer">
+        <div class="verified-badge">
+          🤖 AI Verified
+        </div>
+        <button class="donate-mini-btn"
+          onclick="window.location.href='login.html'">
+          Donate Now
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── STATS BAR ── -->
+<div class="stats-bar">
+  <div class="stats-bar-item">
+    <h3 id="stat-campaigns">0</h3>
+    <p>Campaigns Funded</p>
+  </div>
+  <div class="stats-bar-item">
+    <h3 id="stat-raised">₹0</h3>
+    <p>Total Raised</p>
+  </div>
+  <div class="stats-bar-item">
+    <h3 id="stat-donors">0</h3>
+    <p>Donors Nationwide</p>
+  </div>
+  <div class="stats-bar-item">
+    <h3>100%</h3>
+    <p>Direct to Hospital</p>
+  </div>
+</div>
+
+<!-- ── HOW IT WORKS ── -->
+<section class="section" id="how-it-works">
+  <div class="section-header">
+    <div class="section-pill">Simple Process</div>
+    <h2>How MediTrust Works</h2>
+    <p>From application to receiving funds — transparent at every step</p>
+  </div>
+
+  <div class="steps-grid">
+    <div class="step-card">
+      <div class="step-number">1</div>
+      <div class="step-icon">📝</div>
+      <h3>Create Campaign</h3>
+      <p>Register and fill patient details. Upload hospital documents — estimate, bills, discharge summary.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-number">2</div>
+      <div class="step-icon">🤖</div>
+      <h3>AI Verification</h3>
+      <p>Our AI engine scans all documents for tampering, expired records, and cross-document inconsistencies.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-number">3</div>
+      <div class="step-icon">👨‍⚕️</div>
+      <h3>Admin Review</h3>
+      <p>MediTrust team reviews AI results and either verifies or flags the campaign for manual inspection.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-number">4</div>
+      <div class="step-icon">✍️</div>
+      <h3>Write Your Story</h3>
+      <p>Write your campaign story in any language. Gemini AI polishes it while keeping your emotions intact.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-number">5</div>
+      <div class="step-icon">🚀</div>
+      <h3>Go Live</h3>
+      <p>Campaign goes live with a unique UPI QR code. Share it with family, friends and on social media.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-number">6</div>
+      <div class="step-icon">🏥</div>
+      <h3>Funds to Hospital</h3>
+      <p>Collected funds are released in phases directly to the verified hospital. Patient never handles money.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── LIVE CAMPAIGNS ── -->
+<section class="campaigns-section" id="campaigns">
+  <div class="section-header">
+    <div class="section-pill">Verified Campaigns</div>
+    <h2>Help Someone Today</h2>
+    <p>Every campaign below is AI-verified and admin approved. Your donation goes directly to the hospital.</p>
+  </div>
+
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="🔍 Search by name, disease or hospital..."
+           onkeydown="if(event.key==='Enter') searchCampaigns()" />
+    <button onclick="searchCampaigns()">Search</button>
+  </div>
+
+  <div id="campaignsGrid" class="campaigns-grid">
+    <div style="grid-column:1/-1;">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Loading verified campaigns...</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;">
+    <button class="view-all-btn" id="viewAllBtn"
+            onclick="loadCampaigns(true)" style="display:none;">
+      View All Campaigns →
+    </button>
+  </div>
+</section>
+
+<!-- ── WHY MEDITRUST ── -->
+<section class="trust-section" id="trust">
+  <div class="section-header">
+    <div class="section-pill">Why Choose Us</div>
+    <h2>Built on Trust</h2>
+    <p>MediTrust is not just a crowdfunding platform — it is a verification system</p>
+  </div>
+
+  <div class="trust-grid">
+    <div class="trust-card">
+      <div class="icon">🤖</div>
+      <h3>AI Document Check</h3>
+      <p>Every document is scanned for tampering, forgery and expiry using advanced NLP and OCR</p>
+    </div>
+    <div class="trust-card">
+      <div class="icon">🏥</div>
+      <h3>Hospital Direct</h3>
+      <p>Funds are released in phases directly to the treating hospital — never to the patient</p>
+    </div>
+    <div class="trust-card">
+      <div class="icon">🛡️</div>
+      <h3>Blacklist System</h3>
+      <p>Fraudulent applicants are permanently blacklisted by Aadhaar number across the platform</p>
+    </div>
+    <div class="trust-card">
+      <div class="icon">📊</div>
+      <h3>Real-time Tracking</h3>
+      <p>Donors can track every rupee — from donation to fund release to hospital payment</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<section class="cta-section">
+  <h2>Someone Needs Your Help Today</h2>
+  <p>
+    A verified campaign means a real patient, a real hospital, and a real need.
+    Your donation makes a difference.
+  </p>
+  <div class="cta-actions">
+    <button class="btn-cta-white"
+      onclick="window.location.href='login.html'">
+      🏥 Start a Campaign
+    </button>
+    <button class="btn-cta-outline"
+      onclick="document.getElementById('campaigns').scrollIntoView({behavior:'smooth'})">
+      ❤️ Donate Now
+    </button>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer class="footer">
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <h3>🏥 MediTrust</h3>
+      <p>
+        India's first AI-verified medical crowdfunding platform.
+        Every campaign verified. Every rupee tracked.
+        Funds go directly to hospitals.
+      </p>
+    </div>
+    <div class="footer-col">
+      <h4>Platform</h4>
+      <a href="login.html">Start Campaign</a>
+      <a href="#campaigns">Browse Campaigns</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="login.html">Login</a>
+    </div>
+    <div class="footer-col">
+      <h4>Trust</h4>
+      <a href="#">AI Verification</a>
+      <a href="#">Hospital Network</a>
+      <a href="#">Fraud Prevention</a>
+      <a href="#">Transparency</a>
+    </div>
+    <div class="footer-col">
+      <h4>Support</h4>
+      <a href="#">Help Center</a>
+      <a href="#">Contact Us</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Terms of Use</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 MediTrust. All rights reserved.</span>
+    <span>Made with ❤️ for patients across India</span>
+  </div>
+</footer>
+
+<script>
+  const API = 'http://localhost:3000/api';
+  let allCampaigns = [];
+  let showingAll   = false;
+
+  // ─────────────────────────────────────────
+  // INIT
+  // ─────────────────────────────────────────
+  window.onload = () => {
+    loadCampaigns(false);
+    loadStats();
+  };
+
+  // ─────────────────────────────────────────
+  // LOAD STATS
+  // ─────────────────────────────────────────
+  async function loadStats() {
+    try {
+      const res  = await fetch(`${API}/campaigns?limit=100`);
+      const data = await res.json();
+
+      if (data.success) {
+        const total  = data.total || 0;
+        const raised = data.campaigns.reduce((s, c) =>
+          s + parseFloat(c.collected_amount || 0), 0);
+
+        animateNumber('stat-campaigns', total);
+        document.getElementById('stat-raised').textContent =
+          '₹' + formatAmount(raised);
+        animateNumber('stat-donors', total * 12);
+      }
+    } catch (err) {}
+  }
+
+  // ─────────────────────────────────────────
+  // LOAD CAMPAIGNS
+  // ─────────────────────────────────────────
+  async function loadCampaigns(all = false) {
+    const grid  = document.getElementById('campaignsGrid');
+    const limit = all ? 50 : 6;
+
+    try {
+      const search = document.getElementById('searchInput').value.trim();
+      const url    = `${API}/campaigns?limit=${limit}${search ? '&search=' + encodeURIComponent(search) : ''}`;
+
+      const res  = await fetch(url);
+      const data = await res.json();
+
+      if (!data.success || data.campaigns.length === 0) {
+        grid.innerHTML = `
+          <div style="grid-column:1/-1;">
+            <div class="empty">
+              <div class="empty-icon">🏥</div>
+              <h3>No live campaigns yet</h3>
+              <p>Be the first to start a verified campaign</p>
+            </div>
+          </div>`;
+        document.getElementById('viewAllBtn').style.display = 'none';
+        return;
+      }
+
+      allCampaigns = data.campaigns;
+
+      grid.innerHTML = allCampaigns.map(c => campaignCardHTML(c)).join('');
+
+      const viewAllBtn = document.getElementById('viewAllBtn');
+      if (!all && data.total > 6) {
+        viewAllBtn.style.display = 'flex';
+        viewAllBtn.textContent   = `View All ${data.total} Campaigns →`;
+      } else {
+        viewAllBtn.style.display = 'none';
+      }
+
+    } catch (err) {
+      grid.innerHTML = `
+        <div style="grid-column:1/-1;">
+          <div class="loading"><p>Failed to load campaigns</p></div>
+        </div>`;
+    }
+  }
+
+  // ─────────────────────────────────────────
+  // SEARCH
+  // ─────────────────────────────────────────
+  function searchCampaigns() {
+    loadCampaigns(true);
+  }
+
+  // ─────────────────────────────────────────
+  // CAMPAIGN CARD HTML
+  // ─────────────────────────────────────────
+  function campaignCardHTML(c) {
+    const collected = parseFloat(c.collected_amount || 0);
+    const target    = parseFloat(c.verified_amount  || 1);
+    const percent   = Math.min(100, Math.round((collected / target) * 100));
+    const story     = c.story_gemini || 'Help this patient get the medical treatment they need.';
+
+    return `
+      <div class="campaign-card"
+           onclick="window.location.href='campaign.html?id=${c.id}'">
+        <div class="campaign-card-top">
+          <div class="campaign-disease-icon">🏥</div>
+          <div class="campaign-verified">✅ Verified</div>
+        </div>
+        <div class="campaign-card-body">
+          <h3>${c.title}</h3>
+          <p>${story}</p>
+          <div class="campaign-progress-bar">
+            <div class="campaign-progress-fill" style="width:${percent}%"></div>
+          </div>
+          <div class="campaign-card-footer">
+            <span><strong>₹${formatAmount(collected)}</strong> raised</span>
+            <span>${percent}% funded</span>
+          </div>
+          <button class="btn-donate"
+            onclick="event.stopPropagation(); window.location.href='campaign.html?id=${c.id}'">
+            ❤️ Donate Now
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  // ─────────────────────────────────────────
+  // HELPERS
+  // ─────────────────────────────────────────
+  function formatAmount(n) {
+    return parseFloat(n || 0).toLocaleString('en-IN');
+  }
+
+  function animateNumber(id, target) {
+    const el    = document.getElementById(id);
+    let current = 0;
+    const step  = Math.ceil(target / 40);
+    const timer = setInterval(() => {
+      current = Math.min(current + step, target);
+      el.textContent = current.toLocaleString('en-IN');
+      if (current >= target) clearInterval(timer);
+    }, 40);
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediTrust — Upload Documents</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --orange      : #F97316;
+      --orange-dark : #EA580C;
+      --orange-light: #FFF7ED;
+      --orange-mid  : #FFEDD5;
+      --white       : #FFFFFF;
+      --gray-100    : #F9FAFB;
+      --gray-200    : #F3F4F6;
+      --gray-400    : #9CA3AF;
+      --gray-600    : #4B5563;
+      --gray-800    : #1F2937;
+      --green       : #22C55E;
+      --red         : #EF4444;
+      --yellow      : #F59E0B;
+    }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--gray-100); color: var(--gray-800); min-height: 100vh; }
+    .navbar { background: var(--white); padding: 0 40px; height: 64px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--gray-200); position: sticky; top: 0; z-index: 100; }
+    .nav-logo { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .nav-logo-icon { width: 36px; height: 36px; background: var(--orange); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .nav-logo h1 { font-size: 18px; font-weight: 800; }
+    .nav-logo small { display: block; font-size: 10px; color: var(--gray-400); }
+    .nav-back { font-size: 14px; color: var(--gray-600); cursor: pointer; padding: 8px 16px; border-radius: 8px; }
+    .nav-back:hover { background: var(--gray-100); color: var(--orange); }
+    .page { max-width: 760px; margin: 0 auto; padding: 36px 24px; }
+    .steps-card { background: var(--white); border-radius: 16px; padding: 24px 32px; margin-bottom: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .steps-card h2 { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+    .steps-card p  { font-size: 14px; color: var(--gray-400); margin-bottom: 20px; }
+    .steps-track { display: flex; align-items: center; overflow-x: auto; padding: 0 5px; }
+    .step-item   { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .step-circle { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; background: var(--gray-200); color: var(--gray-400); transition: all 0.5s; }
+    .step-circle.done   { background: var(--green);  color: white; }
+    .step-circle.active { background: var(--orange); color: white; }
+    .step-circle.pulse  { background: var(--orange); color: white; animation: pulse 1.2s ease-in-out infinite; }
+    .step-label  { font-size: 13px; font-weight: 500; color: var(--gray-400); white-space: nowrap; }
+    .step-label.done   { color: var(--green); }
+    .step-label.active { color: var(--orange); font-weight: 700; }
+    .step-line   { flex: 1; height: 2px; background: var(--gray-200); margin: 0 10px; min-width: 20px; transition: background 0.5s; }
+    .step-line.done   { background: var(--green); }
+    .step-line.active { background: var(--orange); }
+    @keyframes pulse  { 0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(249,115,22,0.4);}50%{transform:scale(1.12);box-shadow:0 0 0 8px rgba(249,115,22,0);} }
+    @keyframes bounce { from{transform:translateY(0);}to{transform:translateY(-14px);} }
+    @keyframes spin   { to{transform:rotate(360deg);} }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);} }
+    .upload-zone { border: 2.5px dashed var(--gray-200); border-radius: 14px; padding: 48px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--gray-100); }
+    .upload-zone:hover,.upload-zone.drag-over { border-color: var(--orange); background: var(--orange-light); }
+    .uz-icon { font-size: 48px; margin-bottom: 14px; }
+    .upload-zone h4 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .upload-zone p  { font-size: 13px; color: var(--gray-400); }
+    .browse-link { color: var(--orange); font-weight: 700; }
+    .file-list { margin-top: 16px; }
+    .file-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--gray-100); border-radius: 10px; margin-bottom: 8px; border: 1.5px solid var(--gray-200); }
+    .file-icon { font-size: 26px; flex-shrink: 0; }
+    .file-info { flex: 1; min-width: 0; }
+    .file-info h4 { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-info p  { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+    .file-type-select { padding: 6px 10px; border: 1.5px solid var(--gray-200); border-radius: 8px; font-size: 12px; outline: none; background: var(--white); cursor: pointer; min-width: 155px; }
+    .file-type-select:focus { border-color: var(--orange); }
+    .file-remove { background: none; border: none; color: var(--gray-400); cursor: pointer; font-size: 18px; padding: 4px; }
+    .file-remove:hover { color: var(--red); }
+    .checklist { background: var(--white); border-radius: 12px; padding: 16px 20px; margin: 16px 0; box-shadow: 0 1px 6px rgba(0,0,0,0.05); }
+    .chk { display: flex; align-items: center; gap: 10px; padding: 7px 0; font-size: 13px; color: var(--gray-600); border-bottom: 1px solid var(--gray-200); }
+    .chk:last-child { border-bottom: none; }
+    .chk.ok { color: var(--green); }
+    .btn-submit { width: 100%; padding: 16px; background: var(--orange); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: all 0.15s; margin-top: 16px; }
+    .btn-submit:hover    { background: var(--orange-dark); }
+    .btn-submit:disabled { background: var(--gray-400); cursor: not-allowed; }
+    .spinner { width: 18px; height: 18px; border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid white; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    .loading-card { background: var(--white); border-radius: 20px; padding: 52px 40px; text-align: center; box-shadow: 0 4px 24px rgba(0,0,0,0.08); animation: fadeIn 0.4s ease; }
+    .ai-bot { font-size: 80px; display: block; margin-bottom: 20px; animation: bounce 1s ease-in-out infinite alternate; }
+    .loading-card h3 { font-size: 24px; font-weight: 800; margin-bottom: 10px; }
+    .loading-card > p { font-size: 15px; color: var(--gray-400); margin-bottom: 36px; line-height: 1.7; }
+    .loading-steps { max-width: 320px; margin: 0 auto; text-align: left; }
+    .ls { display: flex; align-items: center; gap: 12px; padding: 10px 0; font-size: 14px; color: var(--gray-400); border-bottom: 1px solid var(--gray-200); transition: all 0.3s; }
+    .ls:last-child { border-bottom: none; }
+    .ls.active { color: var(--orange); font-weight: 700; }
+    .ls.done   { color: var(--green); }
+    .ls-icon   { font-size: 18px; width: 24px; text-align: center; }
+    .result-card { background: var(--white); border-radius: 20px; padding: 48px 36px; text-align: center; box-shadow: 0 4px 24px rgba(0,0,0,0.08); animation: fadeIn 0.5s ease; }
+    .result-icon  { font-size: 80px; margin-bottom: 20px; display: block; }
+    .result-title { font-size: 26px; font-weight: 800; margin-bottom: 20px; }
+    .status-banner { border-radius: 14px; padding: 20px 24px; margin-bottom: 24px; text-align: left; }
+    .status-banner.green  { background:#DCFCE7; border:2px solid #86EFAC; }
+    .status-banner.yellow { background:#FEF3C7; border:2px solid #FCD34D; }
+    .status-banner.red    { background:#FEE2E2; border:2px solid #FCA5A5; }
+    .status-banner.orange { background:var(--orange-light); border:2px solid var(--orange-mid); }
+    .status-banner h3 { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
+    .status-banner p  { font-size: 14px; line-height: 1.7; }
+    .what-next { background: var(--gray-100); border-radius: 14px; padding: 20px 24px; margin-bottom: 24px; text-align: left; }
+    .what-next h4 { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+    .wn-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; font-size: 14px; border-bottom: 1px solid var(--gray-200); }
+    .wn-item:last-child { border-bottom: none; }
+    .wn-icon { font-size: 18px; flex-shrink: 0; }
+    .risk-box  { background: var(--gray-100); border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; }
+    .risk-top  { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+    .risk-bar  { height: 10px; background: var(--gray-200); border-radius: 10px; overflow: hidden; }
+    .risk-fill { height: 100%; border-radius: 10px; transition: width 1s ease; }
+    .risk-note { font-size: 12px; color: var(--gray-400); margin-top: 6px; text-align: left; }
+    .result-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn-primary { padding: 14px 36px; background: var(--orange); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; }
+    .btn-primary:hover { background: var(--orange-dark); }
+    .btn-outline { padding: 14px 24px; background: var(--white); color: var(--gray-600); border: 1.5px solid var(--gray-200); border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-outline:hover { border-color: var(--orange); color: var(--orange); }
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--gray-800); color: white; padding: 14px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; z-index: 9999; transform: translateY(80px); opacity: 0; transition: all 0.3s; }
+    .toast.show    { transform: translateY(0); opacity: 1; }
+    .toast.error   { border-left: 4px solid var(--red); }
+    .toast.info    { border-left: 4px solid var(--orange); }
+    .toast.success { border-left: 4px solid var(--green); }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-logo" onclick="window.location.href='dashboard.html'">
+    <div class="nav-logo-icon">🏥</div>
+    <div><h1>MediTrust</h1><small>Patient Portal</small></div>
+  </div>
+  <div class="nav-back" onclick="window.location.href='dashboard.html'">← Back to Dashboard</div>
+</nav>
+
+<!-- ══════════════════════════════
+     SCREEN 1 — UPLOAD FILES
+     User sees: upload zone + checklist
+     After submit: this DISAPPEARS
+══════════════════════════════ -->
+<div class="page" id="screen1">
+  <div class="steps-card">
+    <h2>Upload Medical Documents</h2>
+    <p>Select your documents, assign types, then submit for AI verification</p>
+    <div class="steps-track">
+      <div class="step-item"><div class="step-circle done">✓</div><span class="step-label done">Campaign Created</span></div>
+      <div class="step-line done"></div>
+      <div class="step-item"><div class="step-circle active">2</div><span class="step-label active">Upload Documents</span></div>
+      <div class="step-line"></div>
+      <div class="step-item"><div class="step-circle">3</div><span class="step-label">AI Verification</span></div>
+      <div class="step-line"></div>
+      <div class="step-item"><div class="step-circle">4</div><span class="step-label">Write Story</span></div>
+      <div class="step-line"></div>
+      <div class="step-item"><div class="step-circle">5</div><span class="step-label">Go Live</span></div>
+    </div>
+  </div>
+
+  <div style="background:var(--white);border-radius:16px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+    <div id="campaignBar" style="background:var(--orange-light);border:1.5px solid var(--orange-mid);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:14px;display:flex;align-items:center;gap:10px;">
+      <span>📋</span>
+      <span>Campaign: <strong id="campaignTitle">Loading...</strong></span>
+    </div>
+
+    <div class="upload-zone" id="uploadZone"
+         onclick="document.getElementById('fileInput').click()"
+         ondragover="handleDragOver(event)"
+         ondragleave="handleDragLeave()"
+         ondrop="handleDrop(event)">
+      <div class="uz-icon">📂</div>
+      <h4>Drop files here or <span class="browse-link">browse</span></h4>
+      <p>PDF, JPG, PNG • Max 10MB each • Minimum: Estimate + Aadhaar</p>
+    </div>
+    <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleFileSelect(event)" />
+    <div class="file-list" id="fileList"></div>
+
+    <div class="checklist">
+      <div class="chk" id="chk1"><span>⭕</span>&nbsp; At least 2 documents uploaded</div>
+      <div class="chk" id="chk2"><span>⭕</span>&nbsp; All files have document type selected</div>
+      <div class="chk" id="chk3"><span>⭕</span>&nbsp; Hospital Estimate uploaded (mandatory)</div>
+      <div class="chk" id="chk4"><span>⭕</span>&nbsp; Aadhaar Card uploaded (mandatory)</div>
+    </div>
+
+    <button class="btn-submit" id="submitBtn" onclick="submitDocuments()" disabled>
+      🤖 Submit for AI Verification
+    </button>
+    <p style="font-size:12px;color:var(--gray-400);text-align:center;margin-top:10px;">AI verification completes in 30–60 seconds</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     SCREEN 2 — AI LOADING
+     Screen 1 is HIDDEN
+     Only steps bar + bouncing robot + loading steps
+══════════════════════════════ -->
+<div class="page hidden" id="screen2">
+  <div class="steps-card">
+    <h2>AI is Verifying Your Documents</h2>
+    <p>Please wait — do not close this page</p>
+    <div class="steps-track">
+      <div class="step-item"><div class="step-circle done">✓</div><span class="step-label done">Campaign Created</span></div>
+      <div class="step-line done"></div>
+      <div class="step-item"><div class="step-circle done">✓</div><span class="step-label done">Upload Documents</span></div>
+      <div class="step-line active"></div>
+      <div class="step-item"><div class="step-circle pulse">3</div><span class="step-label active">AI Verifying...</span></div>
+      <div class="step-line"></div>
+      <div class="step-item"><div class="step-circle">4</div><span class="step-label">Write Story</span></div>
+      <div class="step-line"></div>
+      <div class="step-item"><div class="step-circle">5</div><span class="step-label">Go Live</span></div>
+    </div>
+  </div>
+
+  <div class="loading-card">
+    <span class="ai-bot">🤖</span>
+    <h3>Analyzing Your Documents</h3>
+    <p>Running OCR, BERT authenticity detection<br>and medical entity extraction...</p>
+    <div class="loading-steps">
+      <div class="ls" id="ls1"><span class="ls-icon">📤</span><span>Uploading documents securely</span></div>
+      <div class="ls" id="ls2"><span class="ls-icon">🔍</span><span>Running OCR text extraction</span></div>
+      <div class="ls" id="ls3"><span class="ls-icon">🧠</span><span>AI authenticity check (BERT)</span></div>
+      <div class="ls" id="ls4"><span class="ls-icon">🏥</span><span>Extracting medical entities</span></div>
+      <div class="ls" id="ls5"><span class="ls-icon">⏳</span><span>Finalizing verification result</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     SCREEN 3 — RESULT
+     VERIFIED → Step 4 active, Write Story button
+     PENDING  → Step 4 locked, Dashboard button only
+══════════════════════════════ -->
+<div class="page hidden" id="screen3">
+  <div class="steps-card">
+    <h2 id="rTitle">Verification Complete</h2>
+    <p id="rDesc">Here is your result</p>
+    <div class="steps-track">
+      <div class="step-item"><div class="step-circle done">✓</div><span class="step-label done">Campaign Created</span></div>
+      <div class="step-line done"></div>
+      <div class="step-item"><div class="step-circle done">✓</div><span class="step-label done">Upload Documents</span></div>
+      <div class="step-line done"></div>
+      <div class="step-item"><div class="step-circle done">✓</div><span class="step-label done">AI Verification</span></div>
+      <div class="step-line" id="rLine"></div>
+      <div class="step-item"><div class="step-circle" id="rSC4">4</div><span class="step-label" id="rSL4">Write Story</span></div>
+      <div class="step-line"></div>
+      <div class="step-item"><div class="step-circle">5</div><span class="step-label">Go Live</span></div>
+    </div>
+  </div>
+
+  <div class="result-card" id="resultCard"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API   = 'http://localhost:3000/api';
+  const token = localStorage.getItem('patientToken');
+  let campaignId = null;
+  let files      = [];
+  let lsTimers   = [];
+
+  // ── INIT ─────────────────────────────────────────────
+  window.onload = async () => {
+    if (!token) { window.location.href = 'login.html'; return; }
+    const p = new URLSearchParams(window.location.search);
+    campaignId = p.get('campaign_id');
+    if (!campaignId) {
+      try {
+        const res  = await authFetch(`${API}/campaigns/my/campaigns`);
+        const data = await res.json();
+        if (data.success && data.campaigns.length) {
+          const c = data.campaigns.find(x => x.status === 'DRAFT') ||
+                    data.campaigns.find(x => x.status === 'PENDING_VERIFICATION') ||
+                    data.campaigns[0];
+          campaignId = c.id;
+          document.getElementById('campaignTitle').textContent = c.title;
+        }
+      } catch(e) {}
+    } else {
+      try {
+        const res  = await authFetch(`${API}/campaigns/${campaignId}`);
+        const data = await res.json();
+        if (data.success) document.getElementById('campaignTitle').textContent = data.campaign.title;
+      } catch(e) {}
+    }
+  };
+
+  // ── DRAG DROP ─────────────────────────────────────────
+  function handleDragOver(e)  { e.preventDefault(); document.getElementById('uploadZone').classList.add('drag-over'); }
+  function handleDragLeave()  { document.getElementById('uploadZone').classList.remove('drag-over'); }
+  function handleDrop(e)      { e.preventDefault(); document.getElementById('uploadZone').classList.remove('drag-over'); addFiles(Array.from(e.dataTransfer.files)); }
+  function handleFileSelect(e){ addFiles(Array.from(e.target.files)); e.target.value = ''; }
+
+  // ── ADD FILES ─────────────────────────────────────────
+  function addFiles(newFiles) {
+    for (const f of newFiles) {
+      if (!['application/pdf','image/jpeg','image/jpg','image/png'].includes(f.type)) { toast(f.name + ' — unsupported', 'error'); continue; }
+      if (f.size > 10*1024*1024) { toast(f.name + ' — exceeds 10MB', 'error'); continue; }
+      files.push({ id: Date.now()+Math.random(), file:f, name:f.name, size:f.size, docType:detectType(f.name) });
+    }
+    renderFiles(); updateChecklist();
+  }
+
+  function detectType(n) {
+    n = n.toLowerCase();
+    if (n.includes('estimate') || n.includes('est'))           return 'ESTIMATE';
+    if (n.includes('aadhaar') || n.includes('aadhar') || n.includes('adhar')) return 'AADHAAR';
+    if (n.includes('discharge'))                               return 'DISCHARGE_SUMMARY';
+    if (n.includes('admission') || n.includes('case'))         return 'ADMISSION_SUMMARY';
+    if (n.includes('bill') || n.includes('invoice'))           return 'BILL';
+    if (n.includes('income') || n.includes('certificate'))     return 'INCOME_CERTIFICATE';
+    return 'ESTIMATE';
+  }
+
+  function renderFiles() {
+    const el = document.getElementById('fileList');
+    if (!files.length) { el.innerHTML = ''; return; }
+    el.innerHTML = files.map(f => `
+      <div class="file-item">
+        <div class="file-icon">${f.file.type === 'application/pdf' ? '📄' : '🖼️'}</div>
+        <div class="file-info"><h4>${f.name}</h4><p>${fmtSize(f.size)}</p></div>
+        <select class="file-type-select" onchange="setType('${f.id}', this.value)">
+          <option value="ESTIMATE"           ${f.docType==='ESTIMATE'           ?'selected':''}>🏥 Hospital Estimate</option>
+          <option value="ADMISSION_SUMMARY"  ${f.docType==='ADMISSION_SUMMARY'  ?'selected':''}>📋 Admission Summary</option>
+          <option value="AADHAAR"            ${f.docType==='AADHAAR'            ?'selected':''}>🪪 Aadhaar Card</option>
+          <option value="BILL"               ${f.docType==='BILL'               ?'selected':''}>🧾 Hospital Bill</option>
+          <option value="DISCHARGE_SUMMARY"  ${f.docType==='DISCHARGE_SUMMARY'  ?'selected':''}>📄 Discharge Summary</option>
+          <option value="INCOME_CERTIFICATE" ${f.docType==='INCOME_CERTIFICATE' ?'selected':''}>📜 Income Certificate</option>
+        </select>
+        <button class="file-remove" onclick="removeFile('${f.id}')">✕</button>
+      </div>`).join('');
+  }
+
+  function setType(id, val) {
+    const f = files.find(x => String(x.id) === String(id));
+    if (f) { f.docType = val; updateChecklist(); }
+  }
+
+  function removeFile(id) {
+    files = files.filter(x => String(x.id) !== String(id));
+    renderFiles(); updateChecklist();
+  }
+
+  function updateChecklist() {
+    const ok1 = files.length >= 2;
+    const ok2 = files.length > 0 && files.every(f => f.docType);
+    const ok3 = files.some(f => f.docType === 'ESTIMATE');
+    const ok4 = files.some(f => f.docType === 'AADHAAR');
+    chkSet('chk1', ok1, 'At least 2 documents uploaded');
+    chkSet('chk2', ok2, 'All files have document type selected');
+    chkSet('chk3', ok3, 'Hospital Estimate uploaded (mandatory)');
+    chkSet('chk4', ok4, 'Aadhaar Card uploaded (mandatory)');
+    document.getElementById('submitBtn').disabled = !(ok1 && ok2 && ok3 && ok4);
+  }
+
+  function chkSet(id, ok, label) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = `<span>${ok ? '✅' : '⭕'}</span>&nbsp; ${label}`;
+    el.className = 'chk' + (ok ? ' ok' : '');
+  }
+
+  // ── SUBMIT ────────────────────────────────────────────
+  async function submitDocuments() {
+    const btn = document.getElementById('submitBtn');
+    btn.disabled  = true;
+    btn.innerHTML = '<div class="spinner"></div> Reading files...';
+
+    // Convert files to base64
+    const docs = [];
+    for (const f of files) {
+      try {
+        const b64 = await toBase64(f.file);
+        docs.push({
+          document_type: f.docType,
+          file_url     : `data:${f.file.type};base64,${b64.split(',')[1]}`,
+          file_name    : f.name
+        });
+      } catch(e) { toast('Failed to read ' + f.name, 'error'); }
+    }
+
+    if (!docs.length) {
+      btn.disabled  = false;
+      btn.innerHTML = '🤖 Submit for AI Verification';
+      return;
+    }
+
+    // ✅ HIDE Screen 1 → SHOW Screen 2 (AI loading)
+    showScreen('screen2');
+    startLoadingSteps();
+
+    try {
+      const res  = await authFetch(`${API}/campaigns/${campaignId}/verify-documents`, {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify({ documents: docs })
+      });
+      const data = await res.json();
+      stopLoadingSteps();
+
+      if (data.success) {
+        // ✅ HIDE Screen 2 → SHOW Screen 3 (Result)
+        showResult(data);
+      } else {
+        // Error — go back to Screen 1
+        showScreen('screen1');
+        toast(data.error || 'Verification failed', 'error');
+        btn.disabled  = false;
+        btn.innerHTML = '🤖 Submit for AI Verification';
+      }
+    } catch(e) {
+      stopLoadingSteps();
+      showScreen('screen1');
+      toast('Server error. Please try again.', 'error');
+      btn.disabled  = false;
+      btn.innerHTML = '🤖 Submit for AI Verification';
+    }
+  }
+
+  // ── LOADING STEPS ANIMATION ───────────────────────────
+  function startLoadingSteps() {
+    const ids   = ['ls1','ls2','ls3','ls4','ls5'];
+    const icons = ['📤','🔍','🧠','🏥','⏳'];
+    ids.forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (el) { el.classList.remove('active','done'); el.querySelector('.ls-icon').textContent = icons[i]; }
+    });
+    ids.forEach((id, i) => {
+      const t = setTimeout(() => {
+        if (i > 0) {
+          const prev = document.getElementById(ids[i-1]);
+          if (prev) { prev.classList.remove('active'); prev.classList.add('done'); prev.querySelector('.ls-icon').textContent = '✅'; }
+        }
+        const el = document.getElementById(id);
+        if (el) el.classList.add('active');
+      }, i * 6000);
+      lsTimers.push(t);
+    });
+  }
+
+  function stopLoadingSteps() { lsTimers.forEach(clearTimeout); lsTimers = []; }
+
+  // ── SHOW RESULT ───────────────────────────────────────
+  function showResult(data) {
+    console.log('🕉 === VERIFICATION RESULT RECEIVED ===');
+    console.log('📊 Status:', data.status);
+    console.log('🎯 Risk Score:', data.risk_score || 0);
+    console.log('📋 Extracted Entities:', data.extracted_data || {});
+    console.log('📄 Documents Processed:', data.documents?.length || 0);
+    console.log('🔒 Has Tampering:', data.has_tampering || false);
+    console.log('⏰ Has Expired:', data.has_expired_docs || false);
+    console.log('=====================================');
+
+    showScreen('screen3');
+
+    const status = data.status;
+    const risk   = data.risk_score || 0;
+    const ext    = data.extracted_data || {};
+    const rc     = risk < 30 ? '#16A34A' : risk < 60 ? '#D97706' : '#DC2626';
+
+    // ── Update step bar based on status ──
+    if (status === 'VERIFIED') {
+      // Step 4 becomes ACTIVE — patient can write story
+      document.getElementById('rLine').className  = 'step-line done';
+      document.getElementById('rSC4').className   = 'step-circle active';
+      document.getElementById('rSL4').className   = 'step-label active';
+      document.getElementById('rTitle').textContent = '✅ Verified — Write Your Story Next!';
+      document.getElementById('rDesc').textContent  = 'Documents passed AI check. Go to dashboard to write your story.';
+    } else {
+      // Step 4 stays GREY — patient is BLOCKED
+      document.getElementById('rTitle').textContent = '⏳ Documents Under Admin Review';
+      document.getElementById('rDesc').textContent  = 'You cannot write story until admin approves. We will email you.';
+    }
+
+    const cfgs = {
+      VERIFIED: {
+        icon: '✅', color: '#16A34A', bc: 'green',
+        bTitle: '✅ AI Verification Passed!',
+        bMsg  : 'All documents look authentic. Go to dashboard and click "Write Story" to continue.',
+        items : [
+          { i: '✍️', t: 'Go to Dashboard → click Write Story' },
+          { i: '🤖', t: 'Gemini AI will help polish your story' },
+          { i: '🚀', t: 'Approve story and click Go Live' },
+          { i: '💰', t: 'Donors can now support your treatment!' }
+        ],
+        btnL: '✍️ Go to Dashboard → Write Story',
+        btnA: "window.location.href='dashboard.html'"
+      },
+      PENDING: {
+        icon: '⏳', color: '#D97706', bc: 'yellow',
+        bTitle: '⏳ Sent to Admin for Manual Review',
+        bMsg  : 'AI flagged some items for human verification. Admin will review within 24 hours and email you. You cannot write story or go live until admin approves.',
+        items : [
+          { i: '🚫', t: 'You CANNOT write story or go live yet' },
+          { i: '📧', t: 'We will email you once admin reviews' },
+          { i: '⏰', t: 'Expected review time: within 24 hours' },
+          { i: '🔄', t: 'Check your dashboard for status updates' }
+        ],
+        btnL: '📋 Go to Dashboard',
+        btnA: "window.location.href='dashboard.html'"
+      },
+      VERIFICATION_NEEDED: {
+        icon: '🚨', color: '#DC2626', bc: 'red',
+        bTitle: '🚨 Admin Verification Required',
+        bMsg  : 'AI detected issues with some documents. Admin will investigate carefully. Please watch your email for instructions.',
+        items : [
+          { i: '🚫', t: 'Cannot proceed until admin clears your case' },
+          { i: '📞', t: 'Admin may contact you for more documents' },
+          { i: '📧', t: 'Watch your email for updates' }
+        ],
+        btnL: '📋 Go to Dashboard',
+        btnA: "window.location.href='dashboard.html'"
+      },
+      UPDATE_NEEDED: {
+        icon: '📅', color: '#EA580C', bc: 'orange',
+        bTitle: '📅 Please Upload Fresh Documents',
+        bMsg  : 'Some documents appear expired (older than 90 days). Get updated documents and resubmit.',
+        items : [
+          { i: '🏥', t: 'Get fresh hospital estimate (within 90 days)' },
+          { i: '📤', t: 'Come back and upload updated documents' }
+        ],
+        btnL: '📤 Upload Fresh Documents',
+        btnA: `window.location.href='upload.html?campaign_id=${campaignId}'`
+      }
+    };
+
+    const c = cfgs[status] || cfgs['PENDING'];
+
+    document.getElementById('resultCard').innerHTML = `
+      <span class="result-icon">${c.icon}</span>
+      <div class="result-title" style="color:${c.color}">
+        ${status==='VERIFIED' ? 'Documents Verified!'
+          : status==='PENDING' ? 'Under Admin Review'
+          : status==='VERIFICATION_NEEDED' ? 'Manual Verification Needed'
+          : 'Documents Need Update'}
+      </div>
+
+      <div class="status-banner ${c.bc}">
+        <h3>${c.bTitle}</h3>
+        <p>${c.bMsg}</p>
+      </div>
+
+      <div class="risk-box">
+        <div class="risk-top">
+          <span>AI Risk Score</span>
+          <span style="color:${rc}">${risk}/100</span>
+        </div>
+        <div class="risk-bar">
+          <div class="risk-fill" id="rFill" style="width:0%;background:${rc}"></div>
+        </div>
+        <p class="risk-note">
+          ${risk<30 ? '✅ Low risk — documents look authentic'
+            : risk<60 ? '⚠️ Medium risk — manual review recommended'
+            : '🚨 High risk — admin will verify carefully'}
+        </p>
+      </div>
+
+      <div class="what-next">
+        <h4>📌 What Happens Next</h4>
+        ${c.items.map(x => `
+          <div class="wn-item">
+            <span class="wn-icon">${x.i}</span>
+            <span>${x.t}</span>
+          </div>`).join('')}
+      </div>
+
+      ${(ext.hospital_name || ext.amount || ext.patient_name || (ext.diseases && ext.diseases.length)) ? `
+        <div class="what-next">
+          <h4>📋 Extracted from Your Documents</h4>
+          ${ext.hospital_name ? `<div class="wn-item"><span class="wn-icon">🏥</span><span><b>Hospital:</b> ${ext.hospital_name}</span></div>` : ''}
+          ${ext.patient_name  ? `<div class="wn-item"><span class="wn-icon">👤</span><span><b>Patient:</b> ${ext.patient_name}</span></div>`  : ''}
+          ${ext.amount        ? `<div class="wn-item"><span class="wn-icon">💰</span><span><b>Est. Amount:</b> <b style="color:var(--orange)">₹${parseFloat(ext.amount).toLocaleString('en-IN')}</b></span></div>` : ''}
+          ${(ext.diseases && ext.diseases.length) ? `<div class="wn-item"><span class="wn-icon">🩺</span><span><b>Diagnosis:</b> ${Array.isArray(ext.diseases) ? ext.diseases.join(', ') : ext.diseases}</span></div>` : ''}
+        </div>` : ''}
+
+      <div class="result-btns">
+        <button class="btn-primary" onclick="${c.btnA}">${c.btnL}</button>
+        <button class="btn-outline"  onclick="window.location.href='dashboard.html'">📋 Dashboard</button>
+      </div>`;
+
+    setTimeout(() => { const el = document.getElementById('rFill'); if(el) el.style.width = risk + '%'; }, 400);
+  }
+
+  // ── SCREEN SWITCH ─────────────────────────────────────
+  function showScreen(id) {
+    ['screen1','screen2','screen3'].forEach(s =>
+      document.getElementById(s).classList.toggle('hidden', s !== id)
+    );
+    window.scrollTo(0, 0);
+  }
+
+  // ── HELPERS ───────────────────────────────────────────
+  function toBase64(file) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload  = () => res(r.result);
+      r.onerror = () => rej();
+      r.readAsDataURL(file);
+    });
+  }
+
+  function authFetch(url, opts = {}) {
+    return fetch(url, { ...opts, headers: { ...opts.headers, 'Authorization': `Bearer ${token}` } });
+  }
+
+  function fmtSize(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+    return (b/1048576).toFixed(1) + ' MB';
+  }
+
+  function toast(msg, type = 'info') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className   = `toast ${type} show`;
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+</script>
+</body>
+</html>
