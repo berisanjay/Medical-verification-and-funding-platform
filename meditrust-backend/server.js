@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const http = require('node:http');
 dotenv.config();
 
 const app = express();
@@ -21,7 +22,20 @@ app.get('/', (req, res) => {
   res.json({ message: 'MediTrust Backend Running', status: 'OK' });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const PORT = Number.parseInt(process.env.PORT, 10) || 3000;
+
+const server = http.createServer(app);
+
+server.on('error', (err) => {
+  if (err && err.code === 'EADDRINUSE') {
+    console.error(`ERROR: Port ${PORT} is already in use.`);
+    console.error('   Stop the process using it, or change `PORT` in your `.env` (e.g. 3008).');
+  } else {
+    console.error('ERROR: Failed to start MediTrust Backend:', err);
+  }
+  process.exit(1);
+});
+
+server.listen(PORT, () => {
   console.log(`MediTrust Backend running on port ${PORT}`);
 });

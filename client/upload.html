@@ -49,11 +49,11 @@
     @keyframes bounce { from{transform:translateY(0);}to{transform:translateY(-14px);} }
     @keyframes spin   { to{transform:rotate(360deg);} }
     @keyframes fadeIn { from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);} }
-    .upload-zone { border: 2.5px dashed var(--gray-200); border-radius: 14px; padding: 48px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--gray-100); }
+    .upload-zone { border: 2.5px dashed var(--gray-200); border-radius: 14px; padding: 48px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--gray-100); user-select: none; }
     .upload-zone:hover,.upload-zone.drag-over { border-color: var(--orange); background: var(--orange-light); }
-    .uz-icon { font-size: 48px; margin-bottom: 14px; }
-    .upload-zone h4 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
-    .upload-zone p  { font-size: 13px; color: var(--gray-400); }
+    .uz-icon { font-size: 48px; margin-bottom: 14px; pointer-events: none; }
+    .upload-zone h4 { font-size: 16px; font-weight: 700; margin-bottom: 6px; pointer-events: none; }
+    .upload-zone p  { font-size: 13px; color: var(--gray-400); pointer-events: none; }
     .browse-link { color: var(--orange); font-weight: 700; }
     .file-list { margin-top: 16px; }
     .file-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--gray-100); border-radius: 10px; margin-bottom: 8px; border: 1.5px solid var(--gray-200); }
@@ -108,7 +108,7 @@
     .btn-primary:hover { background: var(--orange-dark); }
     .btn-outline { padding: 14px 24px; background: var(--white); color: var(--gray-600); border: 1.5px solid var(--gray-200); border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
     .btn-outline:hover { border-color: var(--orange); color: var(--orange); }
-    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--gray-800); color: white; padding: 14px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; z-index: 9999; transform: translateY(80px); opacity: 0; transition: all 0.3s; }
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--gray-800); color: white; padding: 14px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; z-index: 9999; transform: translateY(80px); opacity: 0; transition: all 0.3s; max-width: 320px; }
     .toast.show    { transform: translateY(0); opacity: 1; }
     .toast.error   { border-left: 4px solid var(--red); }
     .toast.info    { border-left: 4px solid var(--orange); }
@@ -128,8 +128,6 @@
 
 <!-- ══════════════════════════════
      SCREEN 1 — UPLOAD FILES
-     User sees: upload zone + checklist
-     After submit: this DISAPPEARS
 ══════════════════════════════ -->
 <div class="page" id="screen1">
   <div class="steps-card">
@@ -149,21 +147,18 @@
   </div>
 
   <div style="background:var(--white);border-radius:16px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
-    <div id="campaignBar" style="background:var(--orange-light);border:1.5px solid var(--orange-mid);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:14px;display:flex;align-items:center;gap:10px;">
+    <div style="background:var(--orange-light);border:1.5px solid var(--orange-mid);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:14px;display:flex;align-items:center;gap:10px;">
       <span>📋</span>
       <span>Campaign: <strong id="campaignTitle">Loading...</strong></span>
     </div>
 
-    <div class="upload-zone" id="uploadZone"
-         onclick="document.getElementById('fileInput').click()"
-         ondragover="handleDragOver(event)"
-         ondragleave="handleDragLeave()"
-         ondrop="handleDrop(event)">
+    <!-- Upload Zone — pointer-events on children disabled so click only fires once -->
+    <div class="upload-zone" id="uploadZone" onclick="openFilePicker(event)">
       <div class="uz-icon">📂</div>
       <h4>Drop files here or <span class="browse-link">browse</span></h4>
       <p>PDF, JPG, PNG • Max 10MB each • Minimum: Estimate + Aadhaar</p>
     </div>
-    <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleFileSelect(event)" />
+    <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.jpeg,.png" style="display:none" />
     <div class="file-list" id="fileList"></div>
 
     <div class="checklist">
@@ -173,17 +168,17 @@
       <div class="chk" id="chk4"><span>⭕</span>&nbsp; Aadhaar Card uploaded (mandatory)</div>
     </div>
 
-    <button class="btn-submit" id="submitBtn" onclick="submitDocuments()" disabled>
+    <button class="btn-submit" id="submitBtn" disabled>
       🤖 Submit for AI Verification
     </button>
-    <p style="font-size:12px;color:var(--gray-400);text-align:center;margin-top:10px;">AI verification completes in 30–60 seconds</p>
+    <p style="font-size:12px;color:var(--gray-400);text-align:center;margin-top:10px;">
+      AI verification completes in 30–60 seconds
+    </p>
   </div>
 </div>
 
 <!-- ══════════════════════════════
      SCREEN 2 — AI LOADING
-     Screen 1 is HIDDEN
-     Only steps bar + bouncing robot + loading steps
 ══════════════════════════════ -->
 <div class="page hidden" id="screen2">
   <div class="steps-card">
@@ -201,7 +196,6 @@
       <div class="step-item"><div class="step-circle">5</div><span class="step-label">Go Live</span></div>
     </div>
   </div>
-
   <div class="loading-card">
     <span class="ai-bot">🤖</span>
     <h3>Analyzing Your Documents</h3>
@@ -218,8 +212,6 @@
 
 <!-- ══════════════════════════════
      SCREEN 3 — RESULT
-     VERIFIED → Step 4 active, Write Story button
-     PENDING  → Step 4 locked, Dashboard button only
 ══════════════════════════════ -->
 <div class="page hidden" id="screen3">
   <div class="steps-card">
@@ -237,7 +229,6 @@
       <div class="step-item"><div class="step-circle">5</div><span class="step-label">Go Live</span></div>
     </div>
   </div>
-
   <div class="result-card" id="resultCard"></div>
 </div>
 
@@ -250,56 +241,177 @@
   let files      = [];
   let lsTimers   = [];
 
-  // ── INIT ─────────────────────────────────────────────
+  // ── INIT ──────────────────────────────────────────────
   window.onload = async () => {
     if (!token) { window.location.href = 'login.html'; return; }
+
+    // ── Attach all event listeners properly ──
+    const zone  = document.getElementById('uploadZone');
+    const input = document.getElementById('fileInput');
+    const btn   = document.getElementById('submitBtn');
+
+    // Upload zone click
+    zone.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      input.click();
+    });
+
+    // Drag events
+    zone.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      zone.classList.add('drag-over');
+    });
+    zone.addEventListener('dragleave', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      zone.classList.remove('drag-over');
+    });
+    zone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      zone.classList.remove('drag-over');
+      addFiles(Array.from(e.dataTransfer.files));
+    });
+
+    // Attach file input listener properly
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      addFiles(Array.from(this.files));
+      this.value = '';
+    });
+
+    // Submit button
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      submitDocuments();
+    });
+
+    // ── Load campaign ──
     const p = new URLSearchParams(window.location.search);
     campaignId = p.get('campaign_id');
+
     if (!campaignId) {
-      try {
-        const res  = await authFetch(`${API}/campaigns/my/campaigns`);
-        const data = await res.json();
-        if (data.success && data.campaigns.length) {
-          const c = data.campaigns.find(x => x.status === 'DRAFT') ||
-                    data.campaigns.find(x => x.status === 'PENDING_VERIFICATION') ||
-                    data.campaigns[0];
-          campaignId = c.id;
-          document.getElementById('campaignTitle').textContent = c.title;
-        }
-      } catch(e) {}
+      await getLatestCampaign();
     } else {
-      try {
-        const res  = await authFetch(`${API}/campaigns/${campaignId}`);
-        const data = await res.json();
-        if (data.success) document.getElementById('campaignTitle').textContent = data.campaign.title;
-      } catch(e) {}
+      await loadCampaignInfo(campaignId);
     }
   };
 
-  // ── DRAG DROP ─────────────────────────────────────────
-  function handleDragOver(e)  { e.preventDefault(); document.getElementById('uploadZone').classList.add('drag-over'); }
-  function handleDragLeave()  { document.getElementById('uploadZone').classList.remove('drag-over'); }
-  function handleDrop(e)      { e.preventDefault(); document.getElementById('uploadZone').classList.remove('drag-over'); addFiles(Array.from(e.dataTransfer.files)); }
-  function handleFileSelect(e){ addFiles(Array.from(e.target.files)); e.target.value = ''; }
+  // ── GET LATEST CAMPAIGN ───────────────────────────────
+  async function getLatestCampaign() {
+    try {
+      const res  = await authFetch(`${API}/campaigns/my/campaigns`);
+      const data = await res.json();
+
+      if (!data.success || !data.campaigns.length) {
+        showToast('No campaign found. Create a campaign first.', 'error');
+        setTimeout(() => window.location.href = 'dashboard.html', 2000);
+        return;
+      }
+
+      console.log('All campaigns:', data.campaigns.map(c => `#${c.id} ${c.status}`));
+
+      // Find best campaign to upload for
+      const c = data.campaigns.find(x => x.status === 'DRAFT') ||
+                data.campaigns.find(x => x.status === 'PENDING_VERIFICATION') ||
+                data.campaigns.find(x => x.status === 'PENDING') ||
+                data.campaigns[0];
+
+      campaignId = c.id;
+      console.log('Selected campaign:', campaignId, c.status);
+      document.getElementById('campaignTitle').textContent = c.title;
+
+      // Already past upload stage
+      if (c.status === 'VERIFIED') {
+        showToast('Already verified! Redirecting to dashboard...', 'info');
+        setTimeout(() => window.location.href = 'dashboard.html', 1500);
+        return;
+      }
+      if (c.status === 'LIVE_CAMPAIGN') {
+        showToast('Campaign is already LIVE!', 'info');
+        setTimeout(() => window.location.href = 'dashboard.html', 1500);
+        return;
+      }
+
+    } catch(e) {
+      console.error('getLatestCampaign error:', e);
+      showToast('Failed to load campaign info.', 'error');
+    }
+  }
+
+  // ── LOAD CAMPAIGN INFO ────────────────────────────────
+  async function loadCampaignInfo(id) {
+    try {
+      const res  = await authFetch(`${API}/campaigns/${id}`);
+      const data = await res.json();
+
+      if (!data.success) {
+        showToast('Campaign not found.', 'error');
+        return;
+      }
+
+      const c = data.campaign;
+      document.getElementById('campaignTitle').textContent = c.title;
+      console.log('Campaign loaded:', c.id, c.status);
+
+      if (c.status === 'VERIFIED') {
+        showToast('Documents already verified! Redirecting...', 'info');
+        setTimeout(() => window.location.href = 'dashboard.html', 1500);
+        return;
+      }
+      if (c.status === 'LIVE_CAMPAIGN') {
+        showToast('Campaign is already LIVE!', 'info');
+        setTimeout(() => window.location.href = 'dashboard.html', 1500);
+        return;
+      }
+
+    } catch(e) {
+      console.error('loadCampaignInfo error:', e);
+    }
+  }
 
   // ── ADD FILES ─────────────────────────────────────────
   function addFiles(newFiles) {
+    if (!newFiles || newFiles.length === 0) return;
+    
+    let added = 0;
     for (const f of newFiles) {
-      if (!['application/pdf','image/jpeg','image/jpg','image/png'].includes(f.type)) { toast(f.name + ' — unsupported', 'error'); continue; }
-      if (f.size > 10*1024*1024) { toast(f.name + ' — exceeds 10MB', 'error'); continue; }
-      files.push({ id: Date.now()+Math.random(), file:f, name:f.name, size:f.size, docType:detectType(f.name) });
+      const allowed = ['application/pdf','image/jpeg','image/jpg','image/png'];
+      if (!allowed.includes(f.type)) {
+        showToast(f.name + ' — unsupported format', 'error');
+        continue;
+      }
+      if (f.size > 10 * 1024 * 1024) {
+        showToast(f.name + ' — exceeds 10MB limit', 'error');
+        continue;
+      }
+      files.push({
+        id     : Date.now() + Math.random(),
+        file   : f,
+        name   : f.name,
+        size   : f.size,
+        docType: detectType(f.name)
+      });
+      added++;
     }
-    renderFiles(); updateChecklist();
+    if (added > 0) {
+      renderFiles();
+      updateChecklist();
+    }
   }
 
   function detectType(n) {
     n = n.toLowerCase();
-    if (n.includes('estimate') || n.includes('est'))           return 'ESTIMATE';
+    if (n.includes('estimate') || n.includes('est'))             return 'ESTIMATE';
     if (n.includes('aadhaar') || n.includes('aadhar') || n.includes('adhar')) return 'AADHAAR';
-    if (n.includes('discharge'))                               return 'DISCHARGE_SUMMARY';
-    if (n.includes('admission') || n.includes('case'))         return 'ADMISSION_SUMMARY';
-    if (n.includes('bill') || n.includes('invoice'))           return 'BILL';
-    if (n.includes('income') || n.includes('certificate'))     return 'INCOME_CERTIFICATE';
+    if (n.includes('discharge'))                                 return 'DISCHARGE_SUMMARY';
+    if (n.includes('admission') || n.includes('case'))           return 'ADMISSION_SUMMARY';
+    if (n.includes('bill') || n.includes('invoice'))             return 'BILL';
+    if (n.includes('income') || n.includes('certificate'))       return 'INCOME_CERTIFICATE';
     return 'ESTIMATE';
   }
 
@@ -309,7 +421,10 @@
     el.innerHTML = files.map(f => `
       <div class="file-item">
         <div class="file-icon">${f.file.type === 'application/pdf' ? '📄' : '🖼️'}</div>
-        <div class="file-info"><h4>${f.name}</h4><p>${fmtSize(f.size)}</p></div>
+        <div class="file-info">
+          <h4>${f.name}</h4>
+          <p>${fmtSize(f.size)}</p>
+        </div>
         <select class="file-type-select" onchange="setType('${f.id}', this.value)">
           <option value="ESTIMATE"           ${f.docType==='ESTIMATE'           ?'selected':''}>🏥 Hospital Estimate</option>
           <option value="ADMISSION_SUMMARY"  ${f.docType==='ADMISSION_SUMMARY'  ?'selected':''}>📋 Admission Summary</option>
@@ -329,7 +444,8 @@
 
   function removeFile(id) {
     files = files.filter(x => String(x.id) !== String(id));
-    renderFiles(); updateChecklist();
+    renderFiles();
+    updateChecklist();
   }
 
   function updateChecklist() {
@@ -337,11 +453,14 @@
     const ok2 = files.length > 0 && files.every(f => f.docType);
     const ok3 = files.some(f => f.docType === 'ESTIMATE');
     const ok4 = files.some(f => f.docType === 'AADHAAR');
+
     chkSet('chk1', ok1, 'At least 2 documents uploaded');
     chkSet('chk2', ok2, 'All files have document type selected');
     chkSet('chk3', ok3, 'Hospital Estimate uploaded (mandatory)');
     chkSet('chk4', ok4, 'Aadhaar Card uploaded (mandatory)');
-    document.getElementById('submitBtn').disabled = !(ok1 && ok2 && ok3 && ok4);
+
+    const canSubmit = ok1 && ok2 && ok3 && ok4;
+    document.getElementById('submitBtn').disabled = !canSubmit;
   }
 
   function chkSet(id, ok, label) {
@@ -353,6 +472,21 @@
 
   // ── SUBMIT ────────────────────────────────────────────
   async function submitDocuments() {
+
+    if (!campaignId) {
+      showToast('Campaign ID missing! Go back to dashboard.', 'error');
+      return;
+    }
+    if (!token) {
+      showToast('Not logged in! Redirecting...', 'error');
+      setTimeout(() => window.location.href = 'login.html', 1500);
+      return;
+    }
+    if (files.length === 0) {
+      showToast('Please select files first!', 'error');
+      return;
+    }
+
     const btn = document.getElementById('submitBtn');
     btn.disabled  = true;
     btn.innerHTML = '<div class="spinner"></div> Reading files...';
@@ -367,7 +501,9 @@
           file_url     : `data:${f.file.type};base64,${b64.split(',')[1]}`,
           file_name    : f.name
         });
-      } catch(e) { toast('Failed to read ' + f.name, 'error'); }
+      } catch(e) {
+        showToast('Failed to read ' + f.name, 'error');
+      }
     }
 
     if (!docs.length) {
@@ -376,7 +512,7 @@
       return;
     }
 
-    // ✅ HIDE Screen 1 → SHOW Screen 2 (AI loading)
+    // Switch to AI loading screen
     showScreen('screen2');
     startLoadingSteps();
 
@@ -386,29 +522,28 @@
         headers: { 'Content-Type': 'application/json' },
         body   : JSON.stringify({ documents: docs })
       });
+
       const data = await res.json();
       stopLoadingSteps();
 
       if (data.success) {
-        // ✅ HIDE Screen 2 → SHOW Screen 3 (Result)
         showResult(data);
       } else {
-        // Error — go back to Screen 1
         showScreen('screen1');
-        toast(data.error || 'Verification failed', 'error');
+        showToast(data.error || 'Verification failed. Try again.', 'error');
         btn.disabled  = false;
         btn.innerHTML = '🤖 Submit for AI Verification';
       }
     } catch(e) {
       stopLoadingSteps();
       showScreen('screen1');
-      toast('Server error. Please try again.', 'error');
+      showToast('Server error. Please try again.', 'error');
       btn.disabled  = false;
       btn.innerHTML = '🤖 Submit for AI Verification';
     }
   }
 
-  // ── LOADING STEPS ANIMATION ───────────────────────────
+  // ── LOADING STEPS ─────────────────────────────────────
   function startLoadingSteps() {
     const ids   = ['ls1','ls2','ls3','ls4','ls5'];
     const icons = ['📤','🔍','🧠','🏥','⏳'];
@@ -429,19 +564,13 @@
     });
   }
 
-  function stopLoadingSteps() { lsTimers.forEach(clearTimeout); lsTimers = []; }
+  function stopLoadingSteps() {
+    lsTimers.forEach(clearTimeout);
+    lsTimers = [];
+  }
 
   // ── SHOW RESULT ───────────────────────────────────────
   function showResult(data) {
-    console.log('🕉 === VERIFICATION RESULT RECEIVED ===');
-    console.log('📊 Status:', data.status);
-    console.log('🎯 Risk Score:', data.risk_score || 0);
-    console.log('📋 Extracted Entities:', data.extracted_data || {});
-    console.log('📄 Documents Processed:', data.documents?.length || 0);
-    console.log('🔒 Has Tampering:', data.has_tampering || false);
-    console.log('⏰ Has Expired:', data.has_expired_docs || false);
-    console.log('=====================================');
-
     showScreen('screen3');
 
     const status = data.status;
@@ -449,69 +578,66 @@
     const ext    = data.extracted_data || {};
     const rc     = risk < 30 ? '#16A34A' : risk < 60 ? '#D97706' : '#DC2626';
 
-    // ── Update step bar based on status ──
     if (status === 'VERIFIED') {
-      // Step 4 becomes ACTIVE — patient can write story
       document.getElementById('rLine').className  = 'step-line done';
       document.getElementById('rSC4').className   = 'step-circle active';
       document.getElementById('rSL4').className   = 'step-label active';
       document.getElementById('rTitle').textContent = '✅ Verified — Write Your Story Next!';
       document.getElementById('rDesc').textContent  = 'Documents passed AI check. Go to dashboard to write your story.';
     } else {
-      // Step 4 stays GREY — patient is BLOCKED
       document.getElementById('rTitle').textContent = '⏳ Documents Under Admin Review';
       document.getElementById('rDesc').textContent  = 'You cannot write story until admin approves. We will email you.';
     }
 
     const cfgs = {
       VERIFIED: {
-        icon: '✅', color: '#16A34A', bc: 'green',
-        bTitle: '✅ AI Verification Passed!',
-        bMsg  : 'All documents look authentic. Go to dashboard and click "Write Story" to continue.',
-        items : [
-          { i: '✍️', t: 'Go to Dashboard → click Write Story' },
-          { i: '🤖', t: 'Gemini AI will help polish your story' },
-          { i: '🚀', t: 'Approve story and click Go Live' },
-          { i: '💰', t: 'Donors can now support your treatment!' }
+        icon:'✅', color:'#16A34A', bc:'green',
+        bTitle:'✅ AI Verification Passed!',
+        bMsg  :'All documents look authentic. Go to dashboard and click "Write Story" to continue.',
+        items :[
+          {i:'✍️',t:'Go to Dashboard → click Write Story'},
+          {i:'🤖',t:'Gemini AI will help polish your story'},
+          {i:'🚀',t:'Approve story and click Go Live'},
+          {i:'💰',t:'Donors can now support your treatment!'}
         ],
-        btnL: '✍️ Go to Dashboard → Write Story',
-        btnA: "window.location.href='dashboard.html'"
+        btnL:'✍️ Go to Dashboard → Write Story',
+        btnA:"window.location.href='dashboard.html'"
       },
       PENDING: {
-        icon: '⏳', color: '#D97706', bc: 'yellow',
-        bTitle: '⏳ Sent to Admin for Manual Review',
-        bMsg  : 'AI flagged some items for human verification. Admin will review within 24 hours and email you. You cannot write story or go live until admin approves.',
-        items : [
-          { i: '🚫', t: 'You CANNOT write story or go live yet' },
-          { i: '📧', t: 'We will email you once admin reviews' },
-          { i: '⏰', t: 'Expected review time: within 24 hours' },
-          { i: '🔄', t: 'Check your dashboard for status updates' }
+        icon:'⏳', color:'#D97706', bc:'yellow',
+        bTitle:'⏳ Sent to Admin for Manual Review',
+        bMsg  :'AI flagged some items for human verification. Admin will review within 24 hours. You cannot write story or go live until admin approves.',
+        items :[
+          {i:'🚫',t:'You CANNOT write story or go live yet'},
+          {i:'📧',t:'We will email you once admin reviews'},
+          {i:'⏰',t:'Expected review time: within 24 hours'},
+          {i:'🔄',t:'Check your dashboard for status updates'}
         ],
-        btnL: '📋 Go to Dashboard',
-        btnA: "window.location.href='dashboard.html'"
+        btnL:'📋 Go to Dashboard',
+        btnA:"window.location.href='dashboard.html'"
       },
       VERIFICATION_NEEDED: {
-        icon: '🚨', color: '#DC2626', bc: 'red',
-        bTitle: '🚨 Admin Verification Required',
-        bMsg  : 'AI detected issues with some documents. Admin will investigate carefully. Please watch your email for instructions.',
-        items : [
-          { i: '🚫', t: 'Cannot proceed until admin clears your case' },
-          { i: '📞', t: 'Admin may contact you for more documents' },
-          { i: '📧', t: 'Watch your email for updates' }
+        icon:'🚨', color:'#DC2626', bc:'red',
+        bTitle:'🚨 Admin Verification Required',
+        bMsg  :'AI detected issues with some documents. Admin will investigate carefully.',
+        items :[
+          {i:'🚫',t:'Cannot proceed until admin clears your case'},
+          {i:'📞',t:'Admin may contact you for more documents'},
+          {i:'📧',t:'Watch your email for updates'}
         ],
-        btnL: '📋 Go to Dashboard',
-        btnA: "window.location.href='dashboard.html'"
+        btnL:'📋 Go to Dashboard',
+        btnA:"window.location.href='dashboard.html'"
       },
       UPDATE_NEEDED: {
-        icon: '📅', color: '#EA580C', bc: 'orange',
-        bTitle: '📅 Please Upload Fresh Documents',
-        bMsg  : 'Some documents appear expired (older than 90 days). Get updated documents and resubmit.',
-        items : [
-          { i: '🏥', t: 'Get fresh hospital estimate (within 90 days)' },
-          { i: '📤', t: 'Come back and upload updated documents' }
+        icon:'📅', color:'#EA580C', bc:'orange',
+        bTitle:'📅 Please Upload Fresh Documents',
+        bMsg  :'Some documents appear expired (older than 90 days). Get updated documents and resubmit.',
+        items :[
+          {i:'🏥',t:'Get fresh hospital estimate (within 90 days)'},
+          {i:'📤',t:'Come back and upload updated documents'}
         ],
-        btnL: '📤 Upload Fresh Documents',
-        btnA: `window.location.href='upload.html?campaign_id=${campaignId}'`
+        btnL:'📤 Upload Fresh Documents',
+        btnA:`window.location.href='upload.html?campaign_id=${campaignId}'`
       }
     };
 
@@ -520,17 +646,12 @@
     document.getElementById('resultCard').innerHTML = `
       <span class="result-icon">${c.icon}</span>
       <div class="result-title" style="color:${c.color}">
-        ${status==='VERIFIED' ? 'Documents Verified!'
-          : status==='PENDING' ? 'Under Admin Review'
-          : status==='VERIFICATION_NEEDED' ? 'Manual Verification Needed'
-          : 'Documents Need Update'}
+        ${status==='VERIFIED'?'Documents Verified!':status==='PENDING'?'Under Admin Review':status==='VERIFICATION_NEEDED'?'Manual Verification Needed':'Documents Need Update'}
       </div>
-
       <div class="status-banner ${c.bc}">
         <h3>${c.bTitle}</h3>
         <p>${c.bMsg}</p>
       </div>
-
       <div class="risk-box">
         <div class="risk-top">
           <span>AI Risk Score</span>
@@ -539,73 +660,72 @@
         <div class="risk-bar">
           <div class="risk-fill" id="rFill" style="width:0%;background:${rc}"></div>
         </div>
-        <p class="risk-note">
-          ${risk<30 ? '✅ Low risk — documents look authentic'
-            : risk<60 ? '⚠️ Medium risk — manual review recommended'
-            : '🚨 High risk — admin will verify carefully'}
-        </p>
+        <p class="risk-note">${risk<30?'✅ Low risk — documents look authentic':risk<60?'⚠️ Medium risk — manual review recommended':'🚨 High risk — admin will verify carefully'}</p>
       </div>
-
       <div class="what-next">
         <h4>📌 What Happens Next</h4>
-        ${c.items.map(x => `
-          <div class="wn-item">
-            <span class="wn-icon">${x.i}</span>
-            <span>${x.t}</span>
-          </div>`).join('')}
+        ${c.items.map(x=>`<div class="wn-item"><span class="wn-icon">${x.i}</span><span>${x.t}</span></div>`).join('')}
       </div>
-
-      ${(ext.hospital_name || ext.amount || ext.patient_name || (ext.diseases && ext.diseases.length)) ? `
+      ${(ext.hospital_name||ext.amount||ext.patient_name||(ext.diseases&&ext.diseases.length))?`
         <div class="what-next">
           <h4>📋 Extracted from Your Documents</h4>
-          ${ext.hospital_name ? `<div class="wn-item"><span class="wn-icon">🏥</span><span><b>Hospital:</b> ${ext.hospital_name}</span></div>` : ''}
-          ${ext.patient_name  ? `<div class="wn-item"><span class="wn-icon">👤</span><span><b>Patient:</b> ${ext.patient_name}</span></div>`  : ''}
-          ${ext.amount        ? `<div class="wn-item"><span class="wn-icon">💰</span><span><b>Est. Amount:</b> <b style="color:var(--orange)">₹${parseFloat(ext.amount).toLocaleString('en-IN')}</b></span></div>` : ''}
-          ${(ext.diseases && ext.diseases.length) ? `<div class="wn-item"><span class="wn-icon">🩺</span><span><b>Diagnosis:</b> ${Array.isArray(ext.diseases) ? ext.diseases.join(', ') : ext.diseases}</span></div>` : ''}
-        </div>` : ''}
-
+          ${ext.hospital_name?`<div class="wn-item"><span class="wn-icon">🏥</span><span><b>Hospital:</b> ${ext.hospital_name}</span></div>`:''}
+          ${ext.patient_name ?`<div class="wn-item"><span class="wn-icon">👤</span><span><b>Patient:</b> ${ext.patient_name}</span></div>`:''}
+          ${ext.amount       ?`<div class="wn-item"><span class="wn-icon">💰</span><span><b>Est. Amount:</b> <b style="color:var(--orange)">₹${parseFloat(ext.amount).toLocaleString('en-IN')}</b></span></div>`:''}
+          ${(ext.diseases&&ext.diseases.length)?`<div class="wn-item"><span class="wn-icon">🩺</span><span><b>Diagnosis:</b> ${Array.isArray(ext.diseases)?ext.diseases.join(', '):ext.diseases}</span></div>`:''}
+        </div>`:''}
       <div class="result-btns">
         <button class="btn-primary" onclick="${c.btnA}">${c.btnL}</button>
         <button class="btn-outline"  onclick="window.location.href='dashboard.html'">📋 Dashboard</button>
       </div>`;
 
-    setTimeout(() => { const el = document.getElementById('rFill'); if(el) el.style.width = risk + '%'; }, 400);
+    setTimeout(() => {
+      const el = document.getElementById('rFill');
+      if (el) el.style.width = risk + '%';
+    }, 400);
   }
 
   // ── SCREEN SWITCH ─────────────────────────────────────
   function showScreen(id) {
-    ['screen1','screen2','screen3'].forEach(s =>
-      document.getElementById(s).classList.toggle('hidden', s !== id)
-    );
+    ['screen1','screen2','screen3'].forEach(s => {
+      document.getElementById(s).classList.toggle('hidden', s !== id);
+    });
     window.scrollTo(0, 0);
   }
 
   // ── HELPERS ───────────────────────────────────────────
   function toBase64(file) {
-    return new Promise((res, rej) => {
-      const r = new FileReader();
-      r.onload  = () => res(r.result);
-      r.onerror = () => rej();
-      r.readAsDataURL(file);
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload  = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('FileReader failed'));
+      reader.readAsDataURL(file);
     });
   }
 
   function authFetch(url, opts = {}) {
-    return fetch(url, { ...opts, headers: { ...opts.headers, 'Authorization': `Bearer ${token}` } });
+    return fetch(url, {
+      ...opts,
+      headers: { ...opts.headers, 'Authorization': `Bearer ${token}` }
+    });
   }
 
   function fmtSize(b) {
-    if (b < 1024) return b + ' B';
+    if (b < 1024)    return b + ' B';
     if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
     return (b/1048576).toFixed(1) + ' MB';
   }
 
-  function toast(msg, type = 'info') {
+  // Single toast function — both names work
+  function showToast(msg, type = 'info') {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.className   = `toast ${type} show`;
     setTimeout(() => t.classList.remove('show'), 3500);
   }
+
+  // Alias
+  function toast(msg, type = 'info') { showToast(msg, type); }
 </script>
 </body>
 </html>

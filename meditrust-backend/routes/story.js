@@ -6,42 +6,76 @@ const axios = require('axios');
 
 // ─────────────────────────────────────────
 // HELPER — Call Gemini via Vertex AI
-// Note: Google Cloud keys not set yet
-// Using placeholder until keys are added
+// Supports both JSON key and service account authentication
 // ─────────────────────────────────────────
 const callGemini = async (prompt) => {
   try {
-    // TODO: Replace with real Vertex AI call when Google Cloud keys are added
-    // For now returns a cleaned version of the story
+    // Check for Google Cloud configuration
     const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
+    const jsonKey = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+    const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
     if (!projectId) {
-      // Placeholder — just return cleaned story
+      console.log('❌ Google Cloud Project ID not configured');
       return {
         success: false,
         gemini_story: null,
-        error: 'Google Cloud not configured yet'
+        error: 'Google Cloud Project ID not configured'
       };
     }
 
-    // Real Vertex AI call
+    // Determine authentication method
+    let authConfig = { project: projectId };
+    
+    if (jsonKey) {
+      // JSON key authentication
+      try {
+        const credentials = JSON.parse(jsonKey);
+        authConfig.credentials = credentials;
+        console.log('✅ Using JSON key authentication for Gemini');
+      } catch (e) {
+        console.log('❌ Invalid JSON key format:', e.message);
+        return {
+          success: false,
+          gemini_story: null,
+          error: 'Invalid JSON key format in GOOGLE_APPLICATION_CREDENTIALS_JSON'
+        };
+      }
+    } else if (keyFile) {
+      // Service account file authentication
+      authConfig.keyFile = keyFile;
+      console.log('✅ Using service account file authentication for Gemini');
+    } else {
+      // Default authentication (ADC)
+      console.log('✅ Using Application Default Credentials for Gemini');
+    }
+
+    // Initialize Vertex AI
     const { VertexAI } = require('@google-cloud/vertexai');
     const vertexAI = new VertexAI({
-      project : projectId,
+      ...authConfig,
       location: process.env.GOOGLE_CLOUD_LOCATION || 'us-central1'
     });
 
     const model = vertexAI.getGenerativeModel({ model: 'gemini-pro' });
 
+    console.log('🚀 Calling Gemini AI with prompt...');
     const result = await model.generateContent(prompt);
     const response = result.response;
     const text = response.candidates[0].content.parts[0].text;
 
+    console.log('✅ Gemini response received successfully');
     return { success: true, gemini_story: text };
 
   } catch (err) {
-    console.log('Gemini call failed:', err.message);
-    return { success: false, gemini_story: null, error: err.message };
+    console.log('❌ Gemini call failed:', err.message);
+    console.log('📋 Full error:', err);
+    
+    return { 
+      success: false, 
+      gemini_story: null, 
+      error: `Gemini API error: ${err.message}` 
+    };
   }
 };
 
