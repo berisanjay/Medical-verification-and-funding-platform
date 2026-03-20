@@ -476,13 +476,7 @@
 
   // ── CREATE CAMPAIGN (OTP disabled) ─────────
   function openNewCampaignModal() {
-    // Clear form
-    ['c_title','c_patient_name','c_age','c_city','c_state','c_aadhaar'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
-    });
-    document.getElementById('campaignModalError').style.display = 'none';
-    document.getElementById('newCampaignModal').classList.add('show');
+    window.location.href = 'create-campaign.html';
   }
 
   async function createCampaign() {
@@ -739,7 +733,12 @@
 
   // ── HELPERS ────────────────────────────────
   function authFetch(url, opts = {}) {
-    return fetch(url, { ...opts, headers: { ...opts.headers, 'Authorization': `Bearer ${token}` } });
+    const currentToken = localStorage.getItem('patientToken');
+    if (!currentToken) { 
+      window.location.href = 'login.html'; 
+      return Promise.reject(new Error('Not authenticated'));
+    }
+    return fetch(url, { ...opts, headers: { ...opts.headers, 'Authorization': `Bearer ${currentToken}` } });
   }
 
   function doLogout() {

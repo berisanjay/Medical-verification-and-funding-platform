@@ -93,7 +93,7 @@ class MedicalEntityExtractor:
         # ── Priority 1: Explicit label on NEXT LINE (Apollo estimate) ─────────
         # "PATIENT'S NAME\nGollapati Jesse Jasper"
         match = re.search(
-            r"PATIENT'S\s+NAME\s*\n\s*([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+){1,3})",
+            r"PATIENT'S\s+NAME\s*\n\s*([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+){1,3})\s*\n",
             text, re.MULTILINE
         )
         if match:
@@ -103,8 +103,8 @@ class MedicalEntityExtractor:
 
         # ── Priority 2: "Patient Name: ..." inline format ────────────────────
         match = re.search(
-            r"Patient(?:'s)?\s+Name[\s:\-]+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+){1,3})",
-            text, re.IGNORECASE
+            r"Patient(?:'s)?\s+Name[\s:\-]+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+){1,3})\s*\n",
+            text, re.IGNORECASE | re.MULTILINE
         )
         if match:
             name = match.group(1).strip()
@@ -170,8 +170,8 @@ class MedicalEntityExtractor:
     # ── DOCTOR NAME ───────────────────────────────────────────────────────────
     def _extract_doctor_name(self, text, persons):
         patterns = [
-            # "CONSULTANT DOCTOR\nDr. R. Srinivas Rao"
-            r'CONSULTANT\s+DOCTOR\s*\n\s*(?:Dr\.?\s+)?([A-Z][a-zA-Z\.]+(?:\s+[A-Z][a-zA-Z\.]+){1,3})',
+            # "CONSULTANT DOCTOR\nDr. R. Srinivas Rao\n" — stop at newline
+            r'CONSULTANT\s+DOCTOR\s*\n\s*(?:Dr\.?\s+)?([A-Z][a-zA-Z\.]+(?:\s+[A-Z][a-zA-Z\.]+){1,3})\s*\n',
             r'(?:Consultant\s+Incharge|Consultant\s+Doctor|Doctor|Physician)[\s:\n]+(?:Dr\.?\s+)?([A-Z][a-z]+(?:\s+[A-Z][a-z\.]+){1,3})',
             r'Dr\.?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z\.]+){1,3})',
         ]
@@ -265,51 +265,51 @@ class MedicalEntityExtractor:
         if match:
             disease = match.group(1).strip()
             if len(disease) > 4 and disease.lower() not in ['details', 'n/a', 'none']:
-                diseases.append(disease.title())
+                # Return ONLY this — it is the definitive diagnosis
+                return [disease.title()]
 
         # ── Priority 2: Inline diagnosis patterns ────────────────────────────
         inline_patterns = [
             r'[Dd]iagnosis[\s:\-]+([A-Za-z][A-Za-z\s,]+?)(?:\n|\.|$)',
             r'[Dd]iagnosed\s+(?:with|as)[\s:\-]+([A-Za-z][A-Za-z\s,]+?)(?:\n|\.|$)',
             r'[Cc]ondition[\s:\-]+([A-Za-z][A-Za-z\s,]+?)(?:\n|\.|$)',
+            # Diagnosis doc: "treatment of Critical Cardiovascular Disease requiring..."
+            r'treatment\s+of\s+([A-Za-z][A-Za-z\s]+?)(?:\s+requiring|\s+needing|\.|$)',
+            r'for\s+the\s+treatment\s+of\s+([A-Za-z][A-Za-z\s]+?)(?:\s+requiring|\s+needing|\.|$)',
         ]
         for pattern in inline_patterns:
             matches = re.findall(pattern, text)
             for m in matches:
                 d = m.strip()
                 if len(d) > 4 and d.lower() not in ['details','n/a','none','procedure']:
-                    if d.lower() not in [x.lower() for x in diseases]:
-                        diseases.append(d.title())
+                    return [d.title()]
 
-        # ── Priority 3: Medical terms dictionary ─────────────────────────────
-        for term in self.medical_terms:
-            if term in text_lower:
-                # Avoid adding single generic words if specific diagnosis found
-                if len(diseases) > 0 and len(term.split()) == 1 and len(term) < 8:
-                    continue
-                titled = term.title()
-                if titled.lower() not in [d.lower() for d in diseases]:
-                    diseases.append(titled)
+        # ── Priority 3: Only if no explicit label — return MOST SPECIFIC term ──
+        # Do NOT return all terms — pick the longest/most specific match only
+        found_terms = [term for term in self.medical_terms if term in text_lower]
+        if found_terms:
+            best = max(found_terms, key=len)
+            return [best.title()]
 
-        # ── Deduplicate ───────────────────────────────────────────────────────
-        seen   = set()
-        result = []
-        for d in diseases:
-            key = d.lower().strip()
-            if key not in seen and len(key) > 3:
-                seen.add(key)
-                result.append(d)
-
-        return result
+        return []
 
     # ── DATE ──────────────────────────────────────────────────────────────────
     def _extract_date(self, text, doc):
-        # SpaCy dates
-        dates = [ent.text for ent in doc.ents if ent.label_ == 'DATE']
-        if dates:
-            return dates[0]
+        """
+        Extract ADMISSION date specifically.
+        NEVER return DOB (Date of Birth) — that is on Aadhaar and NOT the admission date.
+        """
 
-        # Admission date specifically (most relevant for medical docs)
+        # ── Priority 1: Explicit ADMISSION DATE label ─────────────────────────
+        # Apollo estimate: "ADMISSION DATE\n01-02-2026"
+        match = re.search(
+            r'ADMISSION\s+DATE\s*\n\s*(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})',
+            text, re.MULTILINE | re.IGNORECASE
+        )
+        if match:
+            return match.group(1)
+
+        # "Admission Date: 01-02-2026" inline
         match = re.search(
             r'(?:Admission|Admitted)\s+Date[\s:\-]+(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})',
             text, re.IGNORECASE
@@ -317,16 +317,18 @@ class MedicalEntityExtractor:
         if match:
             return match.group(1)
 
-        date_patterns = [
-            r'\d{1,2}[-/]\d{1,2}[-/]\d{2,4}',
-            r'\d{2,4}[-/]\d{1,2}[-/]\d{1,2}',
-            r'\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4}'
-        ]
-        for pattern in date_patterns:
-            match = re.search(pattern, text, re.IGNORECASE)
-            if match:
-                return match.group(0)
+        # ── Priority 2: Date of Admission ─────────────────────────────────────
+        match = re.search(
+            r'Date\s+of\s+Admission[\s:\-]+(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})',
+            text, re.IGNORECASE
+        )
+        if match:
+            return match.group(1)
 
+        # ── DO NOT fall back to any date in document ───────────────────────────
+        # Other documents (Aadhaar, Income cert) have DOB, issue date etc.
+        # These are NOT admission dates — returning them causes confusion.
+        # If no explicit admission date label found, return None.
         return None
 
     # ── AMOUNT ────────────────────────────────────────────────────────────────
@@ -382,9 +384,20 @@ class MedicalEntityExtractor:
             return max(candidates)
 
         # ── Priority 4: Income certificate — annual income ────────────────────
-        # "annual income from all Sources ... is Rs. 72000"
+        # "is Rs. 72000 (Rupees Seventy Two Thousand Only)"
+        # Pattern: Rs. + number + (Rupees — very specific to AP income certificates
         match = re.search(
-            r'(?:annual\s+income|income)[^\d]*(?:Rs\.?|₹)?\s*([0-9,]+)',
+            r'Rs\.?\s*([0-9,]+)\s*\(Rupees',
+            text, re.IGNORECASE
+        )
+        if match:
+            val = self._clean_amount(match.group(1))
+            if val and val >= 1000:
+                return val
+
+        # Fallback: "is Rs. X" — avoids matching unrelated numbers
+        match = re.search(
+            r'\bis\s+Rs\.?\s*([0-9,]+)',
             text, re.IGNORECASE
         )
         if match:

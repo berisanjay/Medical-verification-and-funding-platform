@@ -172,10 +172,13 @@ router.post('/login', async (req, res) => {
       message : 'Login successful',
       token,
       user    : {
-        id    : user.id,
-        name  : user.name,
-        email : user.email,
-        role  : user.role
+        id              : user.id,
+        name            : user.name,
+        email           : user.email,
+        phone           : user.phone            || null,
+        aadhaar_number  : user.aadhaar_number   || null,
+        native_languages: user.native_languages || [],
+        role            : user.role
       }
     });
 
@@ -221,6 +224,43 @@ router.get('/me', async (req, res) => {
   } catch (error) {
     console.error('Get profile error:', error);
     res.status(500).json({ success: false, error: 'Failed to get profile' });
+  }
+});
+
+// ─────────────────────────────────────────
+// UPDATE PROFILE — save missing phone/aadhaar
+// PUT /api/auth/profile
+// ─────────────────────────────────────────
+router.put('/profile', async (req, res) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (!token) return res.status(401).json({ success: false, error: 'Token required' });
+
+    const jwt     = require('jsonwebtoken');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const { phone, aadhaar_number, native_languages } = req.body;
+
+    const updateData = {};
+    if (phone)            updateData.phone             = phone;
+    if (aadhaar_number)   updateData.aadhaar_number    = aadhaar_number;
+    if (native_languages) updateData.native_languages  = native_languages;
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ success: false, error: 'Nothing to update' });
+    }
+
+    const user = await prisma.user.update({
+      where  : { id: decoded.id },
+      data   : updateData,
+      select : { id: true, name: true, email: true, phone: true,
+                 aadhaar_number: true, native_languages: true, role: true }
+    });
+
+    res.json({ success: true, user });
+  } catch (error) {
+    console.error('Profile update error:', error);
+    res.status(500).json({ success: false, error: 'Failed to update profile' });
   }
 });
 

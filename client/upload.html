@@ -153,7 +153,7 @@
     </div>
 
     <!-- Upload Zone — pointer-events on children disabled so click only fires once -->
-    <div class="upload-zone" id="uploadZone" onclick="openFilePicker(event)">
+    <div class="upload-zone" id="uploadZone">
       <div class="uz-icon">📂</div>
       <h4>Drop files here or <span class="browse-link">browse</span></h4>
       <p>PDF, JPG, PNG • Max 10MB each • Minimum: Estimate + Aadhaar</p>
@@ -293,6 +293,15 @@
     // ── Load campaign ──
     const p = new URLSearchParams(window.location.search);
     campaignId = p.get('campaign_id');
+
+    // ── FIX Bug 3: also check localStorage if not in URL ──
+    if (!campaignId) {
+      const saved = localStorage.getItem('campaignId');
+      if (saved && !saved.startsWith('demo_')) {
+        campaignId = saved;
+        console.log('Got campaignId from localStorage:', campaignId);
+      }
+    }
 
     if (!campaignId) {
       await getLatestCampaign();
@@ -517,14 +526,29 @@
     startLoadingSteps();
 
     try {
-      const res  = await authFetch(`${API}/campaigns/${campaignId}/verify-documents`, {
+      // 3 minute timeout — AI verification can take time
+      const controller = new AbortController();
+      const timeoutId  = setTimeout(() => controller.abort(), 180000);
+
+      const res = await fetch(`${API}/campaigns/${campaignId}/verify-documents`, {
         method : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body   : JSON.stringify({ documents: docs })
+        headers: {
+          'Content-Type' : 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body  : JSON.stringify({ documents: docs }),
+        signal: controller.signal
       });
 
-      const data = await res.json();
+      clearTimeout(timeoutId);
       stopLoadingSteps();
+
+      let data;
+      try {
+        data = await res.json();
+      } catch(jsonErr) {
+        throw new Error('Server returned invalid response. Please try again.');
+      }
 
       if (data.success) {
         showResult(data);
@@ -534,39 +558,91 @@
         btn.disabled  = false;
         btn.innerHTML = '🤖 Submit for AI Verification';
       }
+
     } catch(e) {
       stopLoadingSteps();
       showScreen('screen1');
-      showToast('Server error. Please try again.', 'error');
+
+      if (e.name === 'AbortError') {
+        showToast('Verification timed out (3 min). Flask AI service may be slow. Try again.', 'error');
+      } else if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) {
+        showToast('Cannot reach server. Is MediTrust backend running on port 3000?', 'error');
+      } else {
+        showToast('Error: ' + e.message, 'error');
+      }
+
       btn.disabled  = false;
       btn.innerHTML = '🤖 Submit for AI Verification';
     }
   }
 
   // ── LOADING STEPS ─────────────────────────────────────
+  // Steps animate in sequence. After last step, loops back
+  // so user always sees activity while waiting for server.
   function startLoadingSteps() {
     const ids   = ['ls1','ls2','ls3','ls4','ls5'];
     const icons = ['📤','🔍','🧠','🏥','⏳'];
+
+    // Reset all steps
     ids.forEach((id, i) => {
       const el = document.getElementById(id);
-      if (el) { el.classList.remove('active','done'); el.querySelector('.ls-icon').textContent = icons[i]; }
+      if (el) {
+        el.classList.remove('active','done');
+        el.querySelector('.ls-icon').textContent = icons[i];
+      }
     });
-    ids.forEach((id, i) => {
-      const t = setTimeout(() => {
-        if (i > 0) {
-          const prev = document.getElementById(ids[i-1]);
-          if (prev) { prev.classList.remove('active'); prev.classList.add('done'); prev.querySelector('.ls-icon').textContent = '✅'; }
+
+    let currentStep = 0;
+
+    function activateNext() {
+      // Mark previous as done
+      if (currentStep > 0) {
+        const prev = document.getElementById(ids[currentStep - 1]);
+        if (prev) {
+          prev.classList.remove('active');
+          prev.classList.add('done');
+          prev.querySelector('.ls-icon').textContent = '✅';
         }
-        const el = document.getElementById(id);
-        if (el) el.classList.add('active');
-      }, i * 6000);
-      lsTimers.push(t);
-    });
+      }
+
+      // If we've gone through all steps, loop back from step 1
+      // (keep showing activity while waiting for server response)
+      if (currentStep >= ids.length) {
+        // Reset all to waiting state and loop again
+        ids.forEach((id, i) => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.classList.remove('active','done');
+            el.querySelector('.ls-icon').textContent = icons[i];
+          }
+        });
+        currentStep = 0;
+      }
+
+      const el = document.getElementById(ids[currentStep]);
+      if (el) el.classList.add('active');
+      currentStep++;
+
+      // Schedule next step — 5 seconds each
+      lsTimers.push(setTimeout(activateNext, 5000));
+    }
+
+    activateNext();
   }
 
   function stopLoadingSteps() {
     lsTimers.forEach(clearTimeout);
     lsTimers = [];
+    // Mark all remaining as done
+    ['ls1','ls2','ls3','ls4','ls5'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.remove('active');
+        el.classList.add('done');
+        const icon = el.querySelector('.ls-icon');
+        if (icon) icon.textContent = '✅';
+      }
+    });
   }
 
   // ── SHOW RESULT ───────────────────────────────────────

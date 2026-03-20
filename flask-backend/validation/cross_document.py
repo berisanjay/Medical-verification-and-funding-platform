@@ -191,71 +191,57 @@ class CrossDocumentValidator:
         return issues
     
     def _validate_amounts(self, amounts, documents):
-        """Validate amount consistency"""
+        """Validate amount consistency — only compare hospital documents, never income cert"""
         issues = []
-        
-        if len(amounts) < 2:
-            return issues
-        
-        # Convert amounts to numbers
-        numeric_amounts = []
-        for amount in amounts:
-            numeric = self._parse_amount(amount)
-            if numeric:
-                numeric_amounts.append(numeric)
-        
-        if len(numeric_amounts) < 2:
-            return issues
-        
-        # Check for large discrepancies
-        min_amount = min(numeric_amounts)
-        max_amount = max(numeric_amounts)
-        
-        # If amounts differ by more than 20%, flag it
-        if min_amount > 0 and (max_amount / min_amount) > 1.2:
-            issues.append({
-                'type': 'AMOUNT_DISCREPANCY',
-                'severity': 'MEDIUM',
-                'description': f'Significant amount variation: ₹{min_amount:,.0f} to ₹{max_amount:,.0f}',
-                'details': {
-                    'amounts': amounts,
-                    'min_amount': min_amount,
-                    'max_amount': max_amount,
-                    'variation_percent': round(((max_amount - min_amount) / min_amount) * 100, 2)
-                }
-            })
-        
-        # Check document types for amount logic
-        # Estimate should be >= Bill
-        estimates = []
-        bills = []
-        
+
+        # Only compare amounts from HOSPITAL documents — never from income certificate
+        hospital_doc_types = ['ESTIMATE', 'BILL', 'ADMISSION_SUMMARY', 'DISCHARGE_SUMMARY']
+
+        hospital_amounts = []
         for doc in documents:
             doc_type = doc.get('document_type', 'UNKNOWN')
+            if doc_type not in hospital_doc_types:
+                continue  # Skip income cert, Aadhaar etc.
             amount_str = doc.get('entities', {}).get('amount')
             if amount_str:
-                amount_num = self._parse_amount(amount_str)
-                if amount_num:
-                    if doc_type == 'ESTIMATE':
-                        estimates.append(amount_num)
-                    elif doc_type == 'BILL':
-                        bills.append(amount_num)
-        
+                amount_num = self._parse_amount(str(amount_str))
+                if amount_num and amount_num > 1000:
+                    hospital_amounts.append((doc_type, amount_num))
+
+        if len(hospital_amounts) < 2:
+            return issues  # Not enough hospital docs to compare
+
+        numeric_amounts = [a[1] for a in hospital_amounts]
+        min_amount = min(numeric_amounts)
+        max_amount = max(numeric_amounts)
+
+        # Flag only if amounts from SAME type docs differ by more than 20%
+        if min_amount > 0 and (max_amount / min_amount) > 1.2:
+            issues.append({
+                'type'       : 'AMOUNT_DISCREPANCY',
+                'severity'   : 'MEDIUM',
+                'description': f'Amount variation in hospital docs: ₹{min_amount:,.0f} to ₹{max_amount:,.0f}',
+                'details'    : {
+                    'amounts'           : numeric_amounts,
+                    'variation_percent' : round(((max_amount - min_amount) / min_amount) * 100, 2)
+                }
+            })
+
+        # Estimate should be >= Bill
+        estimates = [a[1] for a in hospital_amounts if a[0] == 'ESTIMATE']
+        bills      = [a[1] for a in hospital_amounts if a[0] == 'BILL']
+
         if estimates and bills:
-            max_bill = max(bills)
+            max_bill     = max(bills)
             min_estimate = min(estimates)
-            
-            if max_bill > min_estimate:
+            if max_bill > min_estimate * 1.1:  # 10% tolerance
                 issues.append({
-                    'type': 'BILL_EXCEEDS_ESTIMATE',
-                    'severity': 'HIGH',
-                    'description': f'Bill amount (₹{max_bill:,.0f}) exceeds estimate (₹{min_estimate:,.0f})',
-                    'details': {
-                        'bill_amount': max_bill,
-                        'estimate_amount': min_estimate
-                    }
+                    'type'       : 'BILL_EXCEEDS_ESTIMATE',
+                    'severity'   : 'HIGH',
+                    'description': f'Bill (₹{max_bill:,.0f}) exceeds estimate (₹{min_estimate:,.0f})',
+                    'details'    : { 'bill_amount': max_bill, 'estimate_amount': min_estimate }
                 })
-        
+
         return issues
     
     def _validate_doctors(self, doctor_names):

@@ -897,17 +897,8 @@
         }, 1200);
 
       } else {
-        if (data.user_id) {
-          // Not verified — go to OTP
-          registeredUserId = data.user_id;
-          showAlert(errorEl, '⚠️ Email not verified. Switching to verification...');
-          setTimeout(() => {
-            switchTab('register');
-            showRegisterStep(2);
-          }, 1500);
-        } else {
-          showAlert(errorEl, data.error || 'Invalid email or password');
-        }
+        // DEV MODE: never redirect to OTP — just show the error directly
+        showAlert(errorEl, data.error || 'Invalid email or password');
       }
 
     } catch (err) {
@@ -977,11 +968,13 @@
       const data = await res.json();
 
       if (data.success) {
-        registeredUserId = data.user_id;
-        registeredEmail  = data.email;
-        document.getElementById('otpEmailText').innerHTML =
-          `We've sent a 6-digit OTP to <strong>${data.email}</strong><br/>Enter it below to verify your account.`;
-        showRegisterStep(2);
+        // DEV MODE: OTP disabled — skip step 2, go straight to login
+        showToast('✅ Account created! You can now login.', 'success');
+        setTimeout(() => {
+          switchTab('login');
+          const loginEmail = document.getElementById('loginEmail');
+          if (loginEmail) loginEmail.value = email;
+        }, 1200);
       } else {
         showAlert(errorEl, data.error || 'Registration failed');
       }

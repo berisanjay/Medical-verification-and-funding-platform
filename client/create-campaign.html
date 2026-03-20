@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MediTrust — Create Campaign</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -434,11 +437,11 @@
 
 <!-- NAV -->
 <nav class="topnav">
-  <a class="nav-logo" href="patient-dashboard.html">
+  <a class="nav-logo" href="dashboard.html">
     <div class="nav-logo-icon">🩺</div>
     <div class="nav-logo-text">Medi<span>Trust</span></div>
   </a>
-  <a class="nav-back" href="patient-dashboard.html">← Dashboard</a>
+  <a class="nav-back" href="dashboard.html">← Dashboard</a>
 </nav>
 
 <!-- ════════════════════════════════════════
@@ -579,7 +582,7 @@
         <input type="checkbox" id="acceptCheck" onchange="onAcceptChange()" />
         <label for="acceptCheck">I have read and understood all 10 rules. I confirm that the information I provide will be truthful, and I agree to the platform's eligibility policies and terms. I understand that <strong>false information will result in campaign removal and potential legal action.</strong></label>
       </div>
-      <button class="btn-start" id="startBtn" onclick="startForm()" disabled>
+      <button type="button" class="btn-start" id="startBtn" onclick="startForm()" disabled>
         Start Creating Campaign →
       </button>
     </div>
@@ -601,10 +604,10 @@
     <!-- STEPPER -->
     <div class="stepper" id="stepper">
       <div class="step-progress" id="stepProgress"></div>
-      <div class="step-item active"><div class="step-circle">1</div><div class="step-label">Fundraiser</div></div>
-      <div class="step-item"><div class="step-circle">2</div><div class="step-label">Patient</div></div>
-      <div class="step-item"><div class="step-circle">3</div><div class="step-label">Documents</div></div>
-      <div class="step-item"><div class="step-circle">4</div><div class="step-label">Verify</div></div>
+      <div class="step-item active"><div class="step-circle">1</div><div class="step-label">Your Details</div></div>
+      <div class="step-item"><div class="step-circle">2</div><div class="step-label">Documents</div></div>
+      <div class="step-item"><div class="step-circle">3</div><div class="step-label">AI Extract</div></div>
+      <div class="step-item"><div class="step-circle">4</div><div class="step-label">HMS Verify</div></div>
       <div class="step-item"><div class="step-circle">5</div><div class="step-label">Story</div></div>
       <div class="step-item"><div class="step-circle">6</div><div class="step-label">Submit</div></div>
     </div>
@@ -616,10 +619,23 @@
         <div class="card-head"><h2>👤 Fundraiser Information</h2><p>About the person creating this campaign</p></div>
         <div class="card-body">
           <div class="fg">
-            <div><label class="fl">Your Full Name <span class="req">*</span></label><input class="fi" type="text" id="f_fname" placeholder="As per Aadhaar" /><div class="fe" id="e_fname">Required</div></div>
-            <div><label class="fl">Your Aadhaar Number <span class="req">*</span></label><input class="fi" type="tel" id="f_faadh" maxlength="14" placeholder="XXXX XXXX XXXX" oninput="fmtAadhaar(this)" /><div class="fh">Your identity — not the patient's</div><div class="fe" id="e_faadh">Valid 12-digit Aadhaar required</div></div>
+            <div>
+              <label class="fl">Your Full Name</label>
+              <input class="fi" type="text" id="f_fname" placeholder="Loading from account…" readonly style="background:var(--cream);color:var(--ink-mid);" />
+              <div class="fh">Loaded from your account</div>
+            </div>
+            <div>
+              <label class="fl">Your Aadhaar Number</label>
+              <input class="fi" type="tel" id="f_faadh" maxlength="14" placeholder="Loading from account…" readonly style="background:var(--cream);color:var(--ink-mid);cursor:default;" />
+              <div class="fh">Your identity — loaded from account</div>
+              <div class="fe" id="e_faadh">Aadhaar not found in account — please update profile</div>
+            </div>
             <div><label class="fl">Phone <span class="req">*</span></label><div class="ig"><span class="ipfx">+91</span><input class="fi" type="tel" id="f_fphone" maxlength="10" placeholder="9XXXXXXXXX" /></div><div class="fe" id="e_fphone">10-digit number required</div></div>
-            <div><label class="fl">Email <span class="req">*</span></label><input class="fi" type="email" id="f_femail" placeholder="you@email.com" /><div class="fh">Campaign updates sent here</div><div class="fe" id="e_femail">Valid email required</div></div>
+            <div>
+              <label class="fl">Email Address</label>
+              <input class="fi" type="email" id="f_femail" placeholder="Loading from account…" readonly style="background:var(--cream);color:var(--ink-mid);" />
+              <div class="fh">Campaign updates sent here</div>
+            </div>
             <div class="s2"><label class="fl">Relationship to Patient <span class="req">*</span></label>
               <select class="fs" id="f_rel">
                 <option value="">Select…</option>
@@ -637,42 +653,89 @@
             </div>
           </div>
         </div>
-        <div class="form-footer"><span class="stepind">Step 1 of 6</span><button class="btn-next" onclick="goNext(1)">Continue →</button></div>
+        <div class="form-footer"><span class="stepind">Step 1 of 6</span><button type="button" class="btn-next" onclick="goNext(1)">Continue →</button></div>
       </div>
 
-      <!-- ═══ STEP 2 ═══ -->
+      <!-- ═══ STEP 2 — UPLOAD DOCUMENTS ═══ -->
       <div class="step-panel" id="step2">
-        <div class="card-head"><h2>🏥 About the Patient</h2><p>Must match exactly as on Aadhaar, Ration Card, and Hospital records</p></div>
+        <div class="card-head"><h2>📎 Upload Documents</h2><p>All 5 are mandatory — AI will extract all patient &amp; medical details from these automatically</p></div>
         <div class="card-body">
-          <div class="infobox"><span style="font-size:15px;flex-shrink:0">ℹ️</span><span>Name and Aadhaar must match across all documents. AI will cross-check automatically in Step 4.</span></div>
-          <div class="fg">
-            <div><label class="fl">Patient Full Name <span class="req">*</span></label><input class="fi" type="text" id="f_pname" placeholder="Exactly as on Aadhaar" /><div class="fe" id="e_pname">Required</div></div>
-            <div><label class="fl">Date of Birth <span class="req">*</span></label><input class="fi" type="date" id="f_dob" /><div class="fe" id="e_dob">Required</div></div>
-            <div><label class="fl">Age</label><input class="fi" type="number" id="f_age" placeholder="Auto-calculated" readonly style="background:var(--cream);cursor:default" /></div>
-            <div><label class="fl">Gender <span class="req">*</span></label><select class="fs" id="f_gender"><option value="">Select…</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select><div class="fe" id="e_gender">Required</div></div>
-            <div class="s2">
-              <label class="fl">Patient Aadhaar Number <span class="req">*</span></label>
-              <div class="aag">
-                <input class="fi" type="tel" id="aa1" maxlength="4" placeholder="XXXX" oninput="this.value=this.value.replace(/\D/g,'');if(this.value.length===4)document.getElementById('aa2').focus()" />
-                <span class="aasep">–</span>
-                <input class="fi" type="tel" id="aa2" maxlength="4" placeholder="XXXX" oninput="this.value=this.value.replace(/\D/g,'');if(this.value.length===4)document.getElementById('aa3').focus()" />
-                <span class="aasep">–</span>
-                <input class="fi" type="tel" id="aa3" maxlength="4" placeholder="XXXX" oninput="this.value=this.value.replace(/\D/g,'')" />
+          <div class="warnbox"><span style="font-size:15px;flex-shrink:0">⚠️</span><span>Upload clear, unedited scans. Edited or blurred documents are detected by AI and will result in rejection. Max 10MB · PDF, JPG, PNG.</span></div>
+          <div class="doc-grid">
+            <div>
+              <div class="dlrow"><span class="dlabel">Patient Aadhaar Card</span><span class="dreq">MANDATORY</span></div>
+              <div class="uzone" id="z_aadh" ondragover="odo(event,'z_aadh')" ondragleave="odl('z_aadh')" ondrop="odp(event,'aadh')">
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" onchange="ofs(event,'aadh')" />
+                <div class="uicon">🪪</div><div class="utitle">Aadhaar Card (Front &amp; Back)</div><div class="usub">PDF / JPG / PNG</div>
+                <div class="ufname" id="fn_aadh"></div>
               </div>
-              <div class="fh">12-digit Aadhaar — used for duplicate campaign detection</div>
-              <div class="fe" id="e_aadh">Valid 12-digit Aadhaar required</div>
+              <div class="fe" id="e_daadh">Required</div>
             </div>
-            <div><label class="fl">City <span class="req">*</span></label><input class="fi" type="text" id="f_city" placeholder="e.g. Hyderabad" /><div class="fe" id="e_city">Required</div></div>
-            <div><label class="fl">State <span class="req">*</span></label>
-              <select class="fs" id="f_state">
-                <option value="">Select state…</option>
-                <option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option><option>Bihar</option><option>Chhattisgarh</option><option>Goa</option><option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option><option>Jharkhand</option><option>Karnataka</option><option>Kerala</option><option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option><option>Meghalaya</option><option>Mizoram</option><option>Nagaland</option><option>Odisha</option><option>Punjab</option><option>Rajasthan</option><option>Sikkim</option><option>Tamil Nadu</option><option>Telangana</option><option>Tripura</option><option>Uttar Pradesh</option><option>Uttarakhand</option><option>West Bengal</option><option>Delhi</option><option>Jammu &amp; Kashmir</option><option>Ladakh</option>
-              </select>
-              <div class="fe" id="e_state">Required</div>
+            <div>
+              <div class="dlrow"><span class="dlabel">Ration Card</span><span class="dreq">MANDATORY</span></div>
+              <div class="uzone" id="z_ration" ondragover="odo(event,'z_ration')" ondragleave="odl('z_ration')" ondrop="odp(event,'ration')">
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" onchange="ofs(event,'ration')" />
+                <div class="uicon">📒</div><div class="utitle">Ration Card</div><div class="usub">PDF / JPG / PNG</div>
+                <div class="ufname" id="fn_ration"></div>
+              </div>
+              <div class="fe" id="e_dration">Required</div>
             </div>
-            <div class="s2">
-              <label class="fl">Languages Patient Speaks &amp; Understands <span class="req">*</span></label>
-              <div class="fh" style="margin-bottom:10px">Select all that apply — used to match local support volunteers</div>
+            <div>
+              <div class="dlrow"><span class="dlabel">Income Certificate</span><span class="dreq">MANDATORY</span></div>
+              <div class="uzone" id="z_income" ondragover="odo(event,'z_income')" ondragleave="odl('z_income')" ondrop="odp(event,'income')">
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" onchange="ofs(event,'income')" />
+                <div class="uicon">📜</div><div class="utitle">Income Certificate</div><div class="usub">Govt. issued · must show ≤ ₹3L</div>
+                <div class="ufname" id="fn_income"></div>
+              </div>
+              <div class="fe" id="e_dincome">Required</div>
+            </div>
+            <div>
+              <div class="dlrow"><span class="dlabel">Hospital Estimate</span><span class="dreq">MANDATORY</span></div>
+              <div class="uzone" id="z_estimate" ondragover="odo(event,'z_estimate')" ondragleave="odl('z_estimate')" ondrop="odp(event,'estimate')">
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" onchange="ofs(event,'estimate')" />
+                <div class="uicon">🏥</div><div class="utitle">Hospital Cost Estimate</div><div class="usub">Official hospital letter / quote</div>
+                <div class="ufname" id="fn_estimate"></div>
+              </div>
+              <div class="fe" id="e_destimate">Required</div>
+            </div>
+            <div class="doc-full">
+              <div class="dlrow"><span class="dlabel">Admission / Discharge Summary</span><span class="dreq">MANDATORY</span></div>
+              <div class="uzone" id="z_summary" ondragover="odo(event,'z_summary')" ondragleave="odl('z_summary')" ondrop="odp(event,'summary')" style="min-height:75px">
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" onchange="ofs(event,'summary')" />
+                <div class="uicon">📋</div><div class="utitle">Hospital Admission or Discharge Summary</div><div class="usub">With doctor's signature and hospital seal</div>
+                <div class="ufname" id="fn_summary"></div>
+              </div>
+              <div class="fe" id="e_dsummary">Required</div>
+            </div>
+          </div>
+        </div>
+        <div class="form-footer"><button type="button" class="btn-back" onclick="goBack(2)">← Back</button><span class="stepind">Step 2 of 6</span><button type="button" class="btn-next" onclick="goNext(2)">Continue →</button></div>
+      </div>
+
+      <!-- ═══ STEP 3 — AI EXTRACTION ═══ -->
+      <div class="step-panel" id="step3">
+        <div class="card-head"><h2>🤖 AI Document Extraction</h2><p>AI reads all 5 documents · extracts patient &amp; medical details · you confirm</p></div>
+        <div class="card-body">
+          <div class="phase">
+            <div class="ptitle">🧠 AI Reading Documents <span class="pbadge" id="p1b">Waiting</span></div>
+            <p style="font-size:12px;color:var(--ink-soft);margin-bottom:14px">Click below — AI will read all uploaded documents and extract patient name, hospital, diagnosis, dates and amounts automatically.</p>
+            <div style="margin-bottom:16px">
+              <button type="button" class="btn-next" id="aiBtn" onclick="runAI()" style="width:auto">🤖 Start AI Extraction</button>
+            </div>
+            <div class="exfields">
+              <div class="exf"><div class="exfl">Hospital Name</div><div class="exfv dim" id="ex_hosp">—</div></div>
+              <div class="exf"><div class="exfl">Hospital Pincode</div><div class="exfv dim" id="ex_pin">—</div></div>
+              <div class="exf"><div class="exfl">Diagnosis / Disease</div><div class="exfv dim" id="ex_dis">—</div></div>
+              <div class="exf"><div class="exfl">Admission Date</div><div class="exfv dim" id="ex_adm">—</div></div>
+              <div class="exf"><div class="exfl">Hospital Estimate</div><div class="exfv dim" id="ex_est">—</div></div>
+              <div class="exf"><div class="exfl">Annual Income (from cert.)</div><div class="exfv dim" id="ex_inc">—</div></div>
+            </div>
+            <div class="exf" style="margin-top:10px"><div class="exfl">Name Match — Aadhaar vs Ration Card vs HMS</div><div class="exfv dim" id="ex_nm">—</div></div>
+
+            <!-- Languages — only thing AI cannot extract -->
+            <div style="margin-top:16px">
+              <label class="fl">Languages Patient Speaks <span class="req">*</span></label>
+              <div class="fh" style="margin-bottom:8px">Select all that apply — used to match local NGO volunteers</div>
               <div class="lang-wrap">
                 <span class="lchip" onclick="toggleLang(this)" data-l="Hindi">Hindi</span>
                 <span class="lchip" onclick="toggleLang(this)" data-l="Telugu">Telugu</span>
@@ -691,48 +754,16 @@
             </div>
           </div>
         </div>
-        <div class="form-footer"><button class="btn-back" onclick="goBack(2)">← Back</button><span class="stepind">Step 2 of 6</span><button class="btn-next" onclick="goNext(2)">Continue →</button></div>
+        <div class="form-footer"><button type="button" class="btn-back" onclick="goBack(3)">← Back</button><span class="stepind">Step 3 of 6</span><button type="button" class="btn-next" id="s3next" onclick="goNext(3)" disabled>Continue →</button></div>
       </div>
 
-      <!-- ═══ STEP 3 ═══ -->
-      <div class="step-panel" id="step3">
-        <div class="card-head"><h2>📎 Upload Documents</h2><p>All 5 are mandatory — AI extracts all medical details from these automatically</p></div>
-        <div class="card-body">
-          <div class="warnbox"><span style="font-size:15px;flex-shrink:0">⚠️</span><span>Upload clear, unedited scans. Edited or blurred documents are detected by AI and will result in rejection. Max 10MB · PDF, JPG, PNG.</span></div>
-          <div class="doc-grid">
-            <div><div class="dlrow"><span class="dlabel">Patient Aadhaar Card</span><span class="dreq">MANDATORY</span></div><div class="uzone" id="z_aadh" ondragover="odo(event,'z_aadh')" ondragleave="odl('z_aadh')" ondrop="odp(event,'aadh')"><input type="file" accept=".pdf,.jpg,.jpeg,.png" onchange="ofs(event,'aadh')" /><div class="uicon">🪪</div><div class="utitle">Aadhaar Card (Front &amp; Back)</div><div class="usub">PDF / JPG / PNG</div><div class="ufname" id="fn_aadh"></div></div><div class="fe" id="e_daadh">Required</div></div>
-            <div><div class="dlrow"><span class="dlabel">Ration Card</span><span class="dreq">MANDATORY</span></div><div class="uzone" id="z_ration" ondragover="odo(event,'z_ration')" ondragleave="odl('z_ration')" ondrop="odp(event,'ration')"><input type="file" accept=".pdf,.jpg,.jpeg,.png" onchange="ofs(event,'ration')" /><div class="uicon">📒</div><div class="utitle">Ration Card</div><div class="usub">PDF / JPG / PNG</div><div class="ufname" id="fn_ration"></div></div><div class="fe" id="e_dration">Required</div></div>
-            <div><div class="dlrow"><span class="dlabel">Income Certificate</span><span class="dreq">MANDATORY</span></div><div class="uzone" id="z_income" ondragover="odo(event,'z_income')" ondragleave="odl('z_income')" ondrop="odp(event,'income')"><input type="file" accept=".pdf,.jpg,.jpeg,.png" onchange="ofs(event,'income')" /><div class="uicon">📜</div><div class="utitle">Income Certificate</div><div class="usub">Govt. issued · must show ≤ ₹3L</div><div class="ufname" id="fn_income"></div></div><div class="fe" id="e_dincome">Required</div></div>
-            <div><div class="dlrow"><span class="dlabel">Hospital Estimate</span><span class="dreq">MANDATORY</span></div><div class="uzone" id="z_estimate" ondragover="odo(event,'z_estimate')" ondragleave="odl('z_estimate')" ondrop="odp(event,'estimate')"><input type="file" accept=".pdf,.jpg,.jpeg,.png" onchange="ofs(event,'estimate')" /><div class="uicon">🏥</div><div class="utitle">Hospital Cost Estimate</div><div class="usub">Official hospital letter / quote</div><div class="ufname" id="fn_estimate"></div></div><div class="fe" id="e_destimate">Required</div></div>
-            <div class="doc-full"><div class="dlrow"><span class="dlabel">Admission / Discharge Summary</span><span class="dreq">MANDATORY</span></div><div class="uzone" id="z_summary" ondragover="odo(event,'z_summary')" ondragleave="odl('z_summary')" ondrop="odp(event,'summary')" style="min-height:75px"><input type="file" accept=".pdf,.jpg,.jpeg,.png" onchange="ofs(event,'summary')" /><div class="uicon">📋</div><div class="utitle">Hospital Admission or Discharge Summary</div><div class="usub">With doctor's signature and hospital seal</div><div class="ufname" id="fn_summary"></div></div><div class="fe" id="e_dsummary">Required</div></div>
-          </div>
-        </div>
-        <div class="form-footer"><button class="btn-back" onclick="goBack(3)">← Back</button><span class="stepind">Step 3 of 6</span><button class="btn-next" onclick="goNext(3)">Continue →</button></div>
-      </div>
-
-      <!-- ═══ STEP 4 ═══ -->
+      <!-- ═══ STEP 4 — HMS VERIFY ═══ -->
       <div class="step-panel" id="step4">
-        <div class="card-head"><h2>🤖 AI Extraction &amp; HMS Confirmation</h2><p>AI reads your documents · HMS confirms the record · You just confirm at the end</p></div>
+        <div class="card-head"><h2>🏥 HMS Verification &amp; Billing</h2><p>Platform checks hospital database · confirms billing · you set campaign goal</p></div>
         <div class="card-body">
-          <div class="phase">
-            <div class="ptitle">🧠 Phase 1 — AI Document Extraction <span class="pbadge" id="p1b">Waiting</span></div>
-            <p style="font-size:12px;color:var(--ink-soft);margin-bottom:14px">Reads all 5 documents · extracts hospital info, diagnosis, dates and financials · cross-checks names</p>
-            <div class="exfields">
-              <div class="exf"><div class="exfl">Hospital Name</div><div class="exfv dim" id="ex_hosp">—</div></div>
-              <div class="exf"><div class="exfl">Hospital Pincode</div><div class="exfv dim" id="ex_pin">—</div></div>
-              <div class="exf"><div class="exfl">Diagnosis / Disease</div><div class="exfv dim" id="ex_dis">—</div></div>
-              <div class="exf"><div class="exfl">Admission Date</div><div class="exfv dim" id="ex_adm">—</div></div>
-              <div class="exf"><div class="exfl">Hospital Estimate</div><div class="exfv dim" id="ex_est">—</div></div>
-              <div class="exf"><div class="exfl">Annual Income (from cert.)</div><div class="exfv dim" id="ex_inc">—</div></div>
-            </div>
-            <div class="exf" style="margin-top:10px"><div class="exfl">Name Match — Aadhaar vs Ration Card vs HMS</div><div class="exfv dim" id="ex_nm">—</div></div>
-            <div style="margin-top:14px">
-              <button class="btn-next" id="aiBtn" onclick="runAI()" style="width:auto">🤖 Start AI Extraction</button>
-            </div>
-          </div>
-          <div class="phase" id="phase2" style="opacity:.4;pointer-events:none">
-            <div class="ptitle">🏥 Phase 2 — HMS Record Confirmation <span class="pbadge" id="p2b">Locked</span></div>
-            <p style="font-size:12px;color:var(--ink-soft);margin-bottom:8px">Platform calls HMS · HMS returns live billing status</p>
+          <div class="phase" id="phase2">
+            <div class="ptitle">🏥 Hospital &amp; Billing Confirmation <span class="pbadge" id="p2b">Waiting</span></div>
+            <p style="font-size:12px;color:var(--ink-soft);margin-bottom:8px">Checked automatically after AI extraction completes in Step 3</p>
             <div class="hmsgrid">
               <div class="hmscard"><div class="hmscl">Admission Status</div><div class="hmscv" id="h_status">—</div></div>
               <div class="hmscard"><div class="hmscl">Treatment Type</div><div class="hmscv" id="h_treat">—</div></div>
@@ -741,12 +772,12 @@
               <div class="hmscard" style="grid-column:span 2"><div class="hmscl">⭐ Outstanding — Becomes Campaign Goal</div><div class="hmscv hi" id="h_out">—</div></div>
             </div>
             <div class="confirmrow" id="confirmRow" style="display:none">
-              <div><p>Campaign goal confirmed by HMS: <strong id="confirmAmt">—</strong></p><p style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Set directly from hospital billing — cannot be changed</p></div>
-              <button class="btn-confirm" onclick="confirmIt()">✅ Confirm &amp; Continue</button>
+              <div><p>Campaign goal confirmed: <strong id="confirmAmt">—</strong></p><p style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Set from hospital billing — cannot be changed</p></div>
+              <button type="button" class="btn-confirm" onclick="confirmIt()">✅ Confirm &amp; Continue</button>
             </div>
           </div>
         </div>
-        <div class="form-footer"><button class="btn-back" onclick="goBack(4)">← Back</button><span class="stepind">Step 4 of 6</span><button class="btn-next" id="s4next" onclick="goNext(4)" disabled>Continue →</button></div>
+        <div class="form-footer"><button type="button" class="btn-back" onclick="goBack(4)">← Back</button><span class="stepind">Step 4 of 6</span><button type="button" class="btn-next" id="s4next" onclick="goNext(4)" disabled>Continue →</button></div>
       </div>
 
       <!-- ═══ STEP 5: STORY ═══ -->
@@ -762,7 +793,7 @@
           <!-- Story input -->
           <div class="story-toolbar">
             <label class="fl" style="margin:0">Your Campaign Story <span class="req">*</span></label>
-            <button class="btn-polish" id="polishBtn" onclick="polishStory()">
+            <button type="button" class="btn-polish" id="polishBtn" onclick="polishStory()">
               ✨ Correct &amp; Improve
             </button>
           </div>
@@ -792,13 +823,13 @@
               </div>
             </div>
             <div class="polish-footer">
-              <button class="btn-keep-orig" onclick="keepOriginal()">Keep My Original</button>
-              <button class="btn-use-new" onclick="usePolished()">✅ Use Gemini Version</button>
+              <button type="button" class="btn-keep-orig" onclick="keepOriginal()">Keep My Original</button>
+              <button type="button" class="btn-use-new" onclick="usePolished()">✅ Use Gemini Version</button>
             </div>
           </div>
 
         </div>
-        <div class="form-footer"><button class="btn-back" onclick="goBack(5)">← Back</button><span class="stepind">Step 5 of 6</span><button class="btn-next" onclick="goNext(5)">Continue →</button></div>
+        <div class="form-footer"><button type="button" class="btn-back" onclick="goBack(5)">← Back</button><span class="stepind">Step 5 of 6</span><button type="button" class="btn-next" onclick="goNext(5)">Continue →</button></div>
       </div>
 
       <!-- ═══ STEP 6 ═══ -->
@@ -808,7 +839,7 @@
           <div class="pvcard" id="pvcard"></div>
           <div class="infobox" style="margin-top:0"><span style="font-size:15px;flex-shrink:0">⏳</span><span>Admin reviews within 24–48 hours. All funds are disbursed directly to the verified hospital — never to individuals.</span></div>
         </div>
-        <div class="form-footer"><button class="btn-back" onclick="goBack(6)">← Back</button><span class="stepind">Step 6 of 6</span><button class="btn-submit" id="subBtn" onclick="submitIt()">🚀 Submit Campaign</button></div>
+        <div class="form-footer"><button type="button" class="btn-back" onclick="goBack(6)">← Back</button><span class="stepind">Step 6 of 6</span><button type="button" class="btn-submit" id="subBtn" onclick="submitIt()">🚀 Submit Campaign</button></div>
       </div>
 
       <!-- SUCCESS -->
@@ -816,7 +847,7 @@
         <div class="spage-icon">🎉</div>
         <h2>Campaign Submitted!</h2>
         <p>Under admin review — you'll be notified within 24–48 hours.<br>Funds will be released directly to <strong id="sucHosp">the hospital</strong>.</p>
-        <button class="btn-next" onclick="window.location.href='patient-dashboard.html'">Go to Dashboard</button>
+        <button type="button" class="btn-next" onclick="window.location.href='dashboard.html'">Go to Dashboard</button>
       </div>
 
     </div><!-- /form-card -->
@@ -869,20 +900,59 @@
     $('screen-form').classList.add('active');
     window.scrollTo({ top: 0, behavior: 'smooth' });
     updateStepper(1);
+    loadAccountDetails();
   }
 
-  // ── DOB → Age ─────────────────────────────────────────
-  $('f_dob').addEventListener('change', function () {
-    const a = Math.floor((Date.now() - new Date(this.value)) / (365.25 * 864e5));
-    $('f_age').value = isNaN(a) || a < 0 ? '' : a;
-  });
+  // Load fundraiser details from localStorage (set at login)
+  function loadAccountDetails() {
+    const user = JSON.parse(localStorage.getItem('patientUser') || '{}');
+    if (!user.id) {
+      toast('⚠️ Not logged in — please login first');
+      setTimeout(() => window.location.href = 'login.html', 1500); return;
+    }
+    // Pre-fill Step 1 read-only fields
+    const nameEl  = $('f_fname');
+    const emailEl = $('f_femail');
+    const phoneEl = $('f_fphone');
+    const aadhEl  = $('f_faadh');
+    if (nameEl  && user.name)           nameEl.value  = user.name;
+    if (emailEl && user.email)          emailEl.value = user.email;
+    if (phoneEl && user.phone)          phoneEl.value = user.phone.replace('+91','');
+    if (aadhEl  && user.aadhaar_number) {
+      // format as XXXX XXXX XXXX
+      const a = user.aadhaar_number.replace(/\D/g,'');
+      aadhEl.value = a.replace(/(\d{4})(\d{4})(\d{4})/, '$1 $2 $3');
+    }
+    // Store for use in submitIt
+    window._accountUser = user;
+  }
+
+  // ── DOB → Age (only if field exists) ──────────────────
+  const dobEl = document.getElementById('f_dob');
+  if (dobEl) {
+    dobEl.addEventListener('change', function () {
+      const a = Math.floor((Date.now() - new Date(this.value)) / (365.25 * 864e5));
+      const ageEl = document.getElementById('f_age');
+      if (ageEl) ageEl.value = isNaN(a) || a < 0 ? '' : a;
+    });
+  }
 
   // ── Aadhaar ───────────────────────────────────────────
   function fmtAadhaar(el) {
     let v = el.value.replace(/\D/g, '').slice(0, 12);
     el.value = v.replace(/(\d{4})(\d{0,4})(\d{0,4})/, (_, a, b, c) => [a, b, c].filter(Boolean).join(' '));
   }
-  function fullAadhaar() { return ($('aa1').value + $('aa2').value + $('aa3').value).replace(/\D/g, ''); }
+  function fullAadhaar() {
+    // Try old split fields first (aa1/aa2/aa3) — fallback to exData from AI extraction
+    const a1 = document.getElementById('aa1');
+    const a2 = document.getElementById('aa2');
+    const a3 = document.getElementById('aa3');
+    if (a1 && a2 && a3) {
+      return (a1.value + a2.value + a3.value).replace(/\D/g, '');
+    }
+    // Use aadhaar extracted by AI from Aadhaar document
+    return (exData.patientAadhaar || '').replace(/\D/g, '');
+  }
 
   // ── Languages ─────────────────────────────────────────
   function toggleLang(chip) {
@@ -932,28 +1002,52 @@
   function validate(s) {
     let ok = true;
     if (s === 1) {
-      clr('fname', 'faadh', 'fphone', 'femail', 'rel');
-      if (!gv('fname'))                                      { err('fname'); ok = false; }
-      if (gv('faadh').replace(/\s/g,'').length !== 12)       { err('faadh'); ok = false; }
-      if (gv('fphone').length !== 10)                        { err('fphone'); ok = false; }
-      if (!gv('femail').includes('@'))                       { err('femail'); ok = false; }
-      if (!gv('rel'))                                        { err('rel'); ok = false; }
+      // Name and email are read-only from account — only validate editable fields
+      clr('fphone', 'rel');
+      if (gv('fphone').length !== 10) { err('fphone'); ok = false; }
+      if (!gv('rel'))                 { err('rel');   ok = false; }
+      // Aadhaar is readonly — skip validation, it loads from account
+
+      // If phone or aadhaar is new — save to profile for next time
+      if (ok) {
+        const user = window._accountUser || {};
+        const needUpdate = (!user.phone && gv('fphone')) || (!user.aadhaar_number && gv('faadh'));
+        if (needUpdate) {
+          const token = localStorage.getItem('patientToken');
+          fetch(`${API}/auth/profile`, {
+            method : 'PUT',
+            headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+            body   : JSON.stringify({
+              phone          : gv('fphone') ? '+91' + gv('fphone') : undefined,
+              aadhaar_number : gv('faadh').replace(/\s/g,'') || undefined
+            })
+          }).then(r => r.json()).then(d => {
+            if (d.success) {
+              localStorage.setItem('patientUser', JSON.stringify(d.user));
+              window._accountUser = d.user;
+              console.log('✅ Profile updated with phone/aadhaar');
+            }
+          }).catch(e => console.warn('Profile update failed:', e.message));
+        }
+      }
     }
     if (s === 2) {
-      clr('pname', 'dob', 'gender', 'aadh', 'city', 'state', 'lang');
-      if (!gv('pname'))             { err('pname'); ok = false; }
-      if (!gv('dob'))               { err('dob'); ok = false; }
-      if (!gv('gender'))            { err('gender'); ok = false; }
-      if (fullAadhaar().length !== 12) { err('aadh'); ok = false; }
-      if (!gv('city'))              { err('city'); ok = false; }
-      if (!gv('state'))             { err('state'); ok = false; }
-      if (!langs.length)            { err('lang'); ok = false; }
-    }
-    if (s === 3) {
-      ['aadh', 'ration', 'income', 'estimate', 'summary'].forEach(t => {
-        if (!docs[t]) { $('e_d' + t).classList.add('show'); ok = false; }
+      // Step 2 is now document upload — validate all 5 docs
+      ['aadh','ration','income','estimate','summary'].forEach(t => {
+        if (!docs[t]) { const el = document.getElementById('e_d' + t); if (el) el.classList.add('show'); ok = false; }
       });
       if (!ok) toast('⚠️ Please upload all 5 mandatory documents');
+    }
+    if (s === 3) {
+      // AI extraction must have completed (s3next button unlocks it)
+      // Only check language selection here
+      if (!langs.length) {
+        const el = document.getElementById('e_lang'); if (el) el.classList.add('show');
+        toast('⚠️ Please select at least one language'); ok = false;
+      }
+      if (!window._previewVerification) {
+        toast('⚠️ Please click "Start AI Extraction" first'); ok = false;
+      }
     }
     if (s === 4) {
       if (!confirmed) { toast('⚠️ Please complete AI extraction and confirm HMS data'); ok = false; }
@@ -962,71 +1056,266 @@
       if (gv('story').length < 100) { err('story'); toast('⚠️ Story must be at least 100 characters'); ok = false; }
       else err('story', false);
     }
-    if (!ok && s < 4) toast('⚠️ Please fill all required fields');
+    // Individual field validations show their own toasts above
     return ok;
   }
 
   // ── Step 4: AI + HMS ──────────────────────────────────
+  // ── Step 4: AI Extraction via Node /preview-verify ──────
   async function runAI() {
-    const btn = $('aiBtn'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Analysing…';
-    $('p1b').className = 'pbadge run'; $('p1b').textContent = 'Running…';
+    const btn = $('aiBtn');
+    btn.disabled  = true;
+    btn.innerHTML = '<span class="spinner"></span> Analysing…';
+    $('p1b').className   = 'pbadge run';
+    $('p1b').textContent = 'Running…';
     ['ex_hosp','ex_pin','ex_dis','ex_adm','ex_est','ex_inc','ex_nm'].forEach(id => {
       $(id).textContent = 'Reading…'; $(id).className = 'exfv dim';
     });
-    await delay(2600);
-    let r;
-    try {
-      const fd = new FormData();
-      Object.entries(docs).forEach(([k, f]) => { if (f) fd.append(k, f); });
-      fd.append('patientName', gv('pname')); fd.append('aadhaar', fullAadhaar());
-      const res = await fetch(`${FLASK}/ai/extract-documents`, { method: 'POST', body: fd });
-      r = await res.json();
-    } catch {
-      const est = 320000 + Math.floor(Math.random() * 120000);
-      r = { hospitalName: 'Apollo Hospitals, Jubilee Hills', hospitalPincode: '500033', disease: 'Coronary Artery Disease — Triple Vessel', admissionDate: '2026-02-18', estimatedAmount: est, annualIncome: 220000, namesMatch: true };
+
+    const token = localStorage.getItem('patientToken');
+    if (!token) { toast('⚠️ Not logged in. Please login first.'); return; }
+    if (!docs.aadh || !docs.estimate) {
+      toast('⚠️ Please upload at least Aadhaar Card + Hospital Estimate in Step 3');
+      btn.disabled = false; btn.innerHTML = '🤖 Start AI Extraction'; return;
     }
-    exData = r;
-    $('ex_hosp').textContent = r.hospitalName || '—';       $('ex_hosp').className = 'exfv';
-    $('ex_pin').textContent  = r.hospitalPincode || '—';    $('ex_pin').className  = 'exfv';
-    $('ex_dis').textContent  = r.disease || '—';            $('ex_dis').className  = 'exfv';
-    $('ex_adm').textContent  = r.admissionDate || '—';      $('ex_adm').className  = 'exfv';
-    $('ex_est').textContent  = fmt(r.estimatedAmount);      $('ex_est').className  = 'exfv';
-    const incOk = r.annualIncome <= 300000;
-    $('ex_inc').textContent  = fmt(r.annualIncome) + (incOk ? ' ✅' : ' ❌ Exceeds ₹3L limit');
-    $('ex_inc').className    = 'exfv'; $('ex_inc').style.color = incOk ? 'var(--green-mid)' : 'var(--red-soft)';
-    $('ex_nm').textContent   = r.namesMatch ? '✅ Names match across Aadhaar, Ration Card & HMS' : '⚠️ Name mismatch detected — will be flagged';
-    $('ex_nm').className     = 'exfv'; $('ex_nm').style.color = r.namesMatch ? 'var(--green-mid)' : 'var(--red-soft)';
-    $('p1b').className = 'pbadge ok'; $('p1b').textContent = 'Done ✓';
-    btn.innerHTML = '✅ Extraction Complete'; btn.style.background = 'var(--green-mid)';
-    if (!incOk) { toast('❌ Income exceeds ₹3L limit — campaign cannot proceed', 6000); return; }
-    if (!r.namesMatch) toast('⚠️ Name mismatch flagged — admin will review', 5000);
-    const p2 = $('phase2'); p2.style.opacity = '1'; p2.style.pointerEvents = 'auto';
-    $('p2b').className = 'pbadge run'; $('p2b').textContent = 'Calling HMS…';
-    await runHMS(r);
+
+    try {
+      // Convert files to base64
+      btn.innerHTML = '<span class="spinner"></span> Reading documents…';
+      const docEntries = [
+        { key:'aadh',     type:'AADHAAR'           },
+        { key:'ration',   type:'RATION_CARD'        },
+        { key:'income',   type:'INCOME_CERTIFICATE' },
+        { key:'estimate', type:'ESTIMATE'            },
+        { key:'summary',  type:'ADMISSION_SUMMARY'  },
+      ];
+      const documents = [];
+      for (const entry of docEntries) {
+        const file = docs[entry.key];
+        if (!file) continue;
+        const b64 = await toBase64(file);
+        documents.push({ document_type: entry.type, file_url: b64, file_name: file.name });
+      }
+      window._docsBase64 = documents;
+
+      btn.innerHTML = '<span class="spinner"></span> AI extracting… (30–90 sec)';
+
+      // Call Node.js preview-verify → Node calls Flask /verify
+      const controller = new AbortController();
+      const tid = setTimeout(() => controller.abort(), 180000);
+      const vRes = await fetch(`${API}/campaigns/preview-verify`, {
+        method : 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+        body   : JSON.stringify({ documents, patient_name: (window._accountUser && window._accountUser.name) || 'Patient' }),
+        signal : controller.signal
+      });
+      clearTimeout(tid);
+
+      // Check HTTP status before parsing JSON to prevent redirects
+      if (!vRes.ok) {
+        if (vRes.status === 401) {
+          toast(" Session expired. Please login again.\, 4000);
+ setTimeout(() => window.location.href = \login.html\, 2000);
+ return;
+ } else if (vRes.status >= 400 && vRes.status < 500) {
+ toast(" Request error: \ + vRes.status, 4000);
+          document.getElementById(\p1b\).className = \pbadge err\; document.getElementById(\p1b\).textContent = \Failed\;
+          btn.disabled = false; btn.innerHTML = " Retry\; return;
+ } else if (vRes.status >= 500) {
+ toast(" Server error. Please try again.\, 4000);
+          document.getElementById(\p1b\).className = \pbadge err\; document.getElementById(\p1b\).textContent = \Failed\;
+          btn.disabled = false; btn.innerHTML = " Retry\; return;
+ }
+ }
+ 
+ const vData = await vRes.json();
+      console.log('📥 Preview result:', vData);
+
+      if (!vData.success || vData.error) {
+        toast('❌ ' + (vData.error || 'AI extraction failed. Is Flask running?'), 6000);
+        $('p1b').className = 'pbadge err'; $('p1b').textContent = 'Failed';
+        btn.disabled = false; btn.innerHTML = '🔄 Retry'; return;
+      }
+
+      // Map extracted_data to display
+      const ext = vData.extracted_data || {};
+      let bestDisease = ext.disease || '';
+      if (!bestDisease && Array.isArray(ext.diseases) && ext.diseases.length)
+        bestDisease = ext.diseases.reduce((a,b) => a.length >= b.length ? a : b, '');
+
+      exData = {
+        // Hospital & medical
+        hospitalName   : ext.hospital_name    || '',
+        hospitalPincode: ext.hospital_pincode  || '',
+        disease        : bestDisease,
+        admissionDate  : ext.admission_date    || '',
+        estimatedAmount: parseFloat(ext.amount || 0),
+        annualIncome   : parseFloat(ext.annual_income || 0),
+        namesMatch     : !(vData.cross_document_issues || []).some(i =>
+                           typeof i === 'string' && i.toLowerCase().includes('name')),
+        // Patient details extracted from Aadhaar card
+        patientName    : ext.patient_name   || '',
+        patientAadhaar : ext.aadhaar_number || '',
+        patientAge     : ext.age            || '',
+        patientGender  : ext.gender         || '',
+        patientCity    : ext.city           || ext.address || '',
+        patientState   : ext.state          || ''
+      };
+      window._previewVerification = vData;
+
+      $('ex_hosp').textContent = exData.hospitalName    || '— Not found'; $('ex_hosp').className = 'exfv';
+      $('ex_pin').textContent  = exData.hospitalPincode || '— Not found'; $('ex_pin').className  = 'exfv';
+      $('ex_dis').textContent  = exData.disease         || '— Not found'; $('ex_dis').className  = 'exfv';
+      $('ex_adm').textContent  = exData.admissionDate   || '— Not found'; $('ex_adm').className  = 'exfv';
+      $('ex_est').textContent  = exData.estimatedAmount > 0 ? fmt(exData.estimatedAmount) : '— Not found';
+      $('ex_est').className    = 'exfv';
+
+      const incOk = exData.annualIncome <= 300000 || exData.annualIncome === 0;
+      $('ex_inc').textContent = exData.annualIncome > 0
+        ? fmt(exData.annualIncome) + (incOk ? ' ✅' : ' ❌ Exceeds ₹3L limit')
+        : '— Not found';
+      $('ex_inc').className   = 'exfv';
+      $('ex_inc').style.color = incOk ? 'var(--green-mid)' : 'var(--red-soft)';
+
+      $('ex_nm').textContent = exData.namesMatch
+        ? '✅ Names consistent across documents'
+        : '⚠️ Name mismatch — admin will review';
+      $('ex_nm').className   = 'exfv';
+      $('ex_nm').style.color = exData.namesMatch ? 'var(--green-mid)' : 'var(--red-soft)';
+
+      $('p1b').className   = 'pbadge ok'; $('p1b').textContent = 'Done ✓';
+      btn.innerHTML        = '✅ Extraction Complete'; btn.style.background = 'var(--green-mid)';
+
+      if (!incOk && exData.annualIncome > 0) {
+        toast('❌ Income exceeds ₹3L limit — campaign cannot proceed', 6000);
+        $('p1b').className = 'pbadge err'; $('p1b').textContent = 'Rejected'; return;
+      }
+
+      // ✅ Extraction done — unlock Step 3 Continue button
+      const s3btn = $('s3next');
+      if (s3btn) s3btn.disabled = false;
+      toast('✅ Extraction complete! Select languages then click Continue.', 4000);
+
+      // Pre-run HMS in background so Step 4 loads fast
+      runHMS(exData);
+
+    } catch(e) {
+      if (e.name === 'AbortError') {
+        toast('⚠️ Timed out — is Flask running on port 5000?', 6000);
+      } else {
+        toast('❌ AI extraction failed: ' + e.message, 6000);
+        console.error('runAI error:', e);
+      }
+      $('p1b').className = 'pbadge err'; $('p1b').textContent = 'Failed';
+      btn.disabled = false; btn.innerHTML = '🔄 Retry AI Extraction';
+    }
   }
 
+  // ── Step 4: HMS Check ─────────────────────────────────
+  // 1. Search hospital in AccessibleHospital table
+  // 2. If found & has API → call their HMS
+  // 3. If not found / no API → use estimate amount from documents
   async function runHMS(ex) {
-    await delay(2200);
-    let h;
+    $('p2b').className = 'pbadge run'; $('p2b').textContent = 'Checking hospital…';
+
+    let billing = null;
+    let hospitalSource = 'DOC_EXTRACTED';
+    let hmsHospitalId  = null;
+
     try {
-      const res = await fetch(`${HMS}/verify/patient`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ patientName: gv('pname'), aadhaarNumber: fullAadhaar(), hospitalName: ex.hospitalName, admissionDate: ex.admissionDate, disease: ex.disease })
-      });
-      h = await res.json();
-    } catch {
-      const tot = ex.estimatedAmount || 380000; const paid = Math.floor(tot * 0.18);
-      h = { admissionStatus: 'Admitted', treatmentType: 'Cardiac Surgery — CABG', totalEstimate: tot, amountPaid: paid, outstanding: tot - paid };
+      // Step 1: Search hospital in our accessible hospitals DB
+      const searchRes = await fetch(
+        `${API}/hospitals/search?name=${encodeURIComponent(ex.hospitalName || '')}`,
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+      const searchData = await searchRes.json();
+      console.log('🏥 Hospital search:', searchData);
+
+      if (searchData.found && searchData.hospital) {
+        const hosp = searchData.hospital;
+        hmsHospitalId = hosp.id;
+        $('p2b').textContent = hosp.is_hms_connected ? 'Calling HMS API…' : 'Hospital found — loading estimate…';
+
+        // Step 2: Check patient in this hospital
+        const patientRes = await fetch(`${API}/hospitals/${hosp.id}/check-patient`, {
+          method : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body   : JSON.stringify({
+            patient_name    : gv('pname'),
+            patient_aadhaar : fullAadhaar(),
+            estimated_amount: ex.estimatedAmount
+          })
+        });
+        const patientData = await patientRes.json();
+        console.log('👤 Patient check:', patientData);
+
+        billing       = patientData.billing;
+        hospitalSource = billing?.source || 'DOC_EXTRACTED';
+        window._hmsPatientId = patientData.hms_patient_id || null;
+
+        if (hosp.is_hms_connected && patientData.found) {
+          toast('✅ Patient found in hospital HMS system!', 3000);
+        } else if (hosp.is_hms_connected && !patientData.found) {
+          toast('⚠️ Hospital registered but patient not in HMS yet — using estimate amount', 4000);
+        } else {
+          toast('ℹ️ Hospital found — using document estimate (no HMS API)', 3000);
+        }
+      } else {
+        // Hospital NOT in our system — use document data
+        toast('ℹ️ Hospital not in our database — using document estimate. Admin will verify.', 5000);
+        billing = {
+          source          : 'DOC_EXTRACTED',
+          total_estimate  : ex.estimatedAmount,
+          amount_paid     : 0,
+          outstanding     : ex.estimatedAmount,
+          admission_status: '⚠️ Not in our database — admin will verify'
+        };
+      }
+    } catch(e) {
+      console.warn('Hospital check failed:', e.message);
+      billing = {
+        source          : 'DOC_EXTRACTED',
+        total_estimate  : ex.estimatedAmount,
+        amount_paid     : 0,
+        outstanding     : ex.estimatedAmount,
+        admission_status: '⚠️ Could not verify — admin will check'
+      };
     }
-    hmsData = h;
-    $('h_status').textContent = h.admissionStatus || '—';
-    $('h_treat').textContent  = h.treatmentType || '—';
-    $('h_total').textContent  = fmt(h.totalEstimate);
-    $('h_paid').textContent   = fmt(h.amountPaid);
-    $('h_out').textContent    = fmt(h.outstanding);
-    $('p2b').className = 'pbadge ok'; $('p2b').textContent = 'Confirmed ✓';
-    $('confirmAmt').textContent = fmt(h.outstanding);
+
+    // Display billing data
+    hmsData = {
+      admissionStatus: billing.admission_status || billing.admissionStatus || '—',
+      treatmentType  : ex.disease || '—',
+      totalEstimate  : parseFloat(billing.total_estimate || ex.estimatedAmount || 0),
+      amountPaid     : parseFloat(billing.amount_paid   || 0),
+      outstanding    : parseFloat(billing.outstanding   || ex.estimatedAmount || 0),
+      source         : billing.source || 'DOC_EXTRACTED',
+      hospitalId     : hmsHospitalId
+    };
+
+    $('h_status').textContent = hmsData.admissionStatus;
+    const treatDisplay = hmsData.treatmentType.includes(',')
+      ? hmsData.treatmentType.split(',').reduce((a,b) => a.length >= b.length ? a : b,'').trim()
+      : hmsData.treatmentType;
+    $('h_treat').textContent  = treatDisplay;
+    $('h_total').textContent  = fmt(hmsData.totalEstimate);
+    $('h_paid').textContent   = fmt(hmsData.amountPaid);
+    $('h_out').textContent    = fmt(hmsData.outstanding);
+
+    // Show source badge
+    const sourceBadge = hmsData.source === 'HMS_API'
+      ? '✅ Live HMS Data' : '📄 From Document Estimate';
+    $('p2b').className   = 'pbadge ok';
+    $('p2b').textContent = 'Done ✓';
+
+    $('confirmAmt').textContent = fmt(hmsData.outstanding);
     $('confirmRow').style.display = 'flex';
+
+    // Show source info in confirm row
+    const confirmP = $('confirmRow').querySelector('p:last-child');
+    if (confirmP) confirmP.textContent = hospitalSource === 'HMS_API'
+      ? 'Live from hospital HMS system — most accurate'
+      : 'Based on hospital estimate document — admin will verify before fund release';
   }
 
   function confirmIt() {
@@ -1035,6 +1324,16 @@
     $('confirmRow').querySelector('.btn-confirm').textContent = '✓ Confirmed';
     $('confirmRow').querySelector('.btn-confirm').disabled = true;
     toast('✅ Confirmed! Campaign goal set to ' + fmt(hmsData.outstanding));
+  }
+
+  // ── Base64 helper ─────────────────────────────────────
+  function toBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload  = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('FileReader failed'));
+      reader.readAsDataURL(file);
+    });
   }
 
   // ── Step 5: Gemini Story Polish ───────────────────────
@@ -1150,18 +1449,27 @@ Return ONLY the polished story text — no introductory lines, no commentary, no
 
   // ── Preview ───────────────────────────────────────────
   function buildPreview() {
-    const mask = fullAadhaar().replace(/^(\d{8})(\d{4})$/, 'XXXX-XXXX-$2');
+    // Use exData (from AI extraction) since patient form fields no longer exist
+    const pName   = exData.patientName   || '—';
+    const pAge    = exData.patientAge    || '—';
+    const pGender = exData.patientGender || '—';
+    const pCity   = exData.patientCity   || '—';
+    const pState  = exData.patientState  || '—';
+    const pAadh   = (exData.patientAadhaar || fullAadhaar() || '').replace(/^(\d{8})(\d{4})$/, 'XXXX-XXXX-$2');
+    const fName   = gv('fname') || (window._accountUser && window._accountUser.name) || '—';
+    const rel     = gv('rel') || '—';
+
     $('pvcard').innerHTML = `
       <div class="pvbanner">
-        <div style="font-size:11px;opacity:.6;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">${gv('rel')} · ${gv('state')}</div>
-        <h3>${gv('pname')}'s Medical Campaign</h3>
+        <div style="font-size:11px;opacity:.6;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">${rel} · ${pState}</div>
+        <h3>${pName}'s Medical Campaign</h3>
         <p>${($('f_story').value || '').slice(0, 130)}…</p>
         <div class="pvgoal">${fmt(hmsData.outstanding)} <span>— set by HMS</span></div>
       </div>
       <div class="pvbody">
-        <div class="pvrow"><span class="pvrl">Patient</span><span class="pvrv">${gv('pname')}, ${gv('age')} yrs · ${gv('gender')}</span></div>
-        <div class="pvrow"><span class="pvrl">Aadhaar</span><span class="pvrv">${mask}</span></div>
-        <div class="pvrow"><span class="pvrl">Location</span><span class="pvrv">${gv('city')}, ${gv('state')}</span></div>
+        <div class="pvrow"><span class="pvrl">Patient</span><span class="pvrv">${pName}, ${pAge} yrs · ${pGender}</span></div>
+        <div class="pvrow"><span class="pvrl">Aadhaar</span><span class="pvrv">${pAadh || '—'}</span></div>
+        <div class="pvrow"><span class="pvrl">Location</span><span class="pvrv">${pCity}, ${pState}</span></div>
         <div class="pvrow"><span class="pvrl">Languages</span><span class="pvrv">${langs.join(', ') || '—'}</span></div>
         <div class="pvrow"><span class="pvrl">Diagnosis</span><span class="pvrv">${exData.disease || '—'}</span></div>
         <div class="pvrow"><span class="pvrl">Hospital</span><span class="pvrv">${exData.hospitalName || '—'} · ${exData.hospitalPincode || ''}</span></div>
@@ -1173,45 +1481,202 @@ Return ONLY the polished story text — no introductory lines, no commentary, no
         <div class="pvrow"><span class="pvrl">Name Match</span><span class="pvrv" style="color:var(--green-mid)">✅ Aadhaar + Ration + HMS</span></div>
         <div class="pvrow"><span class="pvrl">Income Eligibility</span><span class="pvrv" style="color:var(--green-mid)">✅ Below ₹3L</span></div>
         <div class="pvrow"><span class="pvrl">Documents</span><span class="pvrv">5 / 5 uploaded ✅</span></div>
-        <div class="pvrow"><span class="pvrl">Fundraiser</span><span class="pvrv">${gv('fname')} (${gv('rel')})</span></div>
+        <div class="pvrow"><span class="pvrl">Fundraiser</span><span class="pvrv">${fName} (${rel})</span></div>
       </div>`;
   }
 
   // ── Submit ────────────────────────────────────────────
   async function submitIt() {
-    const btn = $('subBtn'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Submitting…';
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    const payload = {
-      createdById: user.id, fundraiserName: gv('fname'), fundraiserPhone: gv('fphone'),
-      fundraiserEmail: gv('femail'), relationship: gv('rel'),
-      patientName: gv('pname'), patientAadhaar: fullAadhaar(), patientDob: gv('dob'),
-      patientAge: Number(gv('age')), patientGender: gv('gender'),
-      patientCity: gv('city'), patientState: gv('state'), patientLanguages: langs,
-      disease: exData.disease, hospitalName: exData.hospitalName, hospitalPincode: exData.hospitalPincode,
-      admissionDate: exData.admissionDate, annualIncome: exData.annualIncome, namesMatch: exData.namesMatch,
-      hmsStatus: hmsData.admissionStatus, hmsTreatment: hmsData.treatmentType,
-      totalEstimate: hmsData.totalEstimate, amountPaid: hmsData.amountPaid,
-      goalAmount: hmsData.outstanding, story: $('f_story').value,
-      hmsVerified: true, status: 'pending'
-    };
-    await delay(1200);
+    const btn   = $('subBtn');
+    btn.disabled  = true;
+    btn.innerHTML = '<span class="spinner"></span> Creating campaign…';
+
+    const token = localStorage.getItem('patientToken');
+    if (!token) {
+      toast('⚠️ Not logged in. Please login first.');
+      setTimeout(() => window.location.href = 'login.html', 1500); return;
+    }
+
+    // ── Step 1: Create campaign in DB ─────────────────────
+    let cid = null;
     try {
       const res = await fetch(`${API}/campaigns`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify(payload)
+        method : 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+        body   : JSON.stringify({
+          otp_code                  : '000000',
+          title                     : exData.disease
+            ? exData.disease + ' — ' + gv('pname')
+            : gv('pname') + ' Medical Treatment Campaign',
+          patient_full_name         : exData.patientName || gv('pname'),
+          patient_age               : Number(exData.patientAge || gv('age') || 0),
+          patient_gender            : exData.patientGender || gv('gender') || 'Male',
+          patient_aadhaar           : exData.patientAadhaar || fullAadhaar(),
+          patient_city              : exData.patientCity || gv('city') || '',
+          patient_state             : exData.patientState || gv('state') || '',
+          patient_languages         : langs.length ? langs : ['Telugu'],
+          relationship_to_fundraiser: gv('rel') || 'SELF',
+        })
       });
-      const d = await res.json(); const cid = d.campaign?.id || d.id;
-      if (cid) {
-        const fd = new FormData(); fd.append('campaignId', cid);
-        Object.entries(docs).forEach(([k, f]) => { if (f) fd.append(k, f); });
-        await fetch(`${API}/campaigns/${cid}/documents`, { method: 'POST', headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }, body: fd }).catch(() => {});
+      const d = await res.json();
+      if (!d.success) {
+        toast('❌ ' + (d.error || 'Campaign creation failed')); 
+        btn.disabled = false; btn.innerHTML = '🚀 Submit Campaign'; return;
       }
-    } catch { console.warn('API offline — demo mode'); }
-    $('sucHosp').textContent = exData.hospitalName || 'the hospital';
-    document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
-    $('spage').classList.add('show');
-    $('stepper').style.display = 'none';
+      cid = d.campaign_id;
+      localStorage.setItem('campaignId', String(cid));
+      console.log('✅ Campaign created:', cid);
+    } catch(e) {
+      toast('❌ Cannot reach server. Is backend running?');
+      btn.disabled = false; btn.innerHTML = '🚀 Submit Campaign'; return;
+    }
+
+    // ── Step 2: Save FundNeeder (billing details) ─────────
+    btn.innerHTML = '<span class="spinner"></span> Saving billing details…';
+    try {
+      await fetch(`${API}/hospitals/fund-needer`, {
+        method : 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+        body   : JSON.stringify({
+          campaign_id            : cid,
+          accessible_hospital_id : hmsData.hospitalId || null,
+          patient_name           : exData.patientName  || gv('pname'),
+          patient_aadhaar        : exData.patientAadhaar || fullAadhaar(),
+          patient_age            : exData.patientAge   || gv('age'),
+          patient_gender         : exData.patientGender|| gv('gender'),
+          disease                : exData.disease,
+          admission_date         : exData.admissionDate,
+          hospital_name          : exData.hospitalName,
+          hospital_pincode       : exData.hospitalPincode,
+          total_estimate         : hmsData.totalEstimate,
+          amount_paid            : hmsData.amountPaid,
+          outstanding            : hmsData.outstanding,
+          source                 : hmsData.source || 'DOC_EXTRACTED',
+          hms_patient_id         : window._hmsPatientId || null
+        })
+      });
+      console.log('✅ FundNeeder saved');
+    } catch(e) {
+      console.warn('FundNeeder save failed:', e.message);
+    }
+
+    // ── Step 3: Send docs to verify-documents ─────────────
+    btn.innerHTML = '<span class="spinner"></span> Sending documents for AI verification…';
+    try {
+      let documents = window._docsBase64 || [];
+      if (!documents.length) {
+        const docEntries = [
+          {key:'aadh',type:'AADHAAR'},{key:'ration',type:'RATION_CARD'},
+          {key:'income',type:'INCOME_CERTIFICATE'},{key:'estimate',type:'ESTIMATE'},
+          {key:'summary',type:'ADMISSION_SUMMARY'}
+        ];
+        for (const e of docEntries) {
+          if (docs[e.key]) {
+            const b64 = await toBase64(docs[e.key]);
+            documents.push({ document_type:e.type, file_url:b64, file_name:docs[e.key].name });
+          }
+        }
+      }
+
+      const controller = new AbortController();
+      const tid = setTimeout(() => controller.abort(), 180000);
+      const vRes = await fetch(`${API}/campaigns/${cid}/verify-documents`, {
+        method : 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+        body   : JSON.stringify({ documents }),
+        signal : controller.signal
+      });
+      clearTimeout(tid);
+
+      // Check HTTP status before parsing JSON to prevent redirects
+      if (!vRes.ok) {
+        if (vRes.status === 401) {
+          toast(" Session expired. Please login again.\, 4000);
+ setTimeout(() => window.location.href = \login.html\, 2000);
+ return;
+ } else if (vRes.status >= 400 && vRes.status < 500) {
+ toast(" Request error: \ + vRes.status, 4000);
+          document.getElementById(\p1b\).className = \pbadge err\; document.getElementById(\p1b\).textContent = \Failed\;
+          btn.disabled = false; btn.innerHTML = " Retry\; return;
+ } else if (vRes.status >= 500) {
+ toast(" Server error. Please try again.\, 4000);
+          document.getElementById(\p1b\).className = \pbadge err\; document.getElementById(\p1b\).textContent = \Failed\;
+          btn.disabled = false; btn.innerHTML = " Retry\; return;
+ }
+ }
+ 
+ const vData = await vRes.json();
+      console.log('✅ Verification:', vData.status, '| Risk:', vData.risk_score);
+
+      if (!vData.success && vData.error) {
+        toast('⚠️ ' + vData.error, 5000);
+        btn.disabled = false; btn.innerHTML = '🚀 Submit Campaign'; return;
+      }
+
+      // Show result screen
+      $('sucHosp').textContent = exData.hospitalName || 'the hospital';
+      document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+      $('spage').classList.add('show');
+      $('stepper').style.display = 'none';
+      showResult(vData, cid);
+
+    } catch(e) {
+      if (e.name === 'AbortError') {
+        toast('❌ Verification timed out. Is Flask running on port 5000?', 6000);
+      } else {
+        toast('❌ ' + e.message, 5000);
+      }
+      btn.disabled = false; btn.innerHTML = '🚀 Submit Campaign';
+    }
+  }
+
+  function showResult(data, cid) {
+    const status = data.status || 'PENDING';
+    const risk   = data.risk_score || 0;
+    const ext    = data.extracted_data || {};
+    const rc     = risk < 30 ? '#15803D' : risk < 60 ? '#B45309' : '#DC2626';
+
+    const cfgs = {
+      VERIFIED            : { icon:'✅', color:'#15803D', bTitle:'✅ Documents Verified!',              bMsg:'All documents verified. Admin will review and go live soon.', btn:'📋 Go to Dashboard', act:"window.location.href='dashboard.html'" },
+      PENDING             : { icon:'⏳', color:'#B45309', bTitle:'⏳ Sent for Admin Review',            bMsg:'AI flagged items for review. Admin will verify within 24 hrs.',  btn:'📋 Go to Dashboard', act:"window.location.href='dashboard.html'" },
+      VERIFICATION_NEEDED : { icon:'🚨', color:'#DC2626', bTitle:'🚨 Admin Verification Required',      bMsg:'Issues detected. Admin will investigate carefully.',             btn:'📋 Go to Dashboard', act:"window.location.href='dashboard.html'" },
+      UPDATE_NEEDED       : { icon:'📅', color:'#D97706', bTitle:'📅 Fresh Documents Needed',           bMsg:'Some documents are expired. Please upload fresh ones.',          btn:'🔄 Start Again',    act:"window.location.href='create-campaign.html'" }
+    };
+    const c = cfgs[status] || cfgs['PENDING'];
+
+    const entityRows = (ext.hospital_name || ext.patient_name || ext.amount || ext.disease) ? `
+      <div style="background:var(--cream);border-radius:10px;padding:14px 18px;margin-bottom:16px;">
+        <p style="font-size:12px;font-weight:700;margin-bottom:10px;color:var(--ink-mid);">📋 Extracted from your documents</p>
+        ${ext.hospital_name ? `<p style="font-size:13px;margin-bottom:6px;">🏥 <b>Hospital:</b> ${ext.hospital_name}</p>` : ''}
+        ${ext.patient_name  ? `<p style="font-size:13px;margin-bottom:6px;">👤 <b>Patient:</b> ${ext.patient_name}</p>` : ''}
+        ${ext.amount        ? `<p style="font-size:13px;margin-bottom:6px;">💰 <b>Estimate:</b> <b style="color:var(--green-mid)">₹${parseFloat(ext.amount).toLocaleString('en-IN')}</b></p>` : ''}
+        ${ext.disease       ? `<p style="font-size:13px;margin-bottom:6px;">🩺 <b>Diagnosis:</b> ${ext.disease}</p>` : ''}
+      </div>` : '';
+
+    $('spage').innerHTML = `
+      <div style="text-align:center;padding:20px;">
+        <div style="font-size:52px;margin-bottom:12px;">${c.icon}</div>
+        <h2 style="font-family:'Lora',serif;font-size:22px;color:${c.color};margin-bottom:16px;">${c.bTitle}</h2>
+        <div style="background:var(--cream);border-radius:12px;padding:16px 20px;margin-bottom:16px;text-align:left;">
+          <p style="font-size:14px;color:var(--ink-mid);line-height:1.6;">${c.bMsg}</p>
+        </div>
+        <div style="background:var(--cream);border-radius:10px;padding:14px 18px;margin-bottom:16px;text-align:left;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:6px;">
+            <span>AI Risk Score</span><span style="color:${rc}">${risk}/100</span>
+          </div>
+          <div style="height:8px;background:var(--border);border-radius:99px;overflow:hidden;">
+            <div style="height:100%;width:${risk}%;background:${rc};border-radius:99px;transition:width 1s ease;"></div>
+          </div>
+          <p style="font-size:11px;color:var(--ink-soft);margin-top:5px;">${risk<30?'✅ Low risk — documents look authentic':risk<60?'⚠️ Medium risk — admin will review':'🚨 High risk — admin will check carefully'}</p>
+        </div>
+        ${entityRows}
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+          <button type="button" class="btn-next" onclick="${c.act}">${c.btn}</button>
+          <button type="button" class="btn-back" onclick="window.location.href='dashboard.html'">📋 Dashboard</button>
+        </div>
+      </div>`;
+
+    localStorage.removeItem('draftCampaignId');
   }
 
   updateStepper(1);

@@ -4,4 +4,3 @@
   "password": "Test@1234",
   "admin_secret": "MediTrustAdmin@2026SecretKey"
 }
-local

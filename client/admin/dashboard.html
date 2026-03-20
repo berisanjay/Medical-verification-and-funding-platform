@@ -713,6 +713,9 @@
   }
 
   async function viewDocument(docId, fileName) {
+    // Implementation for viewing documents
+    window.open(`${API}/admin/documents/${docId}`, '_blank');
+  }
 
   // ── DASHBOARD ─────────────────────────────
   function showDashboard() {

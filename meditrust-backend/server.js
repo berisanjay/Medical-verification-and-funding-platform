@@ -5,7 +5,11 @@ const http = require('node:http');
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET','POST','PUT','DELETE','OPTIONS','PATCH'],
+  allowedHeaders: ['Content-Type','Authorization','x-flask-secret']
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -18,6 +22,7 @@ app.use('/api/releases',    require('./routes/releases'));
 app.use('/api/story',       require('./routes/story'));
 app.use('/api/suggestions', require('./routes/suggestions'));
 app.use('/api/ngo',         require('./routes/ngo'));        // Phase 11 — NGO Matching
+app.use('/api/hospitals',   require('./routes/hospitals')); // Accessible hospitals + Fund Needers
 app.use('/internal',        require('./routes/internal'));
 
 app.get('/', (req, res) => {

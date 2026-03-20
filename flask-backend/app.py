@@ -233,14 +233,10 @@ def health_check():
 def verify_documents():
     """AI Document Verification Endpoint"""
     try:
-        # Check internal secret
-        """ secret = request.headers.get('x-flask-secret')
-        EXPECTED = 'meditrust_flask_internal_2026'
-        if secret != EXPECTED:
-            logger.warning(f"Auth failed. Got: '{secret}' Expected: '{EXPECTED}'")
-            return jsonify({'error': 'Unauthorized'}), 403 """
-            # Auth check temporarily disabled for debugging
-# secret = request.headers.get('x-flask-secret')
+        # Internal secret check — disabled for development
+        # Re-enable in production by uncommenting:
+        # if not verify_internal_secret():
+        #     return jsonify({'error': 'Unauthorized'}), 403
 
         data         = request.get_json()
         documents    = data.get('documents', [])
@@ -330,42 +326,57 @@ def verify_documents():
                     all_issues.append(f"Expired document: {file_name}")
 
                 # Merge extracted data
-                logger.info(f" === MERGING DATA FOR {file_name} ===")
-                
+                logger.info(f" === MERGING DATA FOR {file_name} ({doc_type}) ===")
+
                 if entities.get('hospital_name'):
                     if not all_extracted.get('hospital_name'):
                         all_extracted['hospital_name'] = entities.get('hospital_name')
                         logger.info(f"Set hospital: {entities.get('hospital_name')}")
                     else:
-                        logger.info(f"Hospital already exists: {all_extracted.get('hospital_name')}, skipping: {entities.get('hospital_name')}")
-                
+                        logger.info(f"Hospital already set, skipping")
+
+                # Hospital pincode — ONLY from ESTIMATE or ADMISSION_SUMMARY
+                # NOT from Aadhaar (that has patient's home pincode)
+                if entities.get('hospital_pincode') and doc_type in ['ESTIMATE', 'ADMISSION_SUMMARY', 'BILL', 'DISCHARGE_SUMMARY']:
+                    if not all_extracted.get('hospital_pincode'):
+                        all_extracted['hospital_pincode'] = entities.get('hospital_pincode')
+                        logger.info(f"Set hospital pincode: {entities.get('hospital_pincode')}")
+
                 if entities.get('diseases') and entities.get('diseases') != []:
                     if not all_extracted.get('disease'):
-                        all_extracted['disease'] = ', '.join(entities.get('diseases', []))
-                        logger.info(f"Set disease: {entities.get('diseases')}")
+                        # Store as single string — use first/primary diagnosis only
+                        primary = entities.get('diseases')[0] if entities.get('diseases') else ''
+                        all_extracted['disease'] = primary
+                        logger.info(f"Set disease: {primary}")
                     else:
-                        logger.info(f"Disease already exists: {all_extracted.get('disease')}, skipping: {entities.get('diseases')}")
-                        
-                if entities.get('amount'):
+                        logger.info(f"Disease already set, skipping")
+
+                # Amount from hospital documents only — not income cert
+                if entities.get('amount') and doc_type in ['ESTIMATE', 'BILL', 'ADMISSION_SUMMARY']:
                     if not all_extracted.get('amount'):
                         all_extracted['amount'] = entities.get('amount')
                         logger.info(f"Set amount: {entities.get('amount')}")
                     else:
-                        logger.info(f"Amount already exists: {all_extracted.get('amount')}, skipping: {entities.get('amount')}")
-                        
+                        logger.info(f"Amount already set, skipping")
+
+                # Annual income — ONLY from INCOME_CERTIFICATE
+                if entities.get('amount') and doc_type == 'INCOME_CERTIFICATE':
+                    all_extracted['annual_income'] = entities.get('amount')
+                    logger.info(f"Set annual_income: {entities.get('amount')}")
+
                 if entities.get('patient_name'):
                     if not all_extracted.get('patient_name'):
                         all_extracted['patient_name'] = entities.get('patient_name')
                         logger.info(f"Set patient: {entities.get('patient_name')}")
                     else:
-                        logger.info(f"Patient already exists: {all_extracted.get('patient_name')}, skipping: {entities.get('patient_name')}")
-                        
+                        logger.info(f"Patient already set, skipping")
+
                 if entities.get('date'):
                     if not all_extracted.get('admission_date'):
                         all_extracted['admission_date'] = entities.get('date')
                         logger.info(f"Set date: {entities.get('date')}")
                     else:
-                        logger.info(f"Date already exists: {all_extracted.get('admission_date')}, skipping: {entities.get('date')}")
+                        logger.info(f"Date already set, skipping")
 
                 doc_results.append({
                     'document_type': doc_type,
@@ -413,14 +424,13 @@ def verify_documents():
 
     except Exception as e:
         logger.error(f"Verification error: {str(e)}")
+        # Return 500 with real error — do NOT fake a PENDING result
+        # Frontend must know Flask failed so it can show real error
         return jsonify({
+            'success'     : False,
             'error'       : str(e),
-            'final_status': 'PENDING',
-            'risk_score'  : 50,
-            'has_expired_docs': False,
-            'has_tampering'   : False,
-            'document_results' : [],
-            'extracted_data': {}
+            'final_status': None,
+            'risk_score'  : None,
         }), 500
 
 

@@ -570,6 +570,29 @@ router.get('/', async (req, res) => {
 });
 
 // ─────────────────────────────────────────
+// GET PATIENT'S OWN CAMPAIGNS
+// ─────────────────────────────────────────
+router.get('/my/campaigns', verifyToken, async (req, res) => {
+  try {
+    const campaigns = await prisma.campaign.findMany({
+      where  : { patient_id: req.user.id },
+      include: {
+        verification_records: { orderBy: { verified_at: 'desc' }, take: 1 },
+        fund_releases       : { orderBy: { released_at: 'desc' } },
+        donations           : { where: { status: 'SUCCESS' } }
+      },
+      orderBy: { created_at: 'desc' }
+    });
+
+    res.json({ success: true, campaigns });
+
+  } catch (error) {
+    console.error('Get my campaigns error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get campaigns' });
+  }
+});
+
+// ─────────────────────────────────────────
 // GET SINGLE CAMPAIGN (Public)
 // ─────────────────────────────────────────
 router.get('/:id', async (req, res) => {
@@ -614,29 +637,6 @@ router.get('/:id', async (req, res) => {
   } catch (error) {
     console.error('Get campaign error:', error);
     res.status(500).json({ success: false, error: 'Failed to get campaign' });
-  }
-});
-
-// ─────────────────────────────────────────
-// GET PATIENT'S OWN CAMPAIGNS
-// ─────────────────────────────────────────
-router.get('/my/campaigns', verifyToken, async (req, res) => {
-  try {
-    const campaigns = await prisma.campaign.findMany({
-      where  : { patient_id: req.user.id },
-      include: {
-        verification_records: { orderBy: { verified_at: 'desc' }, take: 1 },
-        fund_releases       : { orderBy: { released_at: 'desc' } },
-        donations           : { where: { status: 'SUCCESS' } }
-      },
-      orderBy: { created_at: 'desc' }
-    });
-
-    res.json({ success: true, campaigns });
-
-  } catch (error) {
-    console.error('Get my campaigns error:', error);
-    res.status(500).json({ success: false, error: 'Failed to get campaigns' });
   }
 });
 
