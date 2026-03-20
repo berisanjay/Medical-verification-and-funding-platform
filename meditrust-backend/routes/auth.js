@@ -41,7 +41,7 @@ router.post('/register', async (req, res) => {
     // Hash password
     const password_hash = await bcrypt.hash(password, 12);
 
-    // Create user
+    // Create user — auto-verified in dev mode (no email OTP needed)
     const user = await prisma.user.create({
       data: {
         name,
@@ -51,16 +51,15 @@ router.post('/register', async (req, res) => {
         aadhaar_number: aadhaar_number || null,
         native_languages: native_languages || ['en'],
         role         : 'PATIENT',
-        otp_verified : false
+        otp_verified : true   // DEV MODE: auto-verified — change to false in production
       }
     });
 
-    // Send OTP
-    await createOTP(user.id, email, 'REGISTRATION');
-
+    // DEV MODE: skip OTP email — just return success
+    // In production: await createOTP(user.id, email, 'REGISTRATION');
     res.status(201).json({
       success : true,
-      message : 'Account created. OTP sent to your email.',
+      message : 'Account created successfully. You can now login.',
       user_id : user.id,
       email   : user.email
     });
@@ -146,14 +145,14 @@ router.post('/login', async (req, res) => {
       return res.status(403).json({ success: false, error: 'Your account has been suspended' });
     }
 
-    // Check OTP verified
-    if (!user.otp_verified) {
-      return res.status(401).json({
-        success : false,
-        error   : 'Please verify your email first',
-        user_id : user.id
-      });
-    }
+    // DEV MODE: otp_verified check disabled — re-enable in production
+    // if (!user.otp_verified) {
+    //   return res.status(401).json({
+    //     success : false,
+    //     error   : 'Please verify your email first',
+    //     user_id : user.id
+    //   });
+    // }
 
     // Check password
     const valid = await bcrypt.compare(password, user.password_hash);

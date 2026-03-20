@@ -80,7 +80,7 @@ router.post('/verify-otp', async (req, res) => {
       });
     }
 
-    // TEMPORARILY DISABLED FOR TESTING
+    // OTP DISABLED FOR DEVELOPMENT — re-enable before production
     // const result = await verifyOTP(parseInt(admin_id), otp_code, 'ADMIN_LOGIN');
     // if (!result.valid) {
     //   return res.status(400).json({ success: false, error: result.error });
@@ -611,7 +611,10 @@ router.post('/seed', async (req, res) => {
     res.status(500).json({ success: false, error: 'Failed to seed admin' });
   }
 });
-// GET single document content (base64) for admin viewing
+
+// ─────────────────────────────────────────
+// GET SINGLE DOCUMENT CONTENT (base64) — Admin viewing
+// ─────────────────────────────────────────
 router.get('/documents/:id', verifyAdmin, async (req, res) => {
   try {
     const doc = await prisma.campaignDocument.findUnique({
@@ -625,131 +628,49 @@ router.get('/documents/:id', verifyAdmin, async (req, res) => {
 });
 
 // ─────────────────────────────────────────
-// GET CAMPAIGN FULL REVIEW
-// Patient details + Documents + HMS check
+// GET ALL CAMPAIGNS — Admin (all statuses)
 // ─────────────────────────────────────────
-router.get('/campaigns/:id/review', verifyAdmin, async (req, res) => {
+router.get('/campaigns', verifyAdmin, async (req, res) => {
   try {
-    const campaignId = parseInt(req.params.id);
+    const { status, page = 1, limit = 20 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    // 1. Get campaign + documents + verification
-    const campaign = await prisma.campaign.findUnique({
-      where  : { id: campaignId },
-      include: {
-        patient             : { select: { email: true, phone: true } },
-        documents           : true,
-        verification_records: { orderBy: { verified_at: 'desc' }, take: 1 }
-      }
-    });
+    const where = status ? { status } : {};
 
-    if (!campaign) {
-      return res.status(404).json({ success: false, error: 'Campaign not found' });
-    }
+    const [campaigns, total] = await Promise.all([
+      prisma.campaign.findMany({
+        where,
+        skip,
+        take   : parseInt(limit),
+        include: {
+          patient            : { select: { name: true, email: true, phone: true } },
+          verification_records: { orderBy: { verified_at: 'desc' }, take: 1 }
+        },
+        orderBy: { created_at: 'desc' }
+      }),
+      prisma.campaign.count({ where })
+    ]);
 
-    // 2. HMS check — search by Aadhaar
-    let hms = {
-      found         : false,
-      name_match    : false,
-      aadhaar_match : false,
-      amount_match  : false,
-      hms_patient   : null,
-      payment_status: null,
-      error         : null
-    };
-
-    try {
-      const cleanAadhaar = (campaign.patient_aadhaar || '').replace(/[\s\-]/g, '');
-      const hmsRes = await axios.get(
-        `${process.env.HMS_BASE_URL}/hms/patients/search`,
-        { params: { aadhaar: cleanAadhaar }, timeout: 5000 }
-      );
-
-      if (hmsRes.data.success && hmsRes.data.patients?.length > 0) {
-        const p          = hmsRes.data.patients[0];
-        hms.found        = true;
-        hms.hms_patient  = p;
-
-        // Name match — check first word
-        const cName = campaign.patient_full_name.toLowerCase();
-        const hName = (p.patient_name || '').toLowerCase();
-        hms.name_match = cName.split(' ').some(w => w.length > 2 && hName.includes(w));
-
-        // Aadhaar match
-        hms.aadhaar_match = p.aadhaar_number?.replace(/[\s\-]/g, '') === cleanAadhaar;
-
-        // Amount match — within 20% tolerance
-        const cAmt = parseFloat(campaign.verified_amount || 0);
-        const hAmt = parseFloat(p.ledger?.total_estimate || 0);
-        if (cAmt > 0 && hAmt > 0) {
-          hms.amount_match = Math.abs(cAmt - hAmt) / hAmt <= 0.20;
-        }
-
-        // Payment status
-        hms.payment_status = {
-          total_estimate: p.ledger?.total_estimate    || 0,
-          amount_paid   : p.ledger?.amount_paid       || 0,
-          outstanding   : p.ledger?.outstanding_amount || 0,
-          patient_status: p.status
-        };
-      }
-    } catch (e) {
-      hms.error = 'HMS unavailable: ' + e.message;
-    }
-
-    const ver = campaign.verification_records[0] || {};
-
-    res.json({
-      success : true,
-      campaign: {
-        id             : campaign.id,
-        title          : campaign.title,
-        status         : campaign.status,
-        verified_amount: campaign.verified_amount,
-        created_at     : campaign.created_at,
-      },
-      patient: {
-        full_name   : campaign.patient_full_name,
-        age         : campaign.patient_age,
-        gender      : campaign.patient_gender,
-        aadhaar     : campaign.patient_aadhaar,
-        city        : campaign.patient_city,
-        state       : campaign.patient_state,
-        email       : campaign.patient?.email,
-        relationship: campaign.relationship_to_fundraiser,
-      },
-      documents: campaign.documents.map(d => ({
-        id           : d.id,
-        document_type: d.document_type,
-        file_name    : d.file_name,
-        created_at   : d.created_at,
-      })),
-      ai_verification: {
-        status        : ver.status,
-        risk_score    : ver.risk_score,
-        extracted_data: ver.extracted_data,
-        issues        : ver.issues,
-        has_tampering : ver.has_tampering,
-        has_expired   : ver.has_expired,
-      },
-      hms
-    });
+    res.json({ success: true, campaigns, total, page: parseInt(page), limit: parseInt(limit) });
 
   } catch (error) {
-    console.error('Review error:', error);
-    res.status(500).json({ success: false, error: 'Failed to get review' });
+    console.error('Get all campaigns error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get campaigns' });
   }
 });
 
-// GET single document content (base64) for admin viewing
-router.get('/documents/:id', verifyAdmin, async (req, res) => {
+// ─────────────────────────────────────────
+// GET BLACKLIST — Admin
+// ─────────────────────────────────────────
+router.get('/blacklist', verifyAdmin, async (req, res) => {
   try {
-    const doc = await prisma.campaignDocument.findUnique({
-      where: { id: parseInt(req.params.id) }
+    const blacklist = await prisma.blacklist.findMany({
+      orderBy: { blacklisted_at: 'desc' }
     });
-    if (!doc) return res.status(404).json({ success: false, error: 'Document not found' });
-    res.json({ success: true, document: doc });
+    res.json({ success: true, blacklist });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('Get blacklist error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get blacklist' });
   }
 });
 
