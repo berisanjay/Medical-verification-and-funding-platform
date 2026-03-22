@@ -81,10 +81,10 @@ router.post('/verify-otp', async (req, res) => {
     }
 
     // OTP DISABLED FOR DEVELOPMENT — re-enable before production
-    // const result = await verifyOTP(parseInt(admin_id), otp_code, 'ADMIN_LOGIN');
-    // if (!result.valid) {
-    //   return res.status(400).json({ success: false, error: result.error });
-    // }
+    //const result = await verifyOTP(parseInt(admin_id), otp_code, 'ADMIN_LOGIN');
+    //if (!result.valid) {
+      //return res.status(400).json({ success: false, error: result.error });
+    //}
 
     // Get admin details
     const admin = await prisma.user.findUnique({
@@ -200,7 +200,7 @@ router.get('/dashboard', verifyAdmin, async (req, res) => {
     ] = await Promise.all([
       prisma.campaign.count(),
       prisma.campaign.count({ where: { status: 'LIVE_CAMPAIGN' } }),
-      prisma.campaign.count({ where: { status: 'PENDING' } }),
+      prisma.campaign.count({ where: { status: { in: ['PENDING', 'PENDING_VERIFICATION'] } } }),
       prisma.campaign.count({ where: { status: 'VERIFICATION_NEEDED' } }),
       prisma.donation.aggregate({ _sum: { amount: true }, where: { status: 'SUCCESS' } }),
       prisma.user.count({ where: { role: 'PATIENT' } }),
@@ -365,7 +365,7 @@ router.get('/campaigns/:id/review', verifyAdmin, async (req, res) => {
 router.get('/pending', verifyAdmin, async (req, res) => {
   try {
     const campaigns = await prisma.campaign.findMany({
-      where  : { status: 'PENDING' },
+      where  : { status: { in: ['PENDING', 'PENDING_VERIFICATION', 'VERIFICATION_NEEDED'] } },
       include: {
         patient            : { select: { name: true, email: true } },
         verification_records: { orderBy: { verified_at: 'desc' }, take: 1 },
@@ -422,10 +422,28 @@ router.put('/campaigns/:id/verify', verifyAdmin, async (req, res) => {
       return res.status(404).json({ success: false, error: 'Campaign not found' });
     }
 
-    // Update campaign status to VERIFIED
+    // Generate UPI ID and QR code
+    const { v4: uuidv4 } = require('uuid');
+    const QRCode          = require('qrcode');
+
+    const publicUrl  = `meditrust.in/campaign/${uuidv4().split('-')[0]}`;
+    const upiId      = `meditrust.${campaignId}@ybl`;
+    const qrCodeUrl  = await QRCode.toDataURL(
+      `upi://pay?pa=${upiId}&pn=MediTrust&tn=Campaign-${campaignId}`
+    );
+    const expiresAt  = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+
+    // Update campaign → LIVE directly
     await prisma.campaign.update({
       where: { id: campaignId },
-      data : { status: 'VERIFIED' }
+      data : {
+        status      : 'LIVE_CAMPAIGN',
+        story_approved: true,
+        public_url  : publicUrl,
+        upi_id      : upiId,
+        qr_code_url : qrCodeUrl,
+        expires_at  : expiresAt
+      }
     });
 
     // Update verification record
@@ -441,22 +459,27 @@ router.put('/campaigns/:id/verify', verifyAdmin, async (req, res) => {
         action      : 'CAMPAIGN_VERIFIED',
         target_type : 'campaign',
         target_id   : campaignId,
-        notes       : notes || 'Admin verified campaign'
+        notes       : notes || 'Admin approved — campaign now LIVE'
       }
     });
 
-    // Notify patient via Flask
-    const axios = require('axios');
-    await axios.post(`${process.env.FLASK_BASE_URL}/notify/verification-status`, {
+    // Send campaign LIVE email to patient
+    await axios.post(`${process.env.FLASK_BASE_URL}/notify/campaign-live`, {
       to_email       : campaign.patient.email,
-      patient_name   : campaign.patient.name,
-      status         : 'VERIFIED',
-      campaign_title : campaign.title
+      patient_name   : campaign.patient_full_name,
+      campaign_title : campaign.title,
+      public_url     : publicUrl,
+      upi_id         : upiId
     }, {
       headers: { 'x-flask-secret': process.env.FLASK_INTERNAL_SECRET }
-    }).catch(err => console.log('Notification failed:', err.message));
+    }).catch(err => console.log('Live notification failed:', err.message));
 
-    res.json({ success: true, message: 'Campaign verified successfully' });
+    res.json({
+      success   : true,
+      message   : 'Campaign approved and is now LIVE!',
+      public_url: publicUrl,
+      upi_id    : upiId
+    });
 
   } catch (error) {
     console.error('Verify campaign error:', error);
@@ -485,14 +508,40 @@ router.put('/campaigns/:id/cancel', verifyAdmin, async (req, res) => {
       return res.status(404).json({ success: false, error: 'Campaign not found' });
     }
 
-    // Cancel campaign
-    await prisma.campaign.update({
-      where: { id: campaignId },
-      data : { status: 'CANCELLED' }
-    });
+    // ── Send rejection email BEFORE deleting data ──────────────
+    await axios.post(`${process.env.FLASK_BASE_URL}/notify/campaign-rejected`, {
+      to_email       : campaign.patient.email,
+      patient_name   : campaign.patient_full_name,
+      campaign_title : campaign.title,
+      reason
+    }, {
+      headers: { 'x-flask-secret': process.env.FLASK_INTERNAL_SECRET }
+    }).catch(err => console.log('Rejection email failed:', err.message));
 
-    // Blacklist patient aadhaar and update user
-    if (campaign.patient_aadhaar) {
+    // ── Delete all campaign data from DB ─────────────────────────
+    // Order matters — delete children before parent
+    await prisma.verificationRecord.deleteMany({ where: { campaign_id: campaignId } });
+    await prisma.campaignDocument.deleteMany({  where: { campaign_id: campaignId } });
+    await prisma.campaignUpdate.deleteMany({    where: { campaign_id: campaignId } });
+    await prisma.nGOMatch.deleteMany({          where: { campaign_id: campaignId } });
+    await prisma.fundRelease.deleteMany({       where: { campaign_id: campaignId } });
+    await prisma.donation.deleteMany({          where: { campaign_id: campaignId } });
+
+    // Delete FundNeeder if exists
+    try {
+      await prisma.fundNeeder.delete({ where: { campaign_id: campaignId } });
+    } catch(e) { /* may not exist */ }
+
+    // Delete campaign itself
+    await prisma.campaign.delete({ where: { id: campaignId } });
+    console.log(`✅ Campaign ${campaignId} deleted from DB`);
+
+    // Blacklist aadhaar only if fraud detected
+    const isFraud = reason.toLowerCase().includes('fraud') ||
+                    reason.toLowerCase().includes('fake') ||
+                    reason.toLowerCase().includes('tamper');
+
+    if (isFraud && campaign.patient_aadhaar) {
       await prisma.blacklist.upsert({
         where : { aadhaar_number: campaign.patient_aadhaar },
         update: { reason, blacklisted_by: req.admin.id },
@@ -502,13 +551,12 @@ router.put('/campaigns/:id/cancel', verifyAdmin, async (req, res) => {
           blacklisted_by : req.admin.id
         }
       });
+      await prisma.user.update({
+        where: { id: campaign.patient_id },
+        data : { is_blacklisted: true, blacklist_reason: reason }
+      });
+      console.log(`🚫 Patient blacklisted for fraud: ${campaign.patient_aadhaar}`);
     }
-
-    // Mark user as blacklisted
-    await prisma.user.update({
-      where: { id: campaign.patient_id },
-      data : { is_blacklisted: true, blacklist_reason: reason }
-    });
 
     // Log admin action
     await prisma.adminAuditLog.create({
@@ -521,19 +569,11 @@ router.put('/campaigns/:id/cancel', verifyAdmin, async (req, res) => {
       }
     });
 
-    // Notify patient
-    const axios = require('axios');
-    await axios.post(`${process.env.FLASK_BASE_URL}/notify/verification-status`, {
-      to_email       : campaign.patient.email,
-      patient_name   : campaign.patient.name,
-      status         : 'CANCELLED',
-      campaign_title : campaign.title,
-      reason
-    }, {
-      headers: { 'x-flask-secret': process.env.FLASK_INTERNAL_SECRET }
-    }).catch(err => console.log('Notification failed:', err.message));
-
-    res.json({ success: true, message: 'Campaign cancelled and patient blacklisted' });
+    res.json({
+      success : true,
+      message : 'Campaign rejected, data deleted, patient notified by email',
+      fraud_blacklisted: isFraud
+    });
 
   } catch (error) {
     console.error('Cancel campaign error:', error);

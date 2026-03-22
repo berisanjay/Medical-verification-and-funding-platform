@@ -517,6 +517,31 @@ router.post('/:id/go-live', verifyToken, async (req, res) => {
 });
 
 // ─────────────────────────────────────────
+
+router.get('/my/campaigns', verifyToken, async (req, res) => {
+  try {
+    const campaigns = await prisma.campaign.findMany({
+      where  : { patient_id: req.user.id },
+      include: {
+        verification_records: { orderBy: { verified_at: 'desc' }, take: 1 },
+        fund_releases       : { orderBy: { released_at: 'desc' } },
+        donations           : { where: { status: 'SUCCESS' } }
+      },
+      orderBy: { created_at: 'desc' }
+    });
+
+    res.json({ success: true, campaigns });
+
+  } catch (error) {
+    console.error('Get my campaigns error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get campaigns' });
+  }
+});
+
+// ─────────────────────────────────────────
+// GET SINGLE CAMPAIGN (Public)
+// ─────────────────────────────────────────
+
 // GET ALL LIVE CAMPAIGNS (Public)
 // ─────────────────────────────────────────
 router.get('/', async (req, res) => {
@@ -570,31 +595,103 @@ router.get('/', async (req, res) => {
 });
 
 // ─────────────────────────────────────────
-// GET PATIENT'S OWN CAMPAIGNS
+// SAVE DOCUMENTS — uses Step 3 preview result
+// No Flask re-call — just saves docs + verification record
 // ─────────────────────────────────────────
-router.get('/my/campaigns', verifyToken, async (req, res) => {
+router.post('/:id/save-documents', verifyToken, async (req, res) => {
   try {
-    const campaigns = await prisma.campaign.findMany({
-      where  : { patient_id: req.user.id },
-      include: {
-        verification_records: { orderBy: { verified_at: 'desc' }, take: 1 },
-        fund_releases       : { orderBy: { released_at: 'desc' } },
-        donations           : { where: { status: 'SUCCESS' } }
-      },
-      orderBy: { created_at: 'desc' }
+    const campaignId = parseInt(req.params.id);
+    const { documents, verification_result } = req.body;
+
+    if (!documents || documents.length === 0) {
+      return res.status(400).json({ success: false, error: 'Documents required' });
+    }
+
+    const campaign = await prisma.campaign.findUnique({ where: { id: campaignId } });
+    if (!campaign || campaign.patient_id !== req.user.id) {
+      return res.status(404).json({ success: false, error: 'Campaign not found' });
+    }
+
+    // Save documents to DB
+    await prisma.campaignDocument.createMany({
+      data: documents.map(doc => ({
+        campaign_id  : campaignId,
+        document_type: doc.document_type,
+        file_url     : doc.file_url,
+        file_name    : doc.file_name
+      }))
+    });
+    console.log(`✅ Saved ${documents.length} documents for campaign ${campaignId}`);
+
+    // Use pre-computed verification result from Step 3
+    let finalStatus = 'PENDING';
+    let riskScore   = 50;
+    let extracted   = {};
+
+    if (verification_result && verification_result.final_status) {
+      const statusMap = {
+        'VERIFIED'           : 'VERIFIED',
+        'PENDING'            : 'PENDING',
+        'VERIFICATION_NEEDED': 'VERIFICATION_NEEDED',
+        'UPDATE_NEEDED'      : 'UPDATE_NEEDED'
+      };
+      finalStatus = statusMap[verification_result.final_status] || 'PENDING';
+      riskScore   = verification_result.risk_score   || 0;
+      extracted   = verification_result.extracted_data || {};
+
+      console.log('✅ Using Step 3 preview result — no Flask re-call needed');
+      console.log('   Status:', finalStatus, '| Risk:', riskScore);
+    } else {
+      // No preview result — fallback to PENDING
+      console.log('⚠️ No preview result found — defaulting to PENDING');
+    }
+
+    // Save verification record
+    await prisma.verificationRecord.create({
+      data: {
+        campaign_id   : campaignId,
+        status        : finalStatus,
+        extracted_data: extracted,
+        issues        : verification_result?.cross_document_issues || [],
+        risk_score    : riskScore,
+        has_expired   : verification_result?.has_expired_docs  || false,
+        has_tampering : verification_result?.has_tampering     || false
+      }
     });
 
-    res.json({ success: true, campaigns });
+    // Update campaign status + verified amount
+    const verifiedAmount = extracted.amount
+      ? parseFloat(extracted.amount.toString().replace(/[^0-9.]/g, ''))
+      : null;
+
+    await prisma.campaign.update({
+      where: { id: campaignId },
+      data : {
+        status         : finalStatus,
+        verified_amount: verifiedAmount
+      }
+    });
+
+    console.log(`✅ Campaign ${campaignId} updated → ${finalStatus}`);
+
+    res.json({
+      success       : true,
+      status        : finalStatus,
+      risk_score    : riskScore,
+      extracted_data: extracted,
+      message       : `Documents saved. Status: ${finalStatus}`
+    });
 
   } catch (error) {
-    console.error('Get my campaigns error:', error);
-    res.status(500).json({ success: false, error: 'Failed to get campaigns' });
+    console.error('Save documents error:', error);
+    res.status(500).json({ success: false, error: 'Failed to save documents' });
   }
 });
 
 // ─────────────────────────────────────────
-// GET SINGLE CAMPAIGN (Public)
+// GET PATIENT'S OWN CAMPAIGNS
 // ─────────────────────────────────────────
+
 router.get('/:id', async (req, res) => {
   try {
     const campaign = await prisma.campaign.findUnique({
@@ -753,7 +850,7 @@ router.post('/:id/updates', verifyToken, async (req, res) => {
   }
 });
 
-module.exports = router;
+
 // ─────────────────────────────────────────
 // HOSPITAL CHANGE FLOW
 // OTP required → suspend payouts → re-verify
@@ -765,10 +862,10 @@ router.put('/:id/hospital-change', verifyToken, async (req, res) => {
 
     // Verify OTP
     // OTP DISABLED FOR DEVELOPMENT — re-enable before production
-    // const otpResult = await verifyOTP(req.user.id, otp_code, 'HOSPITAL_CHANGE');
-    // if (!otpResult.valid) {
-    //   return res.status(400).json({ success: false, error: otpResult.error });
-    // }
+    //const otpResult = await verifyOTP(req.user.id, otp_code, 'HOSPITAL_CHANGE');
+    //if (!otpResult.valid) {
+//return res.status(400).json({ success: false, error: otpResult.error });
+    //}
 
     const campaign = await prisma.campaign.findUnique({
       where  : { id: campaignId },
@@ -913,3 +1010,5 @@ router.post('/:id/hospital-change-otp', verifyToken, async (req, res) => {
     res.status(500).json({ success: false, error: 'Failed to send OTP' });
   }
 });
+
+module.exports = router;

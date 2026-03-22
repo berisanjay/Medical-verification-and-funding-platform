@@ -64,11 +64,19 @@ router.post('/trigger', verifyAdmin, async (req, res) => {
       });
     }
 
-    if (!campaign.patient_hms_id) {
-      return res.status(400).json({
-        success: false,
-        error: 'Patient not registered in HMS yet'
+    // ── Get FundNeeder billing data (fallback if no HMS ID) ──
+    let fundNeeder = null;
+    try {
+      fundNeeder = await prisma.fundNeeder.findUnique({
+        where: { campaign_id: parseInt(campaign_id) }
       });
+    } catch(e) {
+      console.log('FundNeeder lookup failed:', e.message);
+    }
+
+    // If no HMS ID and no FundNeeder — still allow release with admin override
+    if (!campaign.patient_hms_id && !fundNeeder) {
+      console.log('⚠️ No HMS ID or FundNeeder — admin proceeding with manual release');
     }
 
     // ── PRE-RELEASE CHECK 1: Hospital still verified? ──
@@ -94,32 +102,47 @@ router.post('/trigger', verifyAdmin, async (req, res) => {
     }
 
     // ── PRE-RELEASE CHECK 2: Patient still active in HMS? ──
-    const hmsStatus = await callHMS('GET', `/hms/patients/${campaign.patient_hms_id}/status`);
-
-    if (!hmsStatus || hmsStatus.status === 'DISCHARGED') {
-      await prisma.fundRelease.create({
-        data: {
-          campaign_id  : parseInt(campaign_id),
-          amount       : parseFloat(amount),
-          triggered_by : 'ADMIN',
-          status       : 'BLOCKED',
-          block_reason : 'Patient already discharged'
-        }
-      });
-      return res.status(400).json({
-        success: false,
-        error  : 'BLOCKED — Patient already discharged'
-      });
+    let hmsStatus = null;
+    if (campaign.patient_hms_id) {
+      hmsStatus = await callHMS('GET', `/hms/patients/${campaign.patient_hms_id}/status`);
+      if (hmsStatus && hmsStatus.status === 'DISCHARGED') {
+        await prisma.fundRelease.create({
+          data: {
+            campaign_id  : parseInt(campaign_id),
+            amount       : parseFloat(amount),
+            triggered_by : 'ADMIN',
+            status       : 'BLOCKED',
+            block_reason : 'Patient already discharged'
+          }
+        });
+        return res.status(400).json({
+          success: false,
+          error  : 'BLOCKED — Patient already discharged'
+        });
+      }
+    } else {
+      console.log('⚠️ No HMS ID — skipping HMS status check');
     }
 
     // ── PRE-RELEASE CHECK 3: Outstanding amount > 0? ──
-    const outstanding = await callHMS(
-      'GET',
-      `/hms/patients/${campaign.patient_hms_id}/outstanding`
-    );
+    let outstanding = null;
+    if (campaign.patient_hms_id) {
+      outstanding = await callHMS(
+        'GET',
+        `/hms/patients/${campaign.patient_hms_id}/outstanding`
+      );
+    }
+
+    // If no HMS — use FundNeeder outstanding or campaign verified_amount
+    if (!outstanding) {
+      const outstandingAmount = fundNeeder
+        ? parseFloat(fundNeeder.outstanding)
+        : parseFloat(campaign.verified_amount || amount);
+      outstanding = { outstanding: outstandingAmount };
+      console.log('⚠️ Using FundNeeder/verified_amount for outstanding:', outstandingAmount);
+    }
 
     if (!outstanding || parseFloat(outstanding.outstanding) <= 0) {
-      // Campaign should be completed
       await prisma.campaign.update({
         where: { id: parseInt(campaign_id) },
         data : { status: 'COMPLETED' }
@@ -146,24 +169,25 @@ router.post('/trigger', verifyAdmin, async (req, res) => {
       }
     });
 
-    // Update HMS ledger
-    const hmsPayment = await callHMS('POST', '/hms/payments', {
-      patient_hms_id: campaign.patient_hms_id,
-      amount        : releaseAmount,
-      source        : 'MediTrust Crowdfunding',
-      notes         : `Campaign ${campaign_id} — Release ${release.id}`
-    });
-
-    // Update HMS payment ID in release
-    if (hmsPayment) {
-      await prisma.fundRelease.update({
-        where: { id: release.id },
-        data : {
-          hms_payment_id: hmsPayment.payment?.id?.toString(),
-          status        : 'COMPLETED'
-        }
+    // Update HMS ledger — only if HMS ID exists
+    let hmsPayment = null;
+    if (campaign.patient_hms_id) {
+      hmsPayment = await callHMS('POST', '/hms/payments', {
+        patient_hms_id: campaign.patient_hms_id,
+        amount        : releaseAmount,
+        source        : 'MediTrust Crowdfunding',
+        notes         : `Campaign ${campaign_id} — Release ${release.id}`
       });
     }
+
+    // Update release status
+    await prisma.fundRelease.update({
+      where: { id: release.id },
+      data : {
+        hms_payment_id: hmsPayment?.payment?.id?.toString() || null,
+        status        : 'COMPLETED'
+      }
+    });
 
     // Update campaign released amount
     await prisma.campaign.update({

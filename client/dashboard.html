@@ -126,7 +126,7 @@
     <div class="nav-item active" onclick="showSection('overview', this)"><span class="icon">🏠</span> Overview</div>
     <div class="nav-item" onclick="showSection('campaigns', this)"><span class="icon">📋</span> My Campaigns</div>
     <div class="nav-label">Actions</div>
-    <div class="nav-item" onclick="openNewCampaignModal()"><span class="icon">➕</span> New Campaign</div>
+    <div class="nav-item" onclick="window.location.href='create-campaign.html'"><span class="icon">➕</span> New Campaign</div>
     <div class="nav-item" onclick="showSection('updates', this)"><span class="icon">📢</span> Post Update</div>
     <div class="nav-label">Info</div>
     <div class="nav-item" onclick="showSection('howit', this)"><span class="icon">❓</span> How It Works</div>
@@ -147,7 +147,7 @@
     </div>
     <div class="topbar-right">
       <button class="btn btn-outline" onclick="loadMyCampaigns()" style="font-size:12px;">🔄 Refresh</button>
-      <button class="btn-new-campaign" onclick="openNewCampaignModal()">➕ New Campaign</button>
+      <button class="btn-new-campaign" onclick="window.location.href='create-campaign.html'">➕ New Campaign</button>
     </div>
   </div>
 
@@ -228,51 +228,7 @@
   </div>
 </div>
 
-<!-- NEW CAMPAIGN MODAL -->
-<div class="modal-overlay" id="newCampaignModal">
-  <div class="modal">
-    <h3>➕ Create New Campaign</h3>
-    <p>Fill in patient details. Documents will be uploaded in the next step.</p>
-    <div id="campaignModalError" style="display:none;background:#FEE2E2;color:#991B1B;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:14px;"></div>
-
-    <!-- Direct form — OTP disabled for testing -->
-    <div id="campaignStep3">
-      <div class="form-group"><label>Campaign Title *</label><input type="text" id="c_title" placeholder="Help [Name] fight [disease]" /></div>
-      <div style="background:var(--orange-light);border-radius:10px;padding:12px 16px;font-size:12px;color:var(--orange-dark);margin-bottom:14px;">
-        👤 <strong>Patient Details</strong> — Fill for the person who needs treatment
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Patient Full Name *</label><input type="text" id="c_patient_name" placeholder="As per Aadhaar" /></div>
-        <div class="form-group"><label>Relationship *</label>
-          <select id="c_relationship">
-            <option value="SELF">Self</option><option value="SPOUSE">Spouse</option>
-            <option value="CHILD">Child</option><option value="PARENT">Parent</option>
-            <option value="SIBLING">Sibling</option><option value="OTHER">Other</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Patient Age *</label><input type="number" id="c_age" placeholder="Age" min="1" max="120" /></div>
-        <div class="form-group"><label>Patient Gender *</label>
-          <select id="c_gender"><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label>Patient City *</label><input type="text" id="c_city" placeholder="City" /></div>
-        <div class="form-group"><label>Patient State *</label><input type="text" id="c_state" placeholder="State" /></div>
-      </div>
-      <div class="form-group">
-        <label>Patient Aadhaar Number *</label>
-        <input type="text" id="c_aadhaar" placeholder="12-digit Aadhaar" maxlength="12" />
-        <div style="font-size:11px;color:var(--gray-400);margin-top:4px;">Used for identity verification</div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn-modal-cancel" onclick="closeModal('newCampaignModal')">Cancel</button>
-        <button class="btn-modal-submit" id="createCampaignBtn" onclick="createCampaign()">Create Campaign →</button>
-      </div>
-    </div>
-  </div>
-</div>
+<!-- New Campaign → navigates to create-campaign.html -->
 
 <!-- STORY MODAL -->
 <div class="modal-overlay" id="storyModal">
@@ -293,31 +249,13 @@
       </select>
     </div>
     <div id="geminiResult" style="display:none;margin-top:16px;">
-      <!-- Version Comparison -->
-      <div style="background:var(--orange-light);border:1.5px solid var(--orange-mid);border-radius:10px;padding:14px;margin-bottom:14px;">
-        <p style="font-size:12px;font-weight:700;color:var(--orange);margin-bottom:8px;">📝 Your Original Story:</p>
-        <p id="originalStoryText" style="font-size:13px;color:var(--gray-800);line-height:1.7;margin:0;background:var(--white);padding:10px;border-radius:6px;"></p>
-      </div>
-      
       <div style="background:var(--gray-100);border-radius:10px;padding:14px;margin-bottom:14px;">
         <p style="font-size:12px;font-weight:700;color:var(--orange);margin-bottom:8px;">✨ Gemini Polished Version:</p>
         <p id="geminiStoryText" style="font-size:13px;color:var(--gray-800);line-height:1.7;margin:0;"></p>
       </div>
-
-      <!-- Correction Section -->
-      <div id="correctionSection" style="display:none;margin-top:16px;">
-        <div style="background:#FEF3C7;border:1.5px solid #FCD34D;border-radius:10px;padding:14px;margin-bottom:14px;">
-          <p style="font-size:12px;font-weight:700;color:#92400E;margin-bottom:8px;">🔧 Suggest Corrections:</p>
-          <textarea id="correctionText" rows="3" placeholder="Tell Gemini what to fix or change... (e.g., 'Make it more emotional', 'Add details about treatment', 'Fix this paragraph...')" style="width:100%;padding:10px;border:1px solid #FCD34D;border-radius:6px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>
-          <button class="btn btn-orange" onclick="correctStory()" style="width:100%;margin-top:8px;" id="correctBtn">🔧 Send Corrections to Gemini</button>
-        </div>
-      </div>
-
-      <!-- Action Buttons -->
       <div style="display:flex;gap:8px;margin-bottom:12px;">
         <button class="btn btn-green" onclick="approveStory(false)">✅ Approve This Story</button>
         <button class="btn btn-outline" onclick="approveStory(true)">Use My Original</button>
-        <button class="btn btn-outline" onclick="toggleCorrection()" id="suggestCorrectionBtn">💡 Suggest Corrections</button>
       </div>
     </div>
     <div class="modal-actions" id="storyActions">
@@ -397,7 +335,7 @@
   function renderOverviewCampaigns() {
     const el = document.getElementById('overviewCampaigns');
     if (!myCampaigns.length) {
-      el.innerHTML = `<div class="empty"><div class="empty-icon">🏥</div><h3>No campaigns yet</h3><p>Create your first campaign</p><button class="btn btn-orange" onclick="openNewCampaignModal()">➕ Create Campaign</button></div>`;
+      el.innerHTML = `<div class="empty"><div class="empty-icon">🏥</div><h3>No campaigns yet</h3><p>Create your first campaign</p><button class="btn btn-orange" onclick="window.location.href='create-campaign.html'">➕ Create Campaign</button></div>`;
       return;
     }
     el.innerHTML = myCampaigns.slice(0,3).map(c => campaignCardHTML(c)).join('');
@@ -406,7 +344,7 @@
   function renderCampaignsList() {
     const el = document.getElementById('campaignsList');
     if (!myCampaigns.length) {
-      el.innerHTML = `<div class="empty"><div class="empty-icon">🏥</div><h3>No campaigns yet</h3><p>Start your first campaign</p><button class="btn btn-orange" onclick="openNewCampaignModal()">➕ Create My First Campaign</button></div>`;
+      el.innerHTML = `<div class="empty"><div class="empty-icon">🏥</div><h3>No campaigns yet</h3><p>Start your first campaign</p><button class="btn btn-orange" onclick="window.location.href='create-campaign.html'">➕ Create My First Campaign</button></div>`;
       return;
     }
     el.innerHTML = myCampaigns.map(c => `<div class="campaign-card">${campaignCardHTML(c)}</div>`).join('');
@@ -448,18 +386,15 @@
   function getActionButtons(c) {
     let btns = '';
 
+    // DRAFT — still needs documents uploaded
     if (c.status === 'DRAFT') {
-      btns += `<button class="btn btn-orange" onclick="window.location.href='upload.html?campaign_id=${c.id}'">📤 Upload Documents</button>`;
+      btns += `<button class="btn btn-orange"
+        onclick="window.location.href='upload.html?campaign_id=${c.id}'">
+        📤 Upload Documents
+      </button>`;
     }
 
-    if (c.status === 'VERIFIED' && !c.story_approved) {
-      btns += `<button class="btn btn-orange" onclick="openStoryModal(${c.id})">✍️ Write Story</button>`;
-    }
-
-    if (c.status === 'VERIFIED' && c.story_approved) {
-      btns += `<button class="btn btn-green" onclick="goLive(${c.id})">🚀 Go Live!</button>`;
-    }
-
+    // LIVE — show QR + UPI + Post Update
     if (c.status === 'LIVE_CAMPAIGN') {
       btns += `
         <button class="btn btn-blue"    onclick="showQR(${c.id})">📱 QR Code</button>
@@ -467,8 +402,18 @@
         <button class="btn btn-outline" onclick="showSection('updates',null)">📢 Post Update</button>`;
     }
 
-    if (['PENDING_VERIFICATION','PENDING','VERIFICATION_NEEDED','UPDATE_NEEDED'].includes(c.status)) {
-      btns += `<button class="btn btn-outline" disabled style="opacity:0.5;cursor:not-allowed;">⏳ ${statusLabel(c.status)}</button>`;
+    // UNDER REVIEW — waiting for admin
+    if (['PENDING_VERIFICATION','PENDING','VERIFICATION_NEEDED'].includes(c.status)) {
+      btns += `<div style="font-size:12px;color:var(--gray-400);padding:6px 0;">
+        ⏳ Under admin review — you will be notified by email
+      </div>`;
+    }
+
+    // VERIFIED (admin approved but not live yet — transitional)
+    if (c.status === 'VERIFIED') {
+      btns += `<div style="font-size:12px;color:var(--green);padding:6px 0;">
+        ✅ Approved by admin — campaign going live soon
+      </div>`;
     }
 
     return btns;
@@ -476,66 +421,13 @@
 
   // ── CREATE CAMPAIGN (OTP disabled) ─────────
   function openNewCampaignModal() {
+    // Navigate to full 6-step campaign creation page
     window.location.href = 'create-campaign.html';
   }
 
-  async function createCampaign() {
-    const title   = document.getElementById('c_title').value.trim();
-    const name    = document.getElementById('c_patient_name').value.trim();
-    const rel     = document.getElementById('c_relationship').value;
-    const age     = document.getElementById('c_age').value;
-    const gender  = document.getElementById('c_gender').value;
-    const city    = document.getElementById('c_city').value.trim();
-    const state   = document.getElementById('c_state').value.trim();
-    const aadhaar = document.getElementById('c_aadhaar').value.trim();
-    const btn     = document.getElementById('createCampaignBtn');
+  // createCampaign() removed — use create-campaign.html
 
-    if (!title || !name || !age || !city || !state || !aadhaar) {
-      showCampaignError('All fields are required'); return;
-    }
-    if (aadhaar.length !== 12) {
-      showCampaignError('Aadhaar must be 12 digits'); return;
-    }
-
-    btn.disabled = true; btn.textContent = 'Creating...';
-
-    try {
-      const res  = await authFetch(`${API}/campaigns`, {
-        method : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body   : JSON.stringify({
-          otp_code                  : '000000',
-          title,
-          patient_full_name         : name,
-          patient_age               : parseInt(age),
-          patient_gender            : gender,
-          patient_city              : city,
-          patient_state             : state,
-          patient_aadhaar           : aadhaar,
-          relationship_to_fundraiser: rel
-        })
-      });
-      const data = await res.json();
-
-      if (data.success) {
-        closeModal('newCampaignModal');
-        showToast('✅ Campaign created! Upload documents to proceed.', 'success');
-        await loadMyCampaigns();
-        // Auto redirect to upload page
-        setTimeout(() => {
-          window.location.href = `upload.html?campaign_id=${data.campaign_id}`;
-        }, 1000);
-      } else {
-        showCampaignError(data.error || 'Failed to create campaign');
-      }
-    } catch(e) {
-      showCampaignError('Server error');
-    } finally {
-      btn.disabled = false; btn.textContent = 'Create Campaign →';
-    }
-  }
-
-  // ── STORY MODAL ────────────────────────────
+    // ── STORY MODAL ────────────────────────────
   function openStoryModal(campaignId) {
     selectedCampaignId = campaignId;
     document.getElementById('storyText').value = '';
@@ -560,9 +452,6 @@
       const data = await res.json();
 
       if (data.success) {
-        // Show original story for comparison
-        document.getElementById('originalStoryText').textContent = data.story_original || text;
-        
         if (data.story_gemini) {
           document.getElementById('geminiStoryText').textContent = data.story_gemini;
           document.getElementById('geminiResult').style.display  = 'block';
@@ -589,65 +478,6 @@
         await loadMyCampaigns();
       } else { showToast(data.error || 'Failed', 'error'); }
     } catch(e) { showToast('Server error', 'error'); }
-  }
-
-  // ── CORRECTION LOOP ────────────────────────
-  function toggleCorrection() {
-    const correctionSection = document.getElementById('correctionSection');
-    const isVisible = correctionSection.style.display !== 'none';
-    
-    correctionSection.style.display = isVisible ? 'none' : 'block';
-    
-    if (!isVisible) {
-      document.getElementById('correctionText').focus();
-    }
-  }
-
-  async function correctStory() {
-    const corrections = document.getElementById('correctionText').value.trim();
-    const btn = document.getElementById('correctBtn');
-
-    if (!corrections || corrections.length < 10) {
-      showToast('Please provide detailed corrections (min 10 characters)', 'error');
-      return;
-    }
-
-    btn.disabled = true; btn.textContent = '🔧 Sending Corrections...';
-    
-    try {
-      const res = await authFetch(`${API}/story/correct`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          campaign_id: selectedCampaignId,
-          corrections: corrections
-        })
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        if (data.story_gemini) {
-          // Update Gemini version with corrected text
-          document.getElementById('geminiStoryText').textContent = data.story_gemini;
-          
-          // Clear correction text and hide section
-          document.getElementById('correctionText').value = '';
-          document.getElementById('correctionSection').style.display = 'none';
-          
-          showToast('✅ Story updated with your corrections!', 'success');
-        } else {
-          showToast(data.message || 'No changes made to story.', 'info');
-        }
-      } else {
-        showToast(data.error || 'Failed to apply corrections', 'error');
-      }
-    } catch(e) {
-      showToast('Server error while applying corrections', 'error');
-    } finally {
-      btn.disabled = false; 
-      btn.textContent = '🔧 Send Corrections to Gemini';
-    }
   }
 
   // ── GO LIVE ────────────────────────────────
@@ -733,12 +563,7 @@
 
   // ── HELPERS ────────────────────────────────
   function authFetch(url, opts = {}) {
-    const currentToken = localStorage.getItem('patientToken');
-    if (!currentToken) { 
-      window.location.href = 'login.html'; 
-      return Promise.reject(new Error('Not authenticated'));
-    }
-    return fetch(url, { ...opts, headers: { ...opts.headers, 'Authorization': `Bearer ${currentToken}` } });
+    return fetch(url, { ...opts, headers: { ...opts.headers, 'Authorization': `Bearer ${token}` } });
   }
 
   function doLogout() {

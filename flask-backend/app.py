@@ -287,36 +287,55 @@ def verify_documents():
                 # Extract text using OCR
                 extracted_text = ocr_processor.extract_text(tmp.name)
 
-                # Cleanup temp file
+                logger.info(f"Extracted {len(extracted_text)} chars from {file_name}")
+
+                # ── STAGE 1: TAMPERING CHECK (before entity extraction) ──────
+                # Pass file_path so Layer 1 (PDF metadata) + Layer 2 (ELA) run
+                logger.info(f"Running tampering check on {file_name}...")
+                auth_result = bert_authenticator.predict_authenticity(
+                    extracted_text, {}, file_path=tmp.name
+                )
+
+                # Cleanup temp file AFTER forensics check
                 try:
                     os.remove(tmp.name)
                 except:
                     pass
 
-                logger.info(f"Extracted {len(extracted_text)} chars from {file_name}")
-
-                # Extract medical entities
-                entities = entity_extractor.extract_entities(extracted_text)
-                
-                # Log detailed extraction for this document
-                logger.info(f" === ENTITY EXTRACTION FOR {file_name} ===")
-                logger.info(f"Patient Name: {entities.get('patient_name')}")
-                logger.info(f"Doctor Name: {entities.get('doctor_name')}")
-                logger.info(f"Hospital Name: {entities.get('hospital_name')}")
-                logger.info(f"Hospital Pincode: {entities.get('hospital_pincode')}")
-                logger.info(f"Diseases: {entities.get('diseases')}")
-                logger.info(f"Date: {entities.get('date')}")
-                logger.info(f"Amount: {entities.get('amount')}")
-                logger.info(f"Raw Text Length: {len(extracted_text)} chars")
-                logger.info(f"Raw Text Sample: {extracted_text[:200]}...")
-                logger.info("=========================================")
-
-                # Authenticate document with BERT
-                auth_result = bert_authenticator.predict_authenticity(extracted_text, entities)
                 if auth_result.get('is_tampered'):
                     has_tampering = True
-                    risk_score   += 30
-                    all_issues.append(f"Tampering detected in {file_name}")
+                    risk_score   += 50
+                    tamper_flags  = auth_result.get('flags', [])
+                    tamper_msg    = f"TAMPERING DETECTED in {file_name}"
+                    if tamper_flags:
+                        tamper_msg += f": {tamper_flags[0]}"
+                    all_issues.append(tamper_msg)
+                    logger.warning(f"🚨 {tamper_msg}")
+
+                    # Add to doc result immediately — skip entity extraction
+                    doc_results.append({{
+                        'document_type' : doc_type,
+                        'file_name'     : file_name,
+                        'status'        : 'TAMPERED',
+                        'is_tampered'   : True,
+                        'tamper_flags'  : tamper_flags,
+                        'entities'      : {{}}
+                    }})
+                    continue  # Skip entity extraction for tampered doc
+
+                logger.info(f"✅ No tampering detected in {file_name}")
+
+                # ── STAGE 2: ENTITY EXTRACTION (only if not tampered) ────────
+                entities = entity_extractor.extract_entities(extracted_text)
+
+                logger.info(f" === ENTITY EXTRACTION FOR {file_name} ===")
+                logger.info(f"Patient Name   : {entities.get('patient_name')}")
+                logger.info(f"Hospital Name  : {entities.get('hospital_name')}")
+                logger.info(f"Diseases       : {entities.get('diseases')}")
+                logger.info(f"Amount         : {entities.get('amount')}")
+                logger.info(f"Aadhaar        : {entities.get('aadhaar_number')}")
+                logger.info(f"Age/Gender     : {entities.get('age')} / {entities.get('gender')}")
+                logger.info("=========================================")
 
                 # Check expiry
                 is_expired, days_old = check_document_expiry(entities, doc_type)
@@ -378,6 +397,19 @@ def verify_documents():
                     else:
                         logger.info(f"Date already set, skipping")
 
+                # ── Extract Aadhaar fields (only from AADHAAR document) ──────
+                if doc_type == 'AADHAAR':
+                    if entities.get('aadhaar_number') and not all_extracted.get('aadhaar_number'):
+                        all_extracted['aadhaar_number'] = entities.get('aadhaar_number')
+                    if entities.get('age') and not all_extracted.get('age'):
+                        all_extracted['age'] = entities.get('age')
+                    if entities.get('gender') and not all_extracted.get('gender'):
+                        all_extracted['gender'] = entities.get('gender')
+                    if entities.get('city') and not all_extracted.get('city'):
+                        all_extracted['city'] = entities.get('city')
+                    if entities.get('state') and not all_extracted.get('state'):
+                        all_extracted['state'] = entities.get('state')
+
                 doc_results.append({
                     'document_type': doc_type,
                     'file_name'    : file_name,
@@ -396,15 +428,37 @@ def verify_documents():
                     'error'        : str(e)
                 })
 
-        # Determine final status
-        if risk_score == 0 and not has_tampering and not has_expired:
-            final_status = 'VERIFIED'
-        elif risk_score >= 60 or has_tampering:
-            final_status = 'VERIFICATION_NEEDED'
+        # ── STAGE 3: CROSS-DOCUMENT CONSISTENCY CHECK ──────────────────
+        # Check name consistency across all documents
+        patient_names = []
+        for dr in doc_results:
+            if dr.get('status') == 'PROCESSED' and dr.get('entities', {}).get('patient_name'):
+                patient_names.append(dr['entities']['patient_name'].lower().strip())
+
+        name_mismatch = False
+        if len(patient_names) >= 2:
+            first_name = patient_names[0].split()[0]  # Compare first name only
+            for name in patient_names[1:]:
+                if first_name not in name and name.split()[0] not in patient_names[0]:
+                    name_mismatch = True
+                    all_issues.append(f"Patient name mismatch across documents: {patient_names}")
+                    logger.warning(f"⚠️ Name mismatch: {patient_names}")
+                    break
+
+        # ── DETERMINE FINAL STATUS ───────────────────────────────────────────
+        # FAKE_DETECTED → hard stop (tampering found)
+        # PENDING       → silent flag (name mismatch, missing data)
+        # VERIFIED      → all clean
+        if has_tampering:
+            final_status = 'FAKE_DETECTED'
         elif has_expired:
             final_status = 'UPDATE_NEEDED'
-        else:
+        elif name_mismatch:
             final_status = 'PENDING'
+        elif risk_score >= 30:
+            final_status = 'PENDING'
+        else:
+            final_status = 'VERIFIED'
 
         logger.info(f"Verification complete: {final_status}, risk: {risk_score}")
 
@@ -510,6 +564,106 @@ def merge_extracted_entities(all_docs):
 
     return merged
 
+
+
+
+# ─────────────────────────────────────────
+# NOTIFY ROUTES — called by Node.js backend
+# ─────────────────────────────────────────
+
+@app.route('/notify/campaign-live', methods=['POST'])
+def notify_campaign_live():
+    """Notify patient their campaign is now LIVE"""
+    try:
+        data           = request.get_json()
+        to_email       = data.get('to_email', '')
+        patient_name   = data.get('patient_name', '')
+        campaign_title = data.get('campaign_title', '')
+        public_url     = data.get('public_url', '')
+        upi_id         = data.get('upi_id', '')
+
+        notification.send_campaign_live_email(
+            to_email, patient_name, campaign_title, public_url, upi_id
+        )
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"notify_campaign_live error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/notify/campaign-rejected', methods=['POST'])
+def notify_campaign_rejected():
+    """Notify patient their campaign was rejected"""
+    try:
+        data           = request.get_json()
+        to_email       = data.get('to_email', '')
+        patient_name   = data.get('patient_name', '')
+        campaign_title = data.get('campaign_title', '')
+        reason         = data.get('reason', 'Did not meet verification requirements')
+
+        subject = f"MediTrust — Your Campaign Was Not Approved"
+        body = f"""Dear {patient_name},
+
+We regret to inform you that your campaign "{campaign_title}" could not be approved after review.
+
+Reason: {reason}
+
+Your campaign data has been removed from our system. You are welcome to apply again with correct documents if applicable.
+
+If you believe this is an error, please contact us at support@meditrust.in
+
+With care,
+Team MediTrust
+
+---
+This is an automated email. Please do not reply.
+"""
+        notification._send(to_email, subject, body)
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"notify_campaign_rejected error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/notify/verification-status', methods=['POST'])
+def notify_verification_status():
+    """Notify patient about verification status"""
+    try:
+        data           = request.get_json()
+        to_email       = data.get('to_email', '')
+        patient_name   = data.get('patient_name', '')
+        status         = data.get('status', '')
+        campaign_title = data.get('campaign_title', '')
+        reason         = data.get('reason', '')
+
+        notification.send_verification_status_email(
+            to_email, patient_name, status, campaign_title, reason
+        )
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"notify_verification_status error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/notify/fund-release', methods=['POST'])
+def notify_fund_release():
+    """Notify patient about fund release"""
+    try:
+        data                  = request.get_json()
+        to_email              = data.get('to_email', '')
+        patient_name          = data.get('patient_name', '')
+        campaign_title        = data.get('campaign_title', '')
+        amount_released       = data.get('amount_released', 0)
+        outstanding_remaining = data.get('outstanding_remaining', 0)
+
+        notification.send_fund_release_notification(
+            to_email, patient_name, campaign_title,
+            amount_released, outstanding_remaining
+        )
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"notify_fund_release error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # ─────────────────────────────────────────
 # STARTUP

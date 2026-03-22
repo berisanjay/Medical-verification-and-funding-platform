@@ -1,964 +1,1272 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MediTrust — Campaign</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
     :root {
-      --orange      : #F97316;
-      --orange-dark : #EA580C;
+      --orange: #F97316;
+      --orange-dark: #EA580C;
       --orange-light: #FFF7ED;
-      --orange-mid  : #FFEDD5;
-      --white       : #FFFFFF;
-      --gray-100    : #F9FAFB;
-      --gray-200    : #F3F4F6;
-      --gray-400    : #9CA3AF;
-      --gray-600    : #4B5563;
-      --gray-800    : #1F2937;
-      --green       : #22C55E;
-      --red         : #EF4444;
-      --blue        : #3B82F6;
+      --orange-mid: #FFEDD5;
+      --white: #FFFFFF;
+      --gray-50: #F9FAFB;
+      --gray-100: #F3F4F6;
+      --gray-200: #E5E7EB;
+      --gray-400: #9CA3AF;
+      --gray-500: #6B7280;
+      --gray-600: #4B5563;
+      --gray-800: #1F2937;
+      --gray-900: #111827;
+      --green: #22C55E;
+      --green-bg: #DCFCE7;
+      --green-text: #15803D;
+      --red: #EF4444;
+      --blue: #3B82F6;
+      --font: 'Plus Jakarta Sans', system-ui, sans-serif;
     }
 
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background : var(--gray-100);
-      color      : var(--gray-800);
+      font-family: var(--font);
+      background: var(--gray-50);
+      color: var(--gray-800);
     }
 
-    /* ── NAVBAR ── */
+    /* ── NAVBAR ─────────────────────────────── */
     .navbar {
-      background     : var(--white);
-      padding        : 0 60px;
-      height         : 64px;
-      display        : flex;
-      align-items    : center;
+      background: var(--white);
+      padding: 0 60px;
+      height: 64px;
+      display: flex;
+      align-items: center;
       justify-content: space-between;
-      border-bottom  : 1px solid var(--gray-200);
-      position       : sticky;
-      top            : 0;
-      z-index        : 100;
+      border-bottom: 1px solid var(--gray-200);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
     }
 
     .nav-logo {
-      display    : flex;
+      display: flex;
       align-items: center;
-      gap        : 10px;
-      cursor     : pointer;
+      gap: 10px;
+      cursor: pointer;
+      text-decoration: none;
     }
 
     .nav-logo-icon {
-      width          : 36px;
-      height         : 36px;
-      background     : var(--orange);
-      border-radius  : 10px;
-      display        : flex;
-      align-items    : center;
+      width: 36px;
+      height: 36px;
+      background: var(--orange);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
       justify-content: center;
-      font-size      : 16px;
+      font-size: 17px;
     }
 
-    .nav-logo h1   { font-size: 18px; font-weight: 800; }
-    .nav-logo small{ display: block; font-size: 10px; color: var(--gray-400); }
+    .nav-logo h1 {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--gray-900);
+    }
+
+    .nav-logo small {
+      display: block;
+      font-size: 10px;
+      color: var(--gray-400);
+    }
 
     .nav-back {
-      display    : flex;
+      display: flex;
       align-items: center;
-      gap        : 8px;
-      font-size  : 14px;
-      color      : var(--gray-600);
-      cursor     : pointer;
-      padding    : 8px 16px;
+      gap: 6px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--gray-600);
+      cursor: pointer;
+      padding: 8px 14px;
       border-radius: 8px;
-      transition : background 0.15s;
+      transition: all 0.15s;
+      text-decoration: none;
     }
 
-    .nav-back:hover { background: var(--gray-100); color: var(--orange); }
+    .nav-back:hover {
+      background: var(--gray-100);
+      color: var(--orange);
+    }
 
-    /* ── LAYOUT ── */
+    /* ── PAGE LAYOUT ─────────────────────────── */
     .page {
-      max-width: 1100px;
-      margin   : 0 auto;
-      padding  : 32px 24px;
-      display  : grid;
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 32px 24px 60px;
+      display: grid;
       grid-template-columns: 1fr 380px;
-      gap      : 28px;
+      gap: 28px;
       align-items: start;
     }
 
-    /* ── LEFT COLUMN ── */
-    .left-col {}
-
-    /* ── CAMPAIGN HEADER ── */
-    .campaign-header {
-      background   : var(--white);
+    /* ── CARDS ───────────────────────────────── */
+    .card {
+      background: var(--white);
       border-radius: 18px;
-      overflow     : hidden;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
       margin-bottom: 20px;
-      box-shadow   : 0 2px 12px rgba(0,0,0,0.06);
     }
 
+    .card:last-child {
+      margin-bottom: 0;
+    }
+
+    .card-header-inner {
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--gray-100);
+    }
+
+    .card-header-inner h3 {
+      font-size: 15.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── CAMPAIGN BANNER ─────────────────────── */
     .campaign-banner {
-      background     : linear-gradient(135deg, var(--orange-light) 0%, var(--orange-mid) 100%);
-      padding        : 40px 32px;
-      display        : flex;
-      align-items    : center;
-      gap            : 20px;
+      background: linear-gradient(135deg, var(--orange-light) 0%, var(--orange-mid) 100%);
+      padding: 36px 32px;
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
     }
 
-    .campaign-banner-icon {
-      width          : 72px;
-      height         : 72px;
-      background     : white;
-      border-radius  : 18px;
-      display        : flex;
-      align-items    : center;
+    .banner-icon {
+      width: 70px;
+      height: 70px;
+      background: white;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
       justify-content: center;
-      font-size      : 36px;
-      box-shadow     : 0 4px 16px rgba(0,0,0,0.08);
-      flex-shrink    : 0;
+      font-size: 34px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      flex-shrink: 0;
     }
 
-    .campaign-banner-info h1 {
-      font-size    : 24px;
-      font-weight  : 800;
+    .banner-info h1 {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1.3;
       margin-bottom: 6px;
-      color        : var(--gray-800);
+      color: var(--gray-900);
     }
 
-    .campaign-banner-info p {
-      font-size: 14px;
-      color    : var(--gray-600);
+    .banner-info p {
+      font-size: 13.5px;
+      color: var(--gray-600);
     }
 
-    .campaign-banner-badges {
-      display  : flex;
-      gap      : 8px;
-      margin-top: 10px;
+    .banner-badges {
+      display: flex;
+      gap: 7px;
+      margin-top: 12px;
       flex-wrap: wrap;
     }
 
     .badge {
-      display      : inline-flex;
-      align-items  : center;
-      padding      : 4px 12px;
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 11px;
       border-radius: 20px;
-      font-size    : 12px;
-      font-weight  : 600;
-      gap          : 4px;
+      font-size: 11.5px;
+      font-weight: 700;
+      gap: 4px;
     }
 
-    .b-verified { background: #DCFCE7; color: #15803D; }
-    .b-live     { background: #DBEAFE; color: #1D4ED8; }
-    .b-hospital { background: var(--orange-mid); color: var(--orange-dark); }
+    .b-verified {
+      background: var(--green-bg);
+      color: var(--green-text);
+    }
 
-    .campaign-body { padding: 24px 32px; }
+    .b-live {
+      background: #DBEAFE;
+      color: #1D4ED8;
+    }
 
-    /* ── PROGRESS ── */
+    .b-hospital {
+      background: var(--orange-mid);
+      color: var(--orange-dark);
+    }
+
+    /* ── PROGRESS ────────────────────────────── */
     .progress-section {
-      margin-bottom: 24px;
+      padding: 24px 32px 20px;
     }
 
     .progress-numbers {
-      display        : flex;
+      display: flex;
       justify-content: space-between;
-      align-items    : flex-end;
-      margin-bottom  : 10px;
+      align-items: flex-end;
+      margin-bottom: 10px;
     }
 
     .amount-raised {
-      font-size  : 32px;
+      font-size: 34px;
       font-weight: 900;
-      color      : var(--orange);
+      color: var(--orange);
+      line-height: 1;
     }
 
     .amount-target {
-      font-size: 14px;
-      color    : var(--gray-400);
+      font-size: 13px;
+      color: var(--gray-400);
+      margin-top: 4px;
     }
 
     .progress-percent {
-      font-size  : 20px;
+      font-size: 22px;
       font-weight: 800;
-      color      : var(--gray-800);
+      color: var(--gray-800);
     }
 
     .progress-bar {
-      height       : 12px;
-      background   : var(--gray-200);
-      border-radius: 12px;
-      overflow     : hidden;
-      margin-bottom: 12px;
+      height: 11px;
+      background: var(--gray-100);
+      border-radius: 11px;
+      overflow: hidden;
+      margin-bottom: 14px;
     }
 
     .progress-fill {
-      height    : 100%;
+      height: 100%;
       background: linear-gradient(90deg, var(--orange), var(--orange-dark));
-      border-radius: 12px;
-      transition: width 0.8s ease;
+      border-radius: 11px;
+      transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .progress-meta {
-      display  : flex;
-      gap      : 24px;
-      font-size: 13px;
-      color    : var(--gray-400);
+      display: flex;
+      gap: 20px;
+      font-size: 12.5px;
+      color: var(--gray-400);
+      flex-wrap: wrap;
     }
 
-    .progress-meta span { display: flex; align-items: center; gap: 5px; }
-    .progress-meta strong { color: var(--gray-800); }
-
-    /* ── STORY ── */
-    .story-card {
-      background   : var(--white);
-      border-radius: 18px;
-      padding      : 28px 32px;
-      margin-bottom: 20px;
-      box-shadow   : 0 2px 12px rgba(0,0,0,0.06);
+    .progress-meta span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
 
-    .story-card h3 {
-      font-size    : 16px;
-      font-weight  : 700;
-      margin-bottom: 16px;
-      display      : flex;
-      align-items  : center;
-      gap          : 8px;
+    .progress-meta strong {
+      color: var(--gray-800);
+      font-weight: 700;
+    }
+
+    /* ── STORY ───────────────────────────────── */
+    .story-body {
+      padding: 24px 32px;
     }
 
     .story-text {
-      font-size  : 15px;
-      line-height: 1.8;
-      color      : var(--gray-600);
+      font-size: 14.5px;
+      line-height: 1.85;
+      color: var(--gray-600);
     }
 
-    /* ── VERIFICATION INFO ── */
-    .verification-card {
-      background   : var(--white);
-      border-radius: 18px;
-      padding      : 24px 32px;
-      margin-bottom: 20px;
-      box-shadow   : 0 2px 12px rgba(0,0,0,0.06);
-    }
-
-    .verification-card h3 {
-      font-size    : 16px;
-      font-weight  : 700;
-      margin-bottom: 16px;
-      display      : flex;
-      align-items  : center;
-      gap          : 8px;
-    }
-
+    /* ── VERIFICATION GRID ───────────────────── */
     .verification-grid {
-      display              : grid;
+      display: grid;
       grid-template-columns: 1fr 1fr;
-      gap                  : 14px;
+      gap: 12px;
+      padding: 20px 28px 24px;
     }
 
     .verification-item {
-      display      : flex;
-      align-items  : center;
-      gap          : 10px;
-      padding      : 12px 14px;
-      background   : var(--gray-100);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 14px;
+      background: var(--gray-50);
+      border-radius: 12px;
+      border: 1px solid var(--gray-100);
+    }
+
+    .v-icon {
+      font-size: 22px;
+    }
+
+    .v-info p {
+      font-size: 11px;
+      color: var(--gray-400);
+      margin-bottom: 2px;
+    }
+
+    .v-info strong {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gray-800);
+    }
+
+    /* ── FUND RELEASES ───────────────────────── */
+    .releases-list {
+      padding: 0 28px 20px;
+    }
+
+    .release-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--gray-100);
+    }
+
+    .release-item:last-child {
+      border-bottom: none;
+    }
+
+    .release-icon {
+      width: 36px;
+      height: 36px;
+      background: #DBEAFE;
       border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
     }
 
-    .v-icon { font-size: 20px; }
-
-    .v-info p     { font-size: 12px; color: var(--gray-400); margin-bottom: 2px; }
-    .v-info strong{ font-size: 13px; color: var(--gray-800); }
-
-    /* ── UPDATES ── */
-    .updates-card {
-      background   : var(--white);
-      border-radius: 18px;
-      padding      : 24px 32px;
-      margin-bottom: 20px;
-      box-shadow   : 0 2px 12px rgba(0,0,0,0.06);
+    .release-info {
+      flex: 1;
     }
 
-    .updates-card h3 {
-      font-size    : 16px;
-      font-weight  : 700;
-      margin-bottom: 16px;
-      display      : flex;
-      align-items  : center;
-      gap          : 8px;
+    .release-info p {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .release-info small {
+      font-size: 11.5px;
+      color: var(--gray-400);
+    }
+
+    .release-amount {
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--orange);
+    }
+
+    /* ── UPDATES ─────────────────────────────── */
+    .updates-list {
+      padding: 0 28px 20px;
     }
 
     .update-item {
-      padding      : 14px 0;
-      border-bottom: 1px solid var(--gray-200);
-      display      : flex;
-      gap          : 14px;
+      display: flex;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--gray-100);
     }
 
-    .update-item:last-child { border-bottom: none; }
+    .update-item:last-child {
+      border-bottom: none;
+    }
 
     .update-dot {
-      width          : 32px;
-      height         : 32px;
-      border-radius  : 50%;
-      background     : var(--orange-mid);
-      display        : flex;
-      align-items    : center;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--orange-mid);
+      display: flex;
+      align-items: center;
       justify-content: center;
-      font-size      : 14px;
-      flex-shrink    : 0;
+      font-size: 15px;
+      flex-shrink: 0;
     }
 
-    .update-content h4 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
-    .update-content p  { font-size: 13px; color: var(--gray-600); line-height: 1.6; }
-    .update-time       { font-size: 11px; color: var(--gray-400); margin-top: 4px; }
-
-    /* ── DONORS ── */
-    .donors-card {
-      background   : var(--white);
-      border-radius: 18px;
-      padding      : 24px 32px;
-      box-shadow   : 0 2px 12px rgba(0,0,0,0.06);
+    .update-content h4 {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 4px;
     }
 
-    .donors-card h3 {
-      font-size    : 16px;
-      font-weight  : 700;
-      margin-bottom: 16px;
-      display      : flex;
-      align-items  : center;
-      gap          : 8px;
+    .update-content p {
+      font-size: 13px;
+      color: var(--gray-600);
+      line-height: 1.6;
+    }
+
+    .update-time {
+      font-size: 11px;
+      color: var(--gray-400);
+      margin-top: 4px;
+    }
+
+    /* ── DONORS ──────────────────────────────── */
+    .donors-list {
+      padding: 0 28px 20px;
     }
 
     .donor-item {
-      display      : flex;
-      align-items  : center;
-      gap          : 12px;
-      padding      : 10px 0;
-      border-bottom: 1px solid var(--gray-200);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--gray-100);
     }
 
-    .donor-item:last-child { border-bottom: none; }
+    .donor-item:last-child {
+      border-bottom: none;
+    }
 
     .donor-avatar {
-      width          : 36px;
-      height         : 36px;
-      border-radius  : 50%;
-      background     : var(--orange-mid);
-      display        : flex;
-      align-items    : center;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--orange-mid);
+      display: flex;
+      align-items: center;
       justify-content: center;
-      font-size      : 14px;
-      font-weight    : 700;
-      color          : var(--orange-dark);
-      flex-shrink    : 0;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--orange-dark);
+      flex-shrink: 0;
     }
 
-    .donor-info span  { display: block; font-size: 13px; font-weight: 600; }
-    .donor-info small { font-size: 12px; color: var(--gray-400); }
-    .donor-amount     { margin-left: auto; font-size: 14px; font-weight: 700; color: var(--orange); }
+    .donor-info span {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+    }
 
-    /* ── RIGHT COLUMN (STICKY DONATE BOX) ── */
+    .donor-info small {
+      font-size: 11.5px;
+      color: var(--gray-400);
+    }
+
+    .donor-amount {
+      margin-left: auto;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--orange);
+    }
+
+    /* ── SUGGESTION BOX ──────────────────────── */
+    .suggestion-form {
+      padding: 20px 28px 24px;
+    }
+
+    .suggestion-form p {
+      font-size: 13px;
+      color: var(--gray-500);
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+
+    .suggestion-textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-family: var(--font);
+      resize: vertical;
+      min-height: 90px;
+      outline: none;
+      transition: border 0.15s;
+      color: var(--gray-800);
+    }
+
+    .suggestion-textarea:focus {
+      border-color: var(--orange);
+    }
+
+    .btn-suggest {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background: var(--orange-light);
+      color: var(--orange-dark);
+      border: none;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: var(--font);
+      transition: background 0.15s;
+    }
+
+    .btn-suggest:hover {
+      background: var(--orange-mid);
+    }
+
+    .btn-suggest:disabled {
+      background: var(--gray-100);
+      color: var(--gray-400);
+      cursor: not-allowed;
+    }
+
+    /* ── DONATE BOX (sticky right) ───────────── */
     .donate-box {
-      background   : var(--white);
+      background: var(--white);
       border-radius: 18px;
-      padding      : 28px;
-      box-shadow   : 0 4px 24px rgba(0,0,0,0.1);
-      position     : sticky;
-      top          : 84px;
+      padding: 26px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+      position: sticky;
+      top: 80px;
     }
 
-    .donate-box h3 {
-      font-size    : 18px;
-      font-weight  : 800;
-      margin-bottom: 6px;
+    .donate-box-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 4px;
     }
 
-    .donate-box p {
-      font-size    : 13px;
-      color        : var(--gray-400);
+    .donate-box-sub {
+      font-size: 12.5px;
+      color: var(--gray-400);
       margin-bottom: 20px;
     }
 
-    /* ── AMOUNT PRESETS ── */
+    /* Amount presets */
     .amount-presets {
-      display              : grid;
+      display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap                  : 8px;
-      margin-bottom        : 14px;
+      gap: 8px;
+      margin-bottom: 12px;
     }
 
     .preset-btn {
-      padding      : 10px 8px;
-      border       : 1.5px solid var(--gray-200);
-      border-radius: 10px;
-      background   : var(--white);
-      font-size    : 13px;
-      font-weight  : 600;
-      cursor       : pointer;
-      text-align   : center;
-      transition   : all 0.15s;
-      color        : var(--gray-800);
+      padding: 10px 6px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 9px;
+      background: var(--white);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+      color: var(--gray-800);
+      font-family: var(--font);
     }
 
     .preset-btn:hover,
     .preset-btn.active {
       border-color: var(--orange);
-      background  : var(--orange-light);
-      color       : var(--orange-dark);
+      background: var(--orange-light);
+      color: var(--orange-dark);
     }
 
     .amount-input-wrap {
-      position     : relative;
-      margin-bottom: 16px;
+      position: relative;
+      margin-bottom: 14px;
     }
 
     .amount-prefix {
-      position   : absolute;
-      left       : 14px;
-      top        : 50%;
-      transform  : translateY(-50%);
-      font-size  : 16px;
-      font-weight: 700;
-      color      : var(--gray-800);
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--gray-800);
+      pointer-events: none;
     }
 
     .amount-input {
-      width        : 100%;
-      padding      : 13px 14px 13px 34px;
-      border       : 1.5px solid var(--gray-200);
+      width: 100%;
+      padding: 12px 14px 12px 32px;
+      border: 1.5px solid var(--gray-200);
       border-radius: 10px;
-      font-size    : 18px;
-      font-weight  : 700;
-      outline      : none;
-      transition   : border 0.15s;
+      font-size: 18px;
+      font-weight: 800;
+      outline: none;
+      transition: border 0.15s;
+      font-family: var(--font);
     }
 
-    .amount-input:focus { border-color: var(--orange); }
+    .amount-input:focus {
+      border-color: var(--orange);
+    }
 
-    /* ── DONOR DETAILS ── */
+    /* Donor fields */
+    .donor-fields {
+      margin-bottom: 2px;
+    }
+
     .form-group {
-      margin-bottom: 12px;
+      margin-bottom: 11px;
     }
 
     .form-group label {
-      display      : block;
-      font-size    : 12px;
-      font-weight  : 600;
-      color        : var(--gray-600);
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gray-600);
       margin-bottom: 5px;
     }
 
     .form-group input {
-      width        : 100%;
-      padding      : 10px 14px;
-      border       : 1.5px solid var(--gray-200);
+      width: 100%;
+      padding: 10px 13px;
+      border: 1.5px solid var(--gray-200);
       border-radius: 8px;
-      font-size    : 13px;
-      outline      : none;
-      transition   : border 0.15s;
+      font-size: 13px;
+      outline: none;
+      transition: border 0.15s;
+      font-family: var(--font);
     }
 
-    .form-group input:focus { border-color: var(--orange); }
+    .form-group input:focus {
+      border-color: var(--orange);
+    }
 
     .anon-check {
-      display    : flex;
+      display: flex;
       align-items: center;
-      gap        : 8px;
-      font-size  : 13px;
-      color      : var(--gray-600);
-      margin-bottom: 16px;
-      cursor     : pointer;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--gray-600);
+      margin-bottom: 14px;
+      cursor: pointer;
+      user-select: none;
     }
 
-    /* ── DONATE BUTTON ── */
+    .anon-check input[type="checkbox"] {
+      cursor: pointer;
+      accent-color: var(--orange);
+      width: 15px;
+      height: 15px;
+    }
+
+    /* Donate button */
     .btn-donate {
-      width        : 100%;
-      padding      : 15px;
-      background   : var(--orange);
-      color        : white;
-      border       : none;
+      width: 100%;
+      padding: 14px;
+      background: var(--orange);
+      color: white;
+      border: none;
       border-radius: 12px;
-      font-size    : 16px;
-      font-weight  : 800;
-      cursor       : pointer;
-      transition   : all 0.15s;
-      display      : flex;
-      align-items  : center;
+      font-size: 15.5px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
       justify-content: center;
-      gap          : 8px;
-      margin-bottom: 12px;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-family: var(--font);
     }
 
     .btn-donate:hover {
       background: var(--orange-dark);
-      transform : translateY(-2px);
-      box-shadow: 0 8px 24px rgba(249,115,22,0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(249, 115, 22, 0.3);
     }
 
     .btn-donate:disabled {
       background: var(--gray-400);
-      cursor    : not-allowed;
-      transform : none;
+      cursor: not-allowed;
+      transform: none;
       box-shadow: none;
     }
 
     .donate-note {
-      font-size : 12px;
-      color     : var(--gray-400);
+      font-size: 11.5px;
+      color: var(--gray-400);
       text-align: center;
-      line-height: 1.5;
+      line-height: 1.6;
     }
 
-    /* ── DIVIDER ── */
+    /* Divider */
     .divider {
-      display    : flex;
+      display: flex;
       align-items: center;
-      gap        : 10px;
-      margin     : 16px 0;
+      gap: 10px;
+      margin: 16px 0;
     }
 
     .divider::before,
     .divider::after {
-      content   : '';
-      flex      : 1;
-      height    : 1px;
+      content: '';
+      flex: 1;
+      height: 1px;
       background: var(--gray-200);
     }
 
-    .divider span { font-size: 12px; color: var(--gray-400); }
+    .divider span {
+      font-size: 11.5px;
+      color: var(--gray-400);
+      white-space: nowrap;
+    }
 
-    /* ── QR DONATE ── */
-    .qr-section { text-align: center; }
+    /* QR */
+    .qr-section {
+      text-align: center;
+    }
 
     .qr-section img {
-      width        : 140px;
-      height       : 140px;
+      width: 140px;
+      height: 140px;
       border-radius: 10px;
+      border: 1px solid var(--gray-200);
       margin-bottom: 8px;
     }
 
     .upi-id {
-      font-size  : 14px;
-      font-weight: 700;
-      color      : var(--orange);
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--orange);
       margin-bottom: 4px;
     }
 
-    .qr-section p { font-size: 12px; color: var(--gray-400); }
-
-    .copy-upi-btn {
-      background   : var(--orange-light);
-      color        : var(--orange-dark);
-      border       : none;
-      padding      : 8px 16px;
-      border-radius: 8px;
-      font-size    : 12px;
-      font-weight  : 600;
-      cursor       : pointer;
-      margin-top   : 8px;
+    .qr-section p {
+      font-size: 12px;
+      color: var(--gray-400);
     }
 
-    /* ── SHARE BOX ── */
+    .copy-upi-btn {
+      background: var(--orange-light);
+      color: var(--orange-dark);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      font-family: var(--font);
+      transition: background 0.15s;
+    }
+
+    .copy-upi-btn:hover {
+      background: var(--orange-mid);
+    }
+
+    /* Share */
     .share-box {
-      background   : var(--gray-100);
+      background: var(--gray-50);
       border-radius: 12px;
-      padding      : 16px;
-      margin-top   : 16px;
-      text-align   : center;
+      padding: 16px;
+      margin-top: 16px;
+      text-align: center;
+      border: 1px solid var(--gray-100);
     }
 
     .share-box p {
-      font-size    : 13px;
-      font-weight  : 600;
-      color        : var(--gray-800);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gray-800);
       margin-bottom: 12px;
     }
 
-    .share-buttons { display: flex; gap: 8px; justify-content: center; }
-
-    .share-btn {
-      padding      : 8px 16px;
-      border-radius: 8px;
-      font-size    : 12px;
-      font-weight  : 600;
-      cursor       : pointer;
-      border       : none;
-      transition   : opacity 0.15s;
+    .share-buttons {
+      display: flex;
+      gap: 7px;
+      justify-content: center;
+      flex-wrap: wrap;
     }
 
-    .share-btn:hover { opacity: 0.85; }
-    .share-whatsapp  { background: #25D366; color: white; }
-    .share-copy      { background: var(--gray-200); color: var(--gray-800); }
-    .share-twitter   { background: #1DA1F2; color: white; }
+    .share-btn {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.15s, transform 0.15s;
+      font-family: var(--font);
+    }
 
-    /* ── MODAL ── */
+    .share-btn:hover {
+      opacity: 0.87;
+      transform: translateY(-1px);
+    }
+
+    .share-whatsapp {
+      background: #25D366;
+      color: white;
+    }
+
+    .share-copy {
+      background: var(--gray-200);
+      color: var(--gray-800);
+    }
+
+    .share-twitter {
+      background: #000;
+      color: white;
+    }
+
+    /* Not live state */
+    .not-live-box {
+      text-align: center;
+      padding: 20px 0 6px;
+    }
+
+    .not-live-box .nl-icon {
+      font-size: 48px;
+      margin-bottom: 14px;
+    }
+
+    .not-live-box h3 {
+      font-size: 17px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .not-live-box p {
+      font-size: 13px;
+      color: var(--gray-400);
+      line-height: 1.6;
+      margin-bottom: 0;
+    }
+
+    /* ── MODAL ───────────────────────────────── */
     .modal-overlay {
-      display        : none;
-      position       : fixed;
-      inset          : 0;
-      background     : rgba(0,0,0,0.5);
-      z-index        : 200;
-      align-items    : center;
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 200;
+      align-items: center;
       justify-content: center;
     }
 
-    .modal-overlay.show { display: flex; }
-
-    .modal {
-      background   : var(--white);
-      border-radius: 20px;
-      padding      : 32px;
-      width        : 460px;
-      max-width    : 90vw;
-      box-shadow   : 0 20px 60px rgba(0,0,0,0.2);
-      text-align   : center;
+    .modal-overlay.show {
+      display: flex;
     }
 
-    .modal-icon { font-size: 56px; margin-bottom: 16px; }
+    .modal {
+      background: var(--white);
+      border-radius: 20px;
+      padding: 36px 32px;
+      width: 460px;
+      max-width: 90vw;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+      text-align: center;
+    }
+
+    .modal-icon {
+      font-size: 56px;
+      margin-bottom: 16px;
+    }
 
     .modal h3 {
-      font-size    : 22px;
-      font-weight  : 800;
+      font-size: 22px;
+      font-weight: 800;
       margin-bottom: 8px;
     }
 
     .modal p {
-      font-size    : 14px;
-      color        : var(--gray-600);
+      font-size: 14px;
+      color: var(--gray-600);
       margin-bottom: 24px;
-      line-height  : 1.6;
+      line-height: 1.6;
     }
 
-    .modal-actions { display: flex; gap: 10px; justify-content: center; }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
 
     .btn-modal-primary {
-      padding      : 11px 28px;
-      background   : var(--orange);
-      color        : white;
-      border       : none;
+      padding: 11px 28px;
+      background: var(--orange);
+      color: white;
+      border: none;
       border-radius: 10px;
-      font-size    : 14px;
-      font-weight  : 700;
-      cursor       : pointer;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: var(--font);
+      transition: background 0.15s;
     }
 
-    .btn-modal-primary:hover { background: var(--orange-dark); }
+    .btn-modal-primary:hover {
+      background: var(--orange-dark);
+    }
 
     .btn-modal-outline {
-      padding      : 11px 28px;
-      background   : var(--white);
-      color        : var(--gray-600);
-      border       : 1.5px solid var(--gray-200);
+      padding: 11px 28px;
+      background: var(--white);
+      color: var(--gray-600);
+      border: 1.5px solid var(--gray-200);
       border-radius: 10px;
-      font-size    : 14px;
-      font-weight  : 600;
-      cursor       : pointer;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font);
+      transition: background 0.15s;
     }
 
-    /* ── TOAST ── */
+    .btn-modal-outline:hover {
+      background: var(--gray-50);
+    }
+
+    /* ── TOAST ───────────────────────────────── */
     .toast {
-      position     : fixed;
-      bottom       : 24px;
-      right        : 24px;
-      background   : var(--gray-800);
-      color        : white;
-      padding      : 14px 20px;
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--gray-900);
+      color: white;
+      padding: 13px 20px;
       border-radius: 10px;
-      font-size    : 13px;
-      font-weight  : 600;
-      z-index      : 999;
-      transform    : translateY(80px);
-      opacity      : 0;
-      transition   : all 0.3s;
-      box-shadow   : 0 4px 20px rgba(0,0,0,0.2);
+      font-size: 13.5px;
+      font-weight: 600;
+      z-index: 999;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.3s;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+      max-width: 320px;
     }
 
-    .toast.show    { transform: translateY(0); opacity: 1; }
-    .toast.success { border-left: 4px solid var(--green); }
-    .toast.error   { border-left: 4px solid var(--red);   }
-    .toast.info    { border-left: 4px solid var(--orange); }
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
 
-    /* ── LOADING ── */
+    .toast.success {
+      border-left: 4px solid var(--green);
+    }
+
+    .toast.error {
+      border-left: 4px solid var(--red);
+    }
+
+    .toast.info {
+      border-left: 4px solid var(--orange);
+    }
+
+    /* ── LOADING / ERROR ─────────────────────── */
     .loading {
-      display        : flex;
-      flex-direction : column;
-      align-items    : center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       justify-content: center;
-      padding        : 80px 20px;
-      gap            : 14px;
+      padding: 80px 20px;
+      gap: 14px;
     }
 
     .spinner {
-      width        : 36px;
-      height       : 36px;
-      border       : 4px solid var(--gray-200);
-      border-top   : 4px solid var(--orange);
+      width: 36px;
+      height: 36px;
+      border: 4px solid var(--gray-200);
+      border-top: 4px solid var(--orange);
       border-radius: 50%;
-      animation    : spin 0.8s linear infinite;
+      animation: spin 0.75s linear infinite;
     }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
 
-    /* ── ERROR STATE ── */
     .error-state {
       text-align: center;
-      padding   : 80px 20px;
+      padding: 80px 20px;
+      max-width: 480px;
+      margin: 0 auto;
     }
 
-    .error-state .icon { font-size: 56px; margin-bottom: 16px; }
-    .error-state h3    { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
-    .error-state p     { font-size: 15px; color: var(--gray-400); }
+    .error-state .icon {
+      font-size: 56px;
+      margin-bottom: 16px;
+    }
+
+    .error-state h3 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .error-state p {
+      font-size: 14px;
+      color: var(--gray-400);
+    }
+
+    @media (max-width: 860px) {
+      .page {
+        grid-template-columns: 1fr;
+      }
+
+      .donate-box {
+        position: static;
+      }
+
+      .navbar {
+        padding: 0 20px;
+      }
+    }
   </style>
 </head>
+
 <body>
 
-<!-- NAVBAR -->
-<nav class="navbar">
-  <div class="nav-logo" onclick="window.location.href='index.html'">
-    <div class="nav-logo-icon">🏥</div>
-    <div>
-      <h1>MediTrust</h1>
-      <small>Verified Medical Crowdfunding</small>
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a class="nav-logo" href="index.html">
+      <div class="nav-logo-icon">🏥</div>
+      <div>
+        <h1>MediTrust</h1>
+        <small>Verified Medical Crowdfunding</small>
+      </div>
+    </a>
+    <a class="nav-back" href="index.html">← Back to Campaigns</a>
+  </nav>
+
+  <!-- PAGE CONTENT (rendered by JS) -->
+  <div id="pageContent">
+    <div class="loading">
+      <div class="spinner"></div>
+      <p style="color:var(--gray-400);font-size:14px;">Loading campaign...</p>
     </div>
   </div>
-  <div class="nav-back" onclick="window.location.href='index.html'">
-    ← Back to Campaigns
-  </div>
-</nav>
 
-<!-- PAGE -->
-<div id="pageContent">
-  <div class="loading">
-    <div class="spinner"></div>
-    <p style="color:var(--gray-400); font-size:14px;">Loading campaign...</p>
-  </div>
-</div>
-
-<!-- SUCCESS MODAL -->
-<div class="modal-overlay" id="successModal">
-  <div class="modal">
-    <div class="modal-icon">🎉</div>
-    <h3>Thank You!</h3>
-    <p id="successMsg">
-      Your donation has been received successfully.<br/>
-      A receipt has been sent to your email.
-    </p>
-    <div class="modal-actions">
-      <button class="btn-modal-primary" onclick="closeModal()">
-        Continue
-      </button>
-      <button class="btn-modal-outline" onclick="window.location.href='index.html'">
-        Browse More
-      </button>
+  <!-- SUCCESS MODAL -->
+  <div class="modal-overlay" id="successModal">
+    <div class="modal">
+      <div class="modal-icon">🎉</div>
+      <h3>Thank You!</h3>
+      <p id="successMsg">Your donation has been received successfully.<br />A receipt has been sent to your email.</p>
+      <div class="modal-actions">
+        <button class="btn-modal-primary" onclick="closeSuccessModal()">Continue</button>
+        <button class="btn-modal-outline" onclick="window.location.href='index.html'">Browse More</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- TOAST -->
-<div class="toast" id="toast"></div>
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
 
-<script>
-  const API = 'http://localhost:3000/api';
-  let campaign     = null;
-  let campaignId   = null;
-  let donationId   = null;
-  let selectedAmt  = 500;
+  <!-- Razorpay SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
-  // ─────────────────────────────────────────
-  // INIT
-  // ─────────────────────────────────────────
-  window.onload = async () => {
-    const params = new URLSearchParams(window.location.search);
-    campaignId   = params.get('id');
+  <script>
+    const API = 'http://localhost:3000/api';
+    let campaign = null;
+    let campaignId = null;
+    let donationId = null;
+    let selectedAmt = 500;
 
-    if (!campaignId) {
-      showError('No campaign ID provided');
-      return;
-    }
+    // ── INIT ─────────────────────────────────────
+    window.onload = async () => {
+      const params = new URLSearchParams(window.location.search);
+      campaignId = params.get('id');
 
-    await loadCampaign();
-  };
-
-  // ─────────────────────────────────────────
-  // LOAD CAMPAIGN
-  // ─────────────────────────────────────────
-  async function loadCampaign() {
-    try {
-      const res  = await fetch(`${API}/campaigns/${campaignId}`);
-      const data = await res.json();
-
-      if (!data.success || !data.campaign) {
-        showError('Campaign not found');
+      if (!campaignId) {
+        showError('No campaign ID provided. Please go back and select a campaign.');
         return;
       }
 
-      campaign = data.campaign;
-      renderPage();
+      await loadCampaign();
+    };
 
-    } catch (err) {
-      showError('Failed to load campaign');
+    // ── LOAD CAMPAIGN ─────────────────────────────
+    async function loadCampaign() {
+      try {
+        const res = await fetch(`${API}/campaigns/${campaignId}`);
+        const data = await res.json();
+
+        if (!data.success || !data.campaign) {
+          showError('Campaign not found or has been removed.');
+          return;
+        }
+
+        campaign = data.campaign;
+        renderPage();
+
+      } catch (err) {
+        showError('Failed to connect to the server. Please check your connection.');
+      }
     }
-  }
 
-  // ─────────────────────────────────────────
-  // RENDER PAGE
-  // ─────────────────────────────────────────
-  function renderPage() {
-    const c         = campaign;
-    const collected = parseFloat(c.collected_amount || 0);
-    const target    = parseFloat(c.verified_amount  || 0);
-    const percent   = target > 0
-      ? Math.min(100, Math.round((collected / target) * 100))
-      : 0;
-    const isLive    = c.status === 'LIVE_CAMPAIGN';
+    // ── RENDER FULL PAGE ──────────────────────────
+    function renderPage() {
+      const c = campaign;
+      const collected = parseFloat(c.collected_amount || 0);
+      const target = parseFloat(c.verified_amount || 0);
+      const percent = target > 0 ? Math.min(100, Math.round((collected / target) * 100)) : 0;
+      const isLive = c.status === 'LIVE_CAMPAIGN';
+      const donors = (c.donations || []).filter(d => d.status !== 'FAILED');
+      const releases = c.fund_releases || [];
 
-    document.title  = `MediTrust — ${c.title}`;
+      document.title = `MediTrust — ${c.title}`;
 
-    document.getElementById('pageContent').innerHTML = `
+      document.getElementById('pageContent').innerHTML = `
       <div class="page">
 
-        <!-- ── LEFT COLUMN ── -->
+        <!-- ══ LEFT COLUMN ══ -->
         <div class="left-col">
 
           <!-- Campaign Header -->
-          <div class="campaign-header">
+          <div class="card">
             <div class="campaign-banner">
-              <div class="campaign-banner-icon">🏥</div>
-              <div class="campaign-banner-info">
-                <h1>${c.title}</h1>
-                <p>Patient: ${c.patient_full_name}
-                  ${c.hospital ? ` • ${c.hospital.name}, ${c.hospital.city}` : ''}
+              <div class="banner-icon">🏥</div>
+              <div class="banner-info">
+                <h1>${esc(c.title)}</h1>
+                <p>Patient: <strong>${esc(c.patient_full_name || '—')}</strong>
+                  ${c.hospital ? ` &nbsp;•&nbsp; ${esc(c.hospital.name)}, ${esc(c.hospital.city || '')}` : ''}
                 </p>
-                <div class="campaign-banner-badges">
+                <div class="banner-badges">
                   <span class="badge b-verified">✅ AI Verified</span>
-                  <span class="badge b-live">🟢 ${c.status.replace('_', ' ')}</span>
-                  ${c.hospital
-                    ? `<span class="badge b-hospital">🏥 ${c.hospital.name}</span>`
-                    : ''}
+                  <span class="badge b-live">🟢 ${esc(c.status.replace(/_/g, ' '))}</span>
+                  ${c.hospital ? `<span class="badge b-hospital">🏥 ${esc(c.hospital.name)}</span>` : ''}
                 </div>
               </div>
             </div>
 
-            <div class="campaign-body">
-              <!-- Progress -->
-              <div class="progress-section">
-                <div class="progress-numbers">
-                  <div>
-                    <div class="amount-raised">₹${formatAmount(collected)}</div>
-                    <div class="amount-target">
-                      raised of ₹${formatAmount(target)} goal
-                    </div>
-                  </div>
-                  <div class="progress-percent">${percent}%</div>
+            <!-- Progress -->
+            <div class="progress-section">
+              <div class="progress-numbers">
+                <div>
+                  <div class="amount-raised">₹${formatAmount(collected)}</div>
+                  <div class="amount-target">raised of ₹${formatAmount(target)} goal</div>
                 </div>
-                <div class="progress-bar">
-                  <div class="progress-fill" style="width:${percent}%"></div>
-                </div>
-                <div class="progress-meta">
-                  <span>❤️ <strong>${c.donations?.length || 0}</strong> donors</span>
-                  <span>💸 ₹<strong>${formatAmount(c.released_amount || 0)}</strong> released to hospital</span>
-                  ${c.expires_at
-                    ? `<span>⏰ Expires <strong>${formatDate(c.expires_at)}</strong></span>`
-                    : ''}
-                </div>
+                <div class="progress-percent">${percent}%</div>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width:0%"></div>
+              </div>
+              <div class="progress-meta">
+                <span>❤️ <strong>${donors.length}</strong> donor${donors.length !== 1 ? 's' : ''}</span>
+                <span>💸 <strong>₹${formatAmount(c.released_amount || 0)}</strong> released to hospital</span>
+                ${c.expires_at ? `<span>⏰ Expires <strong>${formatDate(c.expires_at)}</strong></span>` : ''}
               </div>
             </div>
           </div>
 
           <!-- Story -->
           ${c.story_gemini ? `
-            <div class="story-card">
-              <h3>📖 Campaign Story</h3>
-              <div class="story-text">${c.story_gemini}</div>
+            <div class="card">
+              <div class="card-header-inner"><h3>📖 Campaign Story</h3></div>
+              <div class="story-body">
+                <div class="story-text">${esc(c.story_gemini).replace(/\n/g, '<br/>')}</div>
+              </div>
             </div>
           ` : ''}
 
-          <!-- Verification Info -->
-          <div class="verification-card">
-            <h3>🤖 Verification Details</h3>
+          <!-- Verification Details -->
+          <div class="card">
+            <div class="card-header-inner"><h3>🤖 Verification Details</h3></div>
             <div class="verification-grid">
               <div class="verification-item">
                 <div class="v-icon">✅</div>
-                <div class="v-info">
-                  <p>Document Status</p>
-                  <strong>AI Verified</strong>
-                </div>
+                <div class="v-info"><p>Document Status</p><strong>AI Verified</strong></div>
               </div>
               <div class="verification-item">
                 <div class="v-icon">🛡️</div>
-                <div class="v-info">
-                  <p>Tampering Check</p>
-                  <strong>No Issues Found</strong>
-                </div>
+                <div class="v-info"><p>Tampering Check</p><strong>No Issues Found</strong></div>
               </div>
               <div class="verification-item">
                 <div class="v-icon">🏥</div>
-                <div class="v-info">
-                  <p>Hospital Verified</p>
-                  <strong>${c.hospital?.name || 'Verified Hospital'}</strong>
-                </div>
+                <div class="v-info"><p>Hospital Verified</p><strong>${esc(c.hospital?.name || 'Verified Hospital')}</strong></div>
               </div>
               <div class="verification-item">
                 <div class="v-icon">💸</div>
-                <div class="v-info">
-                  <p>Fund Release</p>
-                  <strong>Direct to Hospital</strong>
-                </div>
+                <div class="v-info"><p>Fund Release</p><strong>Direct to Hospital</strong></div>
               </div>
             </div>
           </div>
 
-          <!-- Updates -->
-          ${c.updates?.length > 0 ? `
-            <div class="updates-card">
-              <h3>📢 Campaign Updates</h3>
-              ${c.updates.map(u => `
-                <div class="update-item">
-                  <div class="update-dot">
-                    ${u.is_milestone ? '🏆' : '📢'}
-                  </div>
-                  <div class="update-content">
-                    <h4>${u.is_milestone ? 'Milestone Update' : 'Update'}</h4>
-                    <p>${u.update_text}</p>
-                    <div class="update-time">${formatDate(u.created_at)}</div>
-                  </div>
-                </div>
-              `).join('')}
+          <!-- Fund Releases -->
+          ${releases.length > 0 ? `
+            <div class="card">
+              <div class="card-header-inner"><h3>💸 Fund Releases to Hospital</h3></div>
+              <div class="releases-list">
+                ${releases.map(r => `
+                  <div class="release-item">
+                    <div class="release-icon">💸</div>
+                    <div class="release-info">
+                      <p>Released to ${esc(c.hospital?.name || 'Hospital')}</p>
+                      <small>${formatDate(r.released_at)} • ${r.hospital_confirmed ? '✅ Hospital confirmed' : '⏳ Awaiting confirmation'}</small>
+                    </div>
+                    <div class="release-amount">₹${formatAmount(r.amount)}</div>
+                  </div>`).join('')}
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- Campaign Updates -->
+          ${(c.updates || []).length > 0 ? `
+            <div class="card">
+              <div class="card-header-inner"><h3>📢 Campaign Updates</h3></div>
+              <div class="updates-list">
+                ${c.updates.map(u => `
+                  <div class="update-item">
+                    <div class="update-dot">${u.is_milestone ? '🏆' : '📢'}</div>
+                    <div class="update-content">
+                      <h4>${u.is_milestone ? '🏆 Milestone Update' : 'Update'}</h4>
+                      <p>${esc(u.update_text)}</p>
+                      <div class="update-time">${formatDate(u.created_at)}</div>
+                    </div>
+                  </div>`).join('')}
+              </div>
             </div>
           ` : ''}
 
           <!-- Recent Donors -->
-          ${c.donations?.length > 0 ? `
-            <div class="donors-card">
-              <h3>❤️ Recent Donors</h3>
-              ${c.donations.slice(0, 8).map(d => `
-                <div class="donor-item">
-                  <div class="donor-avatar">
-                    ${d.is_anonymous ? '?' : d.donor_name.charAt(0).toUpperCase()}
-                  </div>
-                  <div class="donor-info">
-                    <span>${d.donor_name}</span>
-                    <small>${formatDate(d.donated_at)}</small>
-                  </div>
-                  <div class="donor-amount">₹${formatAmount(d.amount)}</div>
-                </div>
-              `).join('')}
+          ${donors.length > 0 ? `
+            <div class="card">
+              <div class="card-header-inner"><h3>❤️ Recent Donors (${donors.length})</h3></div>
+              <div class="donors-list">
+                ${donors.slice(0, 10).map(d => `
+                  <div class="donor-item">
+                    <div class="donor-avatar">${d.is_anonymous ? '?' : esc(d.donor_name.charAt(0).toUpperCase())}</div>
+                    <div class="donor-info">
+                      <span>${esc(d.is_anonymous ? 'Anonymous Donor' : d.donor_name)}</span>
+                      <small>${formatDate(d.donated_at)}</small>
+                    </div>
+                    <div class="donor-amount">₹${formatAmount(d.amount)}</div>
+                  </div>`).join('')}
+              </div>
             </div>
           ` : ''}
 
-        </div>
+          <!-- Donor Suggestion Box -->
+          ${isLive ? `
+            <div class="card">
+              <div class="card-header-inner"><h3>💡 Suggest a Hospital</h3></div>
+              <div class="suggestion-form">
+                <p>Know of a good hospital for this patient's condition? Share your suggestion — it will be verified and sent to the patient in their language.</p>
+                <textarea class="suggestion-textarea" id="suggestionText"
+                  placeholder="E.g. I know a great hospital called Apollo Hospitals in Hyderabad that specializes in this condition..."></textarea>
+                <button class="btn-suggest" id="suggestBtn" onclick="submitSuggestion()">
+                  📤 Submit Suggestion
+                </button>
+              </div>
+            </div>
+          ` : ''}
 
-        <!-- ── RIGHT COLUMN ── -->
+        </div><!-- /left-col -->
+
+        <!-- ══ RIGHT COLUMN ══ -->
         <div class="right-col">
           <div class="donate-box">
 
             ${isLive ? `
-              <h3>❤️ Make a Donation</h3>
-              <p>Your donation goes directly to the hospital</p>
+              <div class="donate-box-title">❤️ Make a Donation</div>
+              <div class="donate-box-sub">Your donation goes directly to the hospital</div>
 
               <!-- Amount Presets -->
               <div class="amount-presets">
@@ -974,290 +1282,337 @@
               <div class="amount-input-wrap">
                 <span class="amount-prefix">₹</span>
                 <input type="number" class="amount-input" id="donationAmount"
-                       value="500" min="10"
-                       oninput="clearPresets()" />
+                       value="500" min="10" oninput="onAmountInput(this)" />
               </div>
 
-              <!-- Donor Details -->
-              <div class="form-group">
-                <label>Your Name *</label>
-                <input type="text" id="donorName" placeholder="Full name" />
-              </div>
-
-              <div class="form-group">
-                <label>Your Email *</label>
-                <input type="email" id="donorEmail" placeholder="For receipt" />
-              </div>
-
+              <!-- Anonymous toggle -->
               <label class="anon-check">
-                <input type="checkbox" id="isAnonymous" />
+                <input type="checkbox" id="isAnonymous" onchange="toggleAnonFields(this)" />
                 Donate anonymously
               </label>
+
+              <!-- Donor Fields (hidden when anonymous) -->
+              <div class="donor-fields" id="donorFields">
+                <div class="form-group">
+                  <label>Your Name *</label>
+                  <input type="text" id="donorName" placeholder="Full name" />
+                </div>
+                <div class="form-group">
+                  <label>Your Email * <small style="color:var(--gray-400);font-weight:400;">(receipt will be sent here)</small></label>
+                  <input type="email" id="donorEmail" placeholder="your@email.com" />
+                </div>
+              </div>
 
               <!-- Donate Button -->
               <button class="btn-donate" id="donateBtn" onclick="initiateDonation()">
                 ❤️ Donate ₹<span id="donateAmountDisplay">500</span>
               </button>
 
-              <p class="donate-note">
-                🔒 Secured by Razorpay<br/>
-                Funds released directly to hospital after verification
-              </p>
+              <p class="donate-note">🔒 Secured by Razorpay &nbsp;•&nbsp; Funds go directly to the verified hospital</p>
 
               ${c.qr_code_url ? `
                 <div class="divider"><span>or donate via UPI</span></div>
                 <div class="qr-section">
-                  <img src="${c.qr_code_url}" alt="UPI QR Code" />
-                  <div class="upi-id">${c.upi_id}</div>
-                  <p>Scan QR or use UPI ID</p>
-                  <button class="copy-upi-btn" onclick="copyUPI('${c.upi_id}')">
-                    📋 Copy UPI ID
-                  </button>
+                  <img src="${esc(c.qr_code_url)}" alt="UPI QR Code" onerror="this.style.display='none'" />
+                  <div class="upi-id">${esc(c.upi_id || '')}</div>
+                  <p>Scan QR or use UPI ID above</p>
+                  <button class="copy-upi-btn" onclick="copyUPI('${esc(c.upi_id || '')}')">📋 Copy UPI ID</button>
                 </div>
               ` : ''}
 
             ` : `
-              <div style="text-align:center; padding:20px 0;">
-                <div style="font-size:48px; margin-bottom:14px;">⏳</div>
-                <h3 style="margin-bottom:8px;">Campaign Not Live Yet</h3>
-                <p style="font-size:13px; color:var(--gray-400); line-height:1.6;">
-                  This campaign is currently being verified.<br/>
-                  Please check back soon.
-                </p>
+              <div class="not-live-box">
+                <div class="nl-icon">⏳</div>
+                <h3>Campaign Not Live Yet</h3>
+                <p>This campaign is currently being verified.<br/>Please check back soon.</p>
               </div>
             `}
 
-            <!-- Share -->
+            <!-- Share Box (always visible) -->
             <div class="share-box">
               <p>📣 Help spread the word</p>
               <div class="share-buttons">
-                <button class="share-btn share-whatsapp" onclick="shareWhatsApp()">
-                  📱 WhatsApp
-                </button>
-                <button class="share-btn share-copy" onclick="shareLink()">
-                  🔗 Copy Link
-                </button>
+                <button class="share-btn share-whatsapp" onclick="shareWhatsApp()">📱 WhatsApp</button>
+                <button class="share-btn share-twitter"  onclick="shareTwitter()">𝕏 Twitter</button>
+                <button class="share-btn share-copy"     onclick="shareLink()">🔗 Copy Link</button>
               </div>
             </div>
 
           </div>
-        </div>
+        </div><!-- /right-col -->
 
-      </div>
+      </div><!-- /page -->
     `;
 
-    // Update donate button amount dynamically
-    document.getElementById('donationAmount')?.addEventListener('input', function() {
-      const display = document.getElementById('donateAmountDisplay');
-      if (display) display.textContent = this.value || '0';
-    });
-  }
-
-  // ─────────────────────────────────────────
-  // SET AMOUNT
-  // ─────────────────────────────────────────
-  function setAmount(amount, el) {
-    selectedAmt = amount;
-    document.getElementById('donationAmount').value = amount;
-
-    const display = document.getElementById('donateAmountDisplay');
-    if (display) display.textContent = amount.toLocaleString('en-IN');
-
-    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-    el.classList.add('active');
-  }
-
-  function clearPresets() {
-    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-    const val     = document.getElementById('donationAmount').value;
-    const display = document.getElementById('donateAmountDisplay');
-    if (display) display.textContent = val || '0';
-  }
-
-  // ─────────────────────────────────────────
-  // INITIATE DONATION
-  // ─────────────────────────────────────────
-  async function initiateDonation() {
-    const amount      = parseFloat(document.getElementById('donationAmount').value);
-    const donorName   = document.getElementById('donorName').value.trim();
-    const donorEmail  = document.getElementById('donorEmail').value.trim();
-    const isAnonymous = document.getElementById('isAnonymous').checked;
-    const btn         = document.getElementById('donateBtn');
-
-    if (!amount || amount < 10) {
-      showToast('Minimum donation is ₹10', 'error');
-      return;
-    }
-
-    if (!donorName) {
-      showToast('Please enter your name', 'error');
-      return;
-    }
-
-    if (!donorEmail || !donorEmail.includes('@')) {
-      showToast('Please enter a valid email', 'error');
-      return;
-    }
-
-    btn.disabled    = true;
-    btn.textContent = 'Processing...';
-
-    try {
-      // Step 1 — Create Razorpay order
-      const res  = await fetch(`${API}/donations/initiate`, {
-        method : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body   : JSON.stringify({
-          campaign_id : campaignId,
-          donor_name  : isAnonymous ? 'Anonymous' : donorName,
-          donor_email : donorEmail,
-          amount,
-          is_anonymous: isAnonymous
-        })
+      // Animate progress bar after render
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const fill = document.getElementById('progressFill');
+          if (fill) fill.style.width = percent + '%';
+        }, 100);
       });
+    }
 
-      const data = await res.json();
+    // ── AMOUNT CONTROLS ───────────────────────────
+    function setAmount(amount, el) {
+      selectedAmt = amount;
+      const input = document.getElementById('donationAmount');
+      if (input) input.value = amount;
+      updateDonateBtn(amount);
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+    }
 
-      if (!data.success) {
-        showToast(data.error || 'Failed to initiate donation', 'error');
-        btn.disabled = false;
-        btn.innerHTML = `❤️ Donate ₹${amount}`;
+    function onAmountInput(el) {
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+      updateDonateBtn(el.value);
+    }
+
+    function updateDonateBtn(val) {
+      const display = document.getElementById('donateAmountDisplay');
+      if (display) display.textContent = parseFloat(val || 0).toLocaleString('en-IN');
+    }
+
+    // ── ANONYMOUS TOGGLE ──────────────────────────
+    function toggleAnonFields(checkbox) {
+      const fields = document.getElementById('donorFields');
+      if (!fields) return;
+      fields.style.display = checkbox.checked ? 'none' : 'block';
+    }
+
+    // ── INITIATE DONATION ─────────────────────────
+    async function initiateDonation() {
+      // Check Razorpay loaded
+      if (typeof Razorpay === 'undefined') {
+        showToast('Payment gateway not loaded. Please refresh and try again.', 'error');
         return;
       }
 
-      donationId = data.donation_id;
+      const amount = parseFloat(document.getElementById('donationAmount').value);
+      const isAnonymous = document.getElementById('isAnonymous').checked;
+      const donorName = document.getElementById('donorName')?.value.trim() || '';
+      const donorEmail = document.getElementById('donorEmail')?.value.trim() || '';
+      const btn = document.getElementById('donateBtn');
 
-      // Step 2 — Open Razorpay
-      const options = {
-        key         : data.key_id,
-        amount      : data.amount,
-        currency    : data.currency,
-        name        : 'MediTrust',
-        description : `Donation to: ${campaign.title}`,
-        order_id    : data.order_id,
-        prefill     : {
-          name    : donorName,
-          email   : donorEmail
-        },
-        theme       : { color: '#F97316' },
-        handler     : async function(response) {
-          await verifyPayment(response);
-        },
-        modal: {
-          ondismiss: function() {
-            btn.disabled  = false;
-            btn.innerHTML = `❤️ Donate ₹${formatAmount(amount)}`;
-          }
-        }
-      };
-
-      const rzp = new Razorpay(options);
-      rzp.open();
-
-    } catch (err) {
-      showToast('Server error. Please try again.', 'error');
-      btn.disabled  = false;
-      btn.innerHTML = `❤️ Donate ₹${amount}`;
-    }
-  }
-
-  // ─────────────────────────────────────────
-  // VERIFY PAYMENT
-  // ─────────────────────────────────────────
-  async function verifyPayment(response) {
-    try {
-      const res  = await fetch(`${API}/donations/verify`, {
-        method : 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body   : JSON.stringify({
-          donation_id          : donationId,
-          razorpay_order_id    : response.razorpay_order_id,
-          razorpay_payment_id  : response.razorpay_payment_id,
-          razorpay_signature   : response.razorpay_signature
-        })
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        const isAnon = document.getElementById('isAnonymous')?.checked;
-        document.getElementById('successMsg').innerHTML = `
-          Your donation of <strong>₹${formatAmount(
-            parseFloat(document.getElementById('donationAmount').value)
-          )}</strong>
-          has been received!<br/>
-          ${!isAnon ? 'A receipt has been sent to your email.' : ''}
-          <br/><br/>
-          <small style="color:var(--gray-400)">
-            Funds will be released directly to the hospital.
-          </small>
-        `;
-        document.getElementById('successModal').classList.add('show');
-        await loadCampaign();
-      } else {
-        showToast(data.error || 'Payment verification failed', 'error');
+      // Validation
+      if (!amount || amount < 10) {
+        showToast('Minimum donation is ₹10', 'error'); return;
       }
 
-    } catch (err) {
-      showToast('Verification failed. Contact support.', 'error');
+      if (!isAnonymous) {
+        if (!donorName) { showToast('Please enter your name', 'error'); return; }
+        if (!donorEmail || !donorEmail.includes('@')) { showToast('Please enter a valid email address', 'error'); return; }
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Processing...';
+
+      try {
+        const res = await fetch(`${API}/donations/initiate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            campaign_id: campaignId,
+            donor_name: isAnonymous ? 'Anonymous Donor' : donorName,
+            donor_email: isAnonymous ? 'anonymous@meditrust.in' : donorEmail,
+            amount,
+            is_anonymous: isAnonymous
+          })
+        });
+
+        const data = await res.json();
+
+        if (!data.success) {
+          showToast(data.error || 'Failed to initiate donation', 'error');
+          resetDonateBtn(amount);
+          return;
+        }
+
+        donationId = data.donation_id;
+
+        // Open Razorpay checkout
+        const rzp = new Razorpay({
+          key: data.key_id,
+          amount: data.amount,
+          currency: data.currency,
+          name: 'MediTrust',
+          description: `Donation — ${campaign.title}`,
+          order_id: data.order_id,
+          prefill: {
+            name: isAnonymous ? '' : donorName,
+            email: isAnonymous ? '' : donorEmail
+          },
+          theme: { color: '#F97316' },
+          handler: async (response) => {
+            await verifyPayment(response);
+          },
+          modal: {
+            ondismiss: () => resetDonateBtn(amount)
+          }
+        });
+
+        rzp.open();
+
+      } catch (err) {
+        showToast('Server error. Please try again.', 'error');
+        resetDonateBtn(amount);
+      }
     }
-  }
 
-  // ─────────────────────────────────────────
-  // SHARE
-  // ─────────────────────────────────────────
-  function shareWhatsApp() {
-    const text = `Help ${campaign.patient_full_name} fight their illness! Every donation goes directly to the hospital. ${window.location.href}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-  }
+    function resetDonateBtn(amount) {
+      const btn = document.getElementById('donateBtn');
+      if (!btn) return;
+      btn.disabled = false;
+      btn.innerHTML = `❤️ Donate ₹<span id="donateAmountDisplay">${formatAmount(amount)}</span>`;
+    }
 
-  function shareLink() {
-    navigator.clipboard.writeText(window.location.href);
-    showToast('✅ Link copied to clipboard!', 'success');
-  }
+    // ── VERIFY PAYMENT ────────────────────────────
+    async function verifyPayment(response) {
+      try {
+        const res = await fetch(`${API}/donations/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            donation_id: donationId,
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature
+          })
+        });
 
-  function copyUPI(upiId) {
-    navigator.clipboard.writeText(upiId);
-    showToast('✅ UPI ID copied!', 'success');
-  }
+        const data = await res.json();
 
-  // ─────────────────────────────────────────
-  // HELPERS
-  // ─────────────────────────────────────────
-  function closeModal() {
-    document.getElementById('successModal').classList.remove('show');
-  }
+        if (data.success) {
+          const isAnon = document.getElementById('isAnonymous')?.checked;
+          const amount = document.getElementById('donationAmount')?.value || 0;
+          document.getElementById('successMsg').innerHTML = `
+          Your donation of <strong>₹${formatAmount(parseFloat(amount))}</strong> has been received! 🎉
+          <br/><br/>
+          ${!isAnon ? 'A PDF receipt has been sent to your email.' : 'Your donation has been recorded anonymously.'}
+          <br/><br/>
+          <small style="color:var(--gray-400);">
+            Funds will be released directly to the verified hospital after milestone checks.
+          </small>
+        `;
+          document.getElementById('successModal').classList.add('show');
+          // Reload campaign to update progress bar
+          await loadCampaign();
+        } else {
+          showToast(data.error || 'Payment verification failed. Please contact support.', 'error');
+          resetDonateBtn(0);
+        }
 
-  function showError(msg) {
-    document.getElementById('pageContent').innerHTML = `
+      } catch (err) {
+        showToast('Verification error. Please contact support if amount was deducted.', 'error');
+      }
+    }
+
+    // ── SUGGESTION ────────────────────────────────
+    async function submitSuggestion() {
+      const text = document.getElementById('suggestionText')?.value.trim();
+      const btn = document.getElementById('suggestBtn');
+
+      if (!text || text.length < 10) {
+        showToast('Please write a more detailed suggestion', 'error'); return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Submitting...';
+
+      try {
+        const res = await fetch(`${API}/donations/suggest`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ campaign_id: campaignId, suggestion_text: text })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          if (data.verified) {
+            showToast(`✅ Hospital suggestion verified and sent to patient!`, 'success');
+          } else {
+            showToast('✅ Suggestion received. Could not verify the hospital on Google Maps.', 'info');
+          }
+          if (document.getElementById('suggestionText')) {
+            document.getElementById('suggestionText').value = '';
+          }
+        } else {
+          showToast(data.error || 'Failed to submit suggestion', 'error');
+        }
+      } catch (err) {
+        showToast('Server error. Please try again.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '📤 Submit Suggestion';
+      }
+    }
+
+    // ── SHARE ─────────────────────────────────────
+    function shareWhatsApp() {
+      const name = campaign?.patient_full_name || 'a patient';
+      const text = `Help ${name} fight their illness! Every donation goes directly to the verified hospital.\n\n${window.location.href}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    }
+
+    function shareTwitter() {
+      const name = campaign?.patient_full_name || 'a patient';
+      const text = `Help ${name} get medical treatment. Verified crowdfunding — funds go directly to hospital. #MediTrust\n\n${window.location.href}`;
+      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank');
+    }
+
+    function shareLink() {
+      navigator.clipboard.writeText(window.location.href)
+        .then(() => showToast('✅ Campaign link copied!', 'success'))
+        .catch(() => showToast('Could not copy link', 'error'));
+    }
+
+    function copyUPI(upiId) {
+      if (!upiId) return;
+      navigator.clipboard.writeText(upiId)
+        .then(() => showToast('✅ UPI ID copied!', 'success'))
+        .catch(() => showToast('Could not copy UPI ID', 'error'));
+    }
+
+    // ── HELPERS ───────────────────────────────────
+    function closeSuccessModal() {
+      document.getElementById('successModal').classList.remove('show');
+    }
+
+    function showError(msg) {
+      document.getElementById('pageContent').innerHTML = `
       <div class="error-state">
         <div class="icon">😕</div>
         <h3>Something went wrong</h3>
-        <p>${msg}</p>
+        <p>${esc(msg)}</p>
       </div>`;
-  }
+    }
 
-  function showToast(msg, type = 'info') {
-    const toast       = document.getElementById('toast');
-    toast.textContent = msg;
-    toast.className   = `toast ${type} show`;
-    setTimeout(() => toast.classList.remove('show'), 3500);
-  }
+    function showToast(msg, type = 'info') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = `toast ${type} show`;
+      setTimeout(() => t.classList.remove('show'), 3800);
+    }
 
-  function formatAmount(n) {
-    return parseFloat(n || 0).toLocaleString('en-IN');
-  }
+    function formatAmount(n) {
+      return parseFloat(n || 0).toLocaleString('en-IN');
+    }
 
-  function formatDate(d) {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-IN', {
-      day: 'numeric', month: 'short', year: 'numeric'
-    });
-  }
-</script>
+    function formatDate(d) {
+      if (!d) return '—';
+      return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
 
-<!-- Razorpay SDK -->
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
+    function esc(str) {
+      if (str == null) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+  </script>
 </body>
+
 </html>

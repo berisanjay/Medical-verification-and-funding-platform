@@ -1116,7 +1116,39 @@
       if (!vData.success || vData.error) {
         toast('❌ ' + (vData.error || 'AI extraction failed. Is Flask running?'), 6000);
         $('p1b').className = 'pbadge err'; $('p1b').textContent = 'Failed';
-        btn.disabled = false; btn.innerHTML = '🔄 Retry'; return;
+        btn.disabled = false; btn.innerHTML = '🔄 Retry AI Extraction'; return;
+      }
+
+      // ── HARD STOP: Tampering / Fake documents detected ────────────────
+      if (vData.status === 'FAKE_DETECTED') {
+        $('p1b').className = 'pbadge err'; $('p1b').textContent = '🚨 Fake Document';
+        btn.disabled = false; btn.innerHTML = '🔄 Retry';
+
+        // Show hard stop error — go back to upload step
+        const tamperIssues = (vData.cross_document_issues || []).join('\n• ');
+        $('aiResultBlock').innerHTML = `
+          <div style="background:#FEE2E2;border:2px solid #FCA5A5;border-radius:14px;
+                      padding:24px;margin-top:20px;text-align:center;">
+            <div style="font-size:48px;margin-bottom:12px;">🚨</div>
+            <h3 style="color:#991B1B;font-size:18px;font-weight:800;margin-bottom:10px;">
+              Document Tampering Detected
+            </h3>
+            <p style="color:#7F1D1D;font-size:14px;margin-bottom:16px;line-height:1.6;">
+              One or more documents appear to have been digitally edited or forged.
+              Please upload original, unedited documents issued directly by the hospital or government authority.
+            </p>
+            ${tamperIssues ? `<div style="background:#FCA5A5;border-radius:8px;padding:12px;
+                              text-align:left;font-size:12px;color:#7F1D1D;margin-bottom:16px;">
+              <b>Issues found:</b><br>• ${tamperIssues.replace(/\n/g,'<br>• ')}
+            </div>` : ''}
+            <button type="button" onclick="goBack(3)"
+              style="background:#991B1B;color:white;border:none;padding:12px 28px;
+                     border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
+              ← Go Back and Upload Original Documents
+            </button>
+          </div>`;
+        $('aiResultBlock').style.display = 'block';
+        return;  // HARD STOP — cannot proceed
       }
 
       // Map extracted_data to display
@@ -1318,94 +1350,58 @@
     });
   }
 
-  // ── Step 5: Gemini Story Polish ───────────────────────
+  // ── Step 5: Story Polish ──────────────────────────────
+  // Level 1 — Local JS corrections (instant, always works)
+  // Level 2 — Backend Gemini (if configured)
   async function polishStory() {
     const original = $('f_story').value.trim();
     if (original.length < 50) {
-      toast('⚠️ Please write your story first before polishing it');
+      toast('⚠️ Please write your story first (at least 50 characters)');
       return;
     }
 
     const btn = $('polishBtn');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Sending to Gemini…';
-
-    // Hide previous result
+    btn.innerHTML = '<span class="spinner"></span> Polishing…';
     $('polishPanel').classList.remove('show');
 
-    const prompt = `You are a compassionate editor helping with a medical crowdfunding campaign on MediTrust, a platform that helps underprivileged patients in India raise funds for genuine medical treatment.
+    // ── LEVEL 1: Local JS Polish (instant, always works) ─────────────
+    const localPolished = localPolish(original);
 
-The fundraiser has written the following campaign story. Your task is to:
-1. Correct all spelling mistakes and grammatical errors
-2. Improve sentence flow and readability
-3. Keep the EXACT same emotional tone, personal feelings, and heart of the original — do not make it sound corporate or formal
-4. Preserve all specific details (names, places, amounts, conditions, relationships)
-5. Keep it in the same person's voice — if they wrote in first person, keep it first person
-6. Do NOT add any new facts, claims, or embellishments that were not in the original
-7. Keep approximately the same length
+    // ── LEVEL 2: Try backend Gemini ───────────────────────────────────
+    let geminiPolished = '';
+    const token      = localStorage.getItem('patientToken');
+    const campaignId = localStorage.getItem('campaignId') || localStorage.getItem('draftCampaignId');
 
-Original story:
-"""
-${original}
-"""
-
-Return ONLY the polished story text — no introductory lines, no commentary, no explanations. Just the improved story.`;
-
-    let polished = '';
-
-    try {
-      // Try Gemini API directly
-      const res = await fetch(`${GEMINI_URL}?key=${GEMINI_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.4, maxOutputTokens: 1500 }
-        })
-      });
-      const data = await res.json();
-      polished = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    } catch {
-      // Fallback: route through your backend Flask service
+    if (token && campaignId) {
       try {
-        const res = await fetch(`${FLASK}/ai/polish-story`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ story: original, patientName: gv('pname'), disease: exData.disease || '' })
+        btn.innerHTML = '<span class="spinner"></span> Checking Gemini…';
+        const ctrl = new AbortController();
+        const tid  = setTimeout(() => ctrl.abort(), 15000);
+        const res  = await fetch(`${API}/story/generate`, {
+          method : 'POST',
+          headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+          body   : JSON.stringify({
+            campaign_id   : parseInt(campaignId),
+            story_original: original,
+            language      : 'en'
+          }),
+          signal: ctrl.signal
         });
+        clearTimeout(tid);
         const data = await res.json();
-        polished = data.polishedStory || data.story || '';
-      } catch {
-        // Final fallback — light demo polish
-        polished = original
-          .replace(/\bi\b/g, 'I')
-          .replace(/\s{2,}/g, ' ')
-          .replace(/\.([A-Za-z])/g, '. $1')
-          .trim();
-
-        // Simulate a meaningful polish for demo
-        polished = `${original.charAt(0).toUpperCase() + original.slice(1)
-          .replace(/\bur\b/g, 'your')
-          .replace(/\bu\b/g, 'you')
-          .replace(/\bthnk\b/gi, 'thank')
-          .replace(/\bpls\b/gi, 'please')
-          .replace(/\bwud\b/gi, 'would')
-          .replace(/\bcud\b/gi, 'could')
-          .replace(/\bshud\b/gi, 'should')
-        }`;
+        if (data.success && data.story_gemini) {
+          geminiPolished = data.story_gemini;
+          console.log('✅ Gemini polish successful');
+        }
+      } catch(e) {
+        console.log('Gemini unavailable:', e.message, '— using local polish only');
       }
     }
 
-    if (!polished) {
-      toast('❌ Could not reach Gemini — please try again');
-      btn.disabled = false;
-      btn.innerHTML = '✨ Correct &amp; Improve';
-      return;
-    }
+    // ── Show best available result ─────────────────────────────────────
+    polishedStory = geminiPolished || localPolished;
 
-    polishedStory = polished.trim();
-
-    // Show comparison panel
     $('origText').textContent     = original;
     $('polishedText').textContent = polishedStory;
     $('polishPanel').classList.add('show');
@@ -1413,8 +1409,74 @@ Return ONLY the polished story text — no introductory lines, no commentary, no
     btn.disabled = false;
     btn.innerHTML = '✨ Correct &amp; Improve';
 
-    // Scroll to comparison
+    if (geminiPolished) {
+      toast('✨ Gemini AI polished your story!', 3000);
+    } else {
+      toast('✅ Basic corrections applied!', 3000);
+    }
+
     setTimeout(() => $('polishPanel').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  }
+
+  // ── LOCAL POLISH — Pure JS, no API, always works ──────────────────────
+  function localPolish(text) {
+    let t = text;
+
+    // Fix capitalisation of 'i'
+    t = t.replace(/\bi\b/g,    'I');
+    t = t.replace(/\bi\'m\b/gi, "I'm");
+    t = t.replace(/\bi\'ve\b/gi,"I've");
+    t = t.replace(/\bi\'ll\b/gi,"I'll");
+    t = t.replace(/\bi\'d\b/gi, "I'd");
+
+    // Fix SMS/chat abbreviations
+    t = t.replace(/\bur\b/g,    'your');
+    t = t.replace(/\bu\b/g,     'you');
+    t = t.replace(/\br\b/g,     'are');
+    t = t.replace(/\bthnk\b/gi, 'thank');
+    t = t.replace(/\bthx\b/gi,  'thanks');
+    t = t.replace(/\bpls\b/gi,  'please');
+    t = t.replace(/\bplz\b/gi,  'please');
+    t = t.replace(/\bwud\b/gi,  'would');
+    t = t.replace(/\bcud\b/gi,  'could');
+    t = t.replace(/\bshud\b/gi, 'should');
+    t = t.replace(/\bdnt\b/gi,  "don't");
+    t = t.replace(/\bcant\b/g,  "can't");
+    t = t.replace(/\bwont\b/g,  "won't");
+    t = t.replace(/\bdoesnt\b/g,"doesn't");
+
+    // Fix common Indian English typos
+    t = t.replace(/\bruppess\b/gi,    'rupees');
+    t = t.replace(/\brupess\b/gi,     'rupees');
+    t = t.replace(/\baffrod\b/gi,     'afford');
+    t = t.replace(/\btreatement\b/gi, 'treatment');
+    t = t.replace(/\boperatoin\b/gi,  'operation');
+    t = t.replace(/\bhospitol\b/gi,   'hospital');
+    t = t.replace(/\bdocters\b/gi,    'doctors');
+    t = t.replace(/\bdocter\b/gi,     'doctor');
+    t = t.replace(/\bmedecine\b/gi,   'medicine');
+    t = t.replace(/\bhelth\b/gi,      'health');
+    t = t.replace(/\bsurgury\b/gi,    'surgery');
+    t = t.replace(/\bsurgrey\b/gi,    'surgery');
+
+    // Fix spacing and punctuation
+    t = t.replace(/\s{2,}/g,       ' ');
+    t = t.replace(/\.([A-Za-z])/g, '. $1');
+    t = t.replace(/,([A-Za-z])/g,   ', $1');
+    t = t.replace(/\s+\./g,       '.');
+    t = t.replace(/\s+,/g,         ',');
+
+    // Capitalise first letter of each sentence
+    t = t.replace(/(^|[.!?]\s+)([a-z])/g, (m, p1, p2) => p1 + p2.toUpperCase());
+
+    // Capitalise first letter
+    t = t.charAt(0).toUpperCase() + t.slice(1);
+
+    // Ensure ends with full stop
+    t = t.trim();
+    if (t && !'.!?'.includes(t[t.length - 1])) t += '.';
+
+    return t;
   }
 
   function usePolished() {
@@ -1542,8 +1604,10 @@ Return ONLY the polished story text — no introductory lines, no commentary, no
       console.warn('FundNeeder save failed:', e.message);
     }
 
-    // ── Step 3: Send docs to verify-documents ─────────────
-    btn.innerHTML = '<span class="spinner"></span> Sending documents for AI verification…';
+    // ── Step 3: Save documents + use Step 3 preview result ─
+    // We already verified in Step 3 (preview-verify) — NO need to call Flask again!
+    // Just save documents to DB and record the verification result we already have.
+    btn.innerHTML = '<span class="spinner"></span> Saving documents to database…';
     try {
       let documents = window._docsBase64 || [];
       if (!documents.length) {
@@ -1560,21 +1624,59 @@ Return ONLY the polished story text — no introductory lines, no commentary, no
         }
       }
 
-      const controller = new AbortController();
-      const tid = setTimeout(() => controller.abort(), 180000);
-      const vRes = await fetch(`${API}/campaigns/${cid}/verify-documents`, {
+      // Use the verification result already computed in Step 3
+      // window._previewVerification has everything Flask already returned
+      const previewResult = window._previewVerification;
+
+      const vRes = await fetch(`${API}/campaigns/${cid}/save-documents`, {
         method : 'POST',
         headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
-        body   : JSON.stringify({ documents }),
-        signal : controller.signal
+        body   : JSON.stringify({
+          documents,
+          // Pass Step 3 verification result directly — no re-processing
+          verification_result: previewResult ? {
+            final_status          : previewResult.status,
+            risk_score            : previewResult.risk_score,
+            extracted_data        : previewResult.extracted_data,
+            cross_document_issues : previewResult.cross_document_issues,
+            has_tampering         : previewResult.has_tampering,
+            has_expired_docs      : previewResult.has_expired_docs,
+            document_results      : previewResult.document_results
+          } : null
+        })
       });
-      clearTimeout(tid);
       const vData = await vRes.json();
-      console.log('✅ Verification:', vData.status, '| Risk:', vData.risk_score);
+      console.log('✅ Documents saved:', vData.status, '| Risk:', vData.risk_score);
 
       if (!vData.success && vData.error) {
         toast('⚠️ ' + vData.error, 5000);
         btn.disabled = false; btn.innerHTML = '🚀 Submit Campaign'; return;
+      }
+
+      // ── Step 4: Save story and approve it ──────────────
+      const storyText = $('f_story').value.trim();
+      if (storyText && storyText.length >= 50) {
+        try {
+          // Save story
+          const sRes = await fetch(`${API}/story/generate`, {
+            method : 'POST',
+            headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+            body   : JSON.stringify({
+              campaign_id   : cid,
+              story_original: storyText,
+              language      : 'en'
+            })
+          });
+          // Approve story (use original if Gemini not configured)
+          await fetch(`${API}/story/approve`, {
+            method : 'POST',
+            headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+            body   : JSON.stringify({ campaign_id: cid, use_original: true })
+          });
+          console.log('✅ Story saved and approved');
+        } catch(sErr) {
+          console.warn('Story save failed (non-critical):', sErr.message);
+        }
       }
 
       // Show result screen
@@ -1601,10 +1703,34 @@ Return ONLY the polished story text — no introductory lines, no commentary, no
     const rc     = risk < 30 ? '#15803D' : risk < 60 ? '#B45309' : '#DC2626';
 
     const cfgs = {
-      VERIFIED            : { icon:'✅', color:'#15803D', bTitle:'✅ Documents Verified!',              bMsg:'All documents verified. Admin will review and go live soon.', btn:'📋 Go to Dashboard', act:"window.location.href='dashboard.html'" },
-      PENDING             : { icon:'⏳', color:'#B45309', bTitle:'⏳ Sent for Admin Review',            bMsg:'AI flagged items for review. Admin will verify within 24 hrs.',  btn:'📋 Go to Dashboard', act:"window.location.href='dashboard.html'" },
-      VERIFICATION_NEEDED : { icon:'🚨', color:'#DC2626', bTitle:'🚨 Admin Verification Required',      bMsg:'Issues detected. Admin will investigate carefully.',             btn:'📋 Go to Dashboard', act:"window.location.href='dashboard.html'" },
-      UPDATE_NEEDED       : { icon:'📅', color:'#D97706', bTitle:'📅 Fresh Documents Needed',           bMsg:'Some documents are expired. Please upload fresh ones.',          btn:'🔄 Start Again',    act:"window.location.href='create-campaign.html'" }
+      VERIFIED : {
+        icon:'✅', color:'#15803D',
+        bTitle:'✅ Campaign Submitted Successfully!',
+        bMsg :'Your documents passed AI verification. Admin will review and your campaign will go LIVE automatically. You will receive an email once it is live.',
+        btn  :'📋 Go to Dashboard',
+        act  :"window.location.href='dashboard.html'"
+      },
+      PENDING : {
+        icon:'⏳', color:'#B45309',
+        bTitle:'⏳ Campaign Needs Admin Approval',
+        bMsg :'Your campaign has been submitted. Admin will carefully review your documents and details. You will receive an email once approved or if more information is needed.',
+        btn  :'📋 Go to Dashboard',
+        act  :"window.location.href='dashboard.html'"
+      },
+      VERIFICATION_NEEDED : {
+        icon:'⏳', color:'#B45309',
+        bTitle:'⏳ Campaign Needs Admin Approval',
+        bMsg :'Your campaign has been submitted. Admin will carefully review your documents and details. You will receive an email once approved or if more information is needed.',
+        btn  :'📋 Go to Dashboard',
+        act  :"window.location.href='dashboard.html'"
+      },
+      UPDATE_NEEDED : {
+        icon:'📅', color:'#D97706',
+        bTitle:'📅 Fresh Documents Needed',
+        bMsg :'Some documents appear expired. Please upload fresh documents issued within the last 90 days.',
+        btn  :'🔄 Start Again',
+        act  :"window.location.href='create-campaign.html'"
+      }
     };
     const c = cfgs[status] || cfgs['PENDING'];
 
@@ -1634,10 +1760,9 @@ Return ONLY the polished story text — no introductory lines, no commentary, no
           <p style="font-size:11px;color:var(--ink-soft);margin-top:5px;">${risk<30?'✅ Low risk — documents look authentic':risk<60?'⚠️ Medium risk — admin will review':'🚨 High risk — admin will check carefully'}</p>
         </div>
         ${entityRows}
-        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-          <button type="button" class="btn-next" onclick="${c.act}">${c.btn}</button>
-          <button type="button" class="btn-back" onclick="window.location.href='dashboard.html'">📋 Dashboard</button>
-        </div>
+         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <button type="button" class="btn-next" onclick="${c.act}">${c.btn}</button>
+          </div>
       </div>`;
 
     localStorage.removeItem('draftCampaignId');
