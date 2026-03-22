@@ -28,7 +28,7 @@ app.get('/', (req, res) => {
   res.json({ message: 'HMS Service Running', status: 'OK' });
 });
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 4001;
 const server = app.listen(PORT, () => {
   console.log(`HMS Service running on port ${PORT}`);
 });

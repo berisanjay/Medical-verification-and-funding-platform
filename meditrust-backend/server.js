@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const http = require('node:http');
+const path = require('path');
 dotenv.config();
 
 const app = express();
@@ -13,6 +14,16 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// ── Serve frontend HTML files directly from Node ──────────
+// This avoids Live Server hot-reload which breaks during long AI requests
+app.use(express.static(path.join(__dirname, '..', 'client'), {
+  etag   : false,
+  maxAge : 0,
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  }
+}));
+
 // Routes
 app.use('/api/auth',        require('./routes/auth'));
 app.use('/api/admin',       require('./routes/admin'));
@@ -22,7 +33,6 @@ app.use('/api/releases',    require('./routes/releases'));
 app.use('/api/story',       require('./routes/story'));
 app.use('/api/suggestions', require('./routes/suggestions'));
 app.use('/api/ngo',         require('./routes/ngo'));        // Phase 11 — NGO Matching
-app.use('/api/hospitals',   require('./routes/hospitals')); // Accessible hospitals + Fund Needers
 app.use('/internal',        require('./routes/internal'));
 
 app.get('/', (req, res) => {

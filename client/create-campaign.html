@@ -859,7 +859,7 @@
 <!-- ════════════════ SCRIPT ════════════════ -->
 <script>
   const API   = 'http://localhost:3000/api';
-  const HMS   = 'http://localhost:4000/api';
+  const HMS   = 'http://localhost:4001/api';
   const FLASK = 'http://localhost:5000';
 
   // ── Gemini API via Anthropic proxy (Claude in Claude pattern)
@@ -1110,25 +1110,7 @@
         signal : controller.signal
       });
       clearTimeout(tid);
-
-      // Check HTTP status before parsing JSON to prevent redirects
-      if (!vRes.ok) {
-        if (vRes.status === 401) {
-          toast(" Session expired. Please login again.\, 4000);
- setTimeout(() => window.location.href = \login.html\, 2000);
- return;
- } else if (vRes.status >= 400 && vRes.status < 500) {
- toast(" Request error: \ + vRes.status, 4000);
-          document.getElementById(\p1b\).className = \pbadge err\; document.getElementById(\p1b\).textContent = \Failed\;
-          btn.disabled = false; btn.innerHTML = " Retry\; return;
- } else if (vRes.status >= 500) {
- toast(" Server error. Please try again.\, 4000);
-          document.getElementById(\p1b\).className = \pbadge err\; document.getElementById(\p1b\).textContent = \Failed\;
-          btn.disabled = false; btn.innerHTML = " Retry\; return;
- }
- }
- 
- const vData = await vRes.json();
+      const vData = await vRes.json();
       console.log('📥 Preview result:', vData);
 
       if (!vData.success || vData.error) {
@@ -1587,25 +1569,7 @@ Return ONLY the polished story text — no introductory lines, no commentary, no
         signal : controller.signal
       });
       clearTimeout(tid);
-
-      // Check HTTP status before parsing JSON to prevent redirects
-      if (!vRes.ok) {
-        if (vRes.status === 401) {
-          toast(" Session expired. Please login again.\, 4000);
- setTimeout(() => window.location.href = \login.html\, 2000);
- return;
- } else if (vRes.status >= 400 && vRes.status < 500) {
- toast(" Request error: \ + vRes.status, 4000);
-          document.getElementById(\p1b\).className = \pbadge err\; document.getElementById(\p1b\).textContent = \Failed\;
-          btn.disabled = false; btn.innerHTML = " Retry\; return;
- } else if (vRes.status >= 500) {
- toast(" Server error. Please try again.\, 4000);
-          document.getElementById(\p1b\).className = \pbadge err\; document.getElementById(\p1b\).textContent = \Failed\;
-          btn.disabled = false; btn.innerHTML = " Retry\; return;
- }
- }
- 
- const vData = await vRes.json();
+      const vData = await vRes.json();
       console.log('✅ Verification:', vData.status, '| Risk:', vData.risk_score);
 
       if (!vData.success && vData.error) {
