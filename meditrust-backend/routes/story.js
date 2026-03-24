@@ -30,11 +30,14 @@ const callGemini = async (prompt) => {
     if (jsonKey) {
       // JSON key authentication
       try {
-        const credentials = JSON.parse(jsonKey);
+        // Clean up the JSON string before parsing
+        const cleanedJson = jsonKey.trim().replace(/\r\n/g, '\\n').replace(/\n/g, '\\n');
+        const credentials = JSON.parse(cleanedJson);
         authConfig.credentials = credentials;
         console.log('✅ Using JSON key authentication for Gemini');
       } catch (e) {
         console.log('❌ Invalid JSON key format:', e.message);
+        console.log('🔍 Raw JSON key preview:', jsonKey.substring(0, 100) + '...');
         return {
           success: false,
           gemini_story: null,

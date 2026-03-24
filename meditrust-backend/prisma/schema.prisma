@@ -165,7 +165,7 @@ model Campaign {
 
   // Public URLs
   public_url              String?        @unique
-  qr_code_url             String?
+  qr_code_url             String?        @db.Text
   upi_id                  String?        @unique
 
   // Timestamps

@@ -9,4 +9,4 @@ success  : True
 message  : Admin seeded successfully
 email    : gajananberi@gmail.com
 password : Admin@MediTrust2026
-note     : Please change password after first login
+note     : Please change password after first loginflask-backend

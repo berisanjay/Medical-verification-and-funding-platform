@@ -1,344 +1,160 @@
-=<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MediTrust — Admin Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     :root {
       --orange: #F97316; --orange-dark: #EA580C; --orange-light: #FFF7ED; --orange-mid: #FFEDD5;
-      --white: #FFFFFF; --gray-50: #F9FAFB; --gray-100: #F3F4F6; --gray-200: #E5E7EB;
-      --gray-400: #9CA3AF; --gray-500: #6B7280; --gray-600: #4B5563; --gray-700: #374151; --gray-800: #1F2937; --gray-900: #111827;
-      --green: #22C55E; --green-bg: #DCFCE7; --green-border: #86EFAC; --green-text: #15803D;
-      --red: #EF4444; --red-bg: #FEE2E2; --red-border: #FCA5A5; --red-text: #991B1B;
-      --blue: #3B82F6; --blue-bg: #DBEAFE; --blue-text: #1D4ED8;
-      --yellow: #F59E0B; --yellow-bg: #FEF9C3; --yellow-border: #FCD34D; --yellow-text: #92400E;
-      --sidebar-w: 256px;
-      --font: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --white: #FFFFFF; --gray-100: #F9FAFB; --gray-200: #F3F4F6; --gray-400: #9CA3AF;
+      --gray-600: #4B5563; --gray-800: #1F2937; --green: #22C55E; --red: #EF4444;
+      --blue: #3B82F6; --yellow: #F59E0B; --sidebar-w: 250px;
     }
-    body { font-family: var(--font); background: var(--gray-50); color: var(--gray-800); min-height: 100vh; }
-
-    /* ── SIDEBAR ─────────────────────────────── */
-    .sidebar {
-      width: var(--sidebar-w); background: var(--gray-900); min-height: 100vh;
-      position: fixed; top: 0; left: 0; display: flex; flex-direction: column; z-index: 100;
-    }
-    .sidebar-logo {
-      padding: 22px 20px; border-bottom: 1px solid var(--gray-700);
-      display: flex; align-items: center; gap: 12px;
-    }
-    .logo-icon {
-      width: 40px; height: 40px; background: var(--orange); border-radius: 11px;
-      display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
-    }
-    .logo-text span { display: block; color: var(--white); font-size: 17px; font-weight: 800; }
-    .logo-text small { color: var(--gray-400); font-size: 11px; }
-    .sidebar-nav { padding: 14px 0; flex: 1; overflow-y: auto; }
-    .nav-section {
-      padding: 8px 20px 4px; font-size: 10px; font-weight: 700; color: var(--gray-500);
-      text-transform: uppercase; letter-spacing: 0.1em;
-    }
-    .nav-item {
-      display: flex; align-items: center; gap: 10px; padding: 10px 20px; color: #D1D5DB;
-      cursor: pointer; font-size: 13.5px; font-weight: 500; transition: all 0.15s;
-      border-left: 3px solid transparent; user-select: none;
-    }
-    .nav-item:hover { background: var(--gray-700); color: var(--white); }
-    .nav-item.active { background: var(--gray-700); color: var(--orange); border-left-color: var(--orange); }
-    .nav-item .icon { font-size: 15px; width: 18px; text-align: center; }
-    .nav-badge {
-      margin-left: auto; background: var(--red); color: white; font-size: 10px;
-      padding: 2px 7px; border-radius: 20px; font-weight: 700;
-    }
-    .sidebar-footer {
-      padding: 14px 20px; border-top: 1px solid var(--gray-700);
-      display: flex; align-items: center; gap: 10px;
-    }
-    .admin-avatar {
-      width: 36px; height: 36px; background: var(--orange); border-radius: 50%;
-      display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; flex-shrink: 0;
-    }
-    .admin-info { flex: 1; min-width: 0; }
-    .admin-info span { display: block; color: var(--white); font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--gray-100); color: var(--gray-800); display: flex; min-height: 100vh; }
+    .sidebar { width: var(--sidebar-w); background: var(--gray-800); min-height: 100vh; position: fixed; top: 0; left: 0; display: flex; flex-direction: column; z-index: 100; }
+    .sidebar-logo { padding: 24px 20px; border-bottom: 1px solid #374151; display: flex; align-items: center; gap: 10px; }
+    .sidebar-logo .logo-icon { width: 38px; height: 38px; background: var(--orange); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .sidebar-logo span { color: var(--white); font-size: 18px; font-weight: 700; }
+    .sidebar-logo small { display: block; color: var(--gray-400); font-size: 11px; }
+    .sidebar-nav { padding: 16px 0; flex: 1; }
+    .nav-section { padding: 8px 16px 4px; font-size: 11px; font-weight: 600; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.08em; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; color: #D1D5DB; cursor: pointer; font-size: 14px; transition: all 0.15s; border-left: 3px solid transparent; }
+    .nav-item:hover { background: #374151; color: var(--white); }
+    .nav-item.active { background: #374151; color: var(--orange); border-left: 3px solid var(--orange); }
+    .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+    .nav-badge { margin-left: auto; background: var(--red); color: white; font-size: 11px; padding: 1px 7px; border-radius: 20px; font-weight: 600; }
+    .sidebar-footer { padding: 16px 20px; border-top: 1px solid #374151; display: flex; align-items: center; gap: 10px; }
+    .admin-avatar { width: 36px; height: 36px; background: var(--orange); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; }
+    .admin-info span { display: block; color: var(--white); font-size: 13px; font-weight: 600; }
     .admin-info small { color: var(--gray-400); font-size: 11px; }
-    .logout-btn {
-      background: none; border: none; color: var(--gray-400); cursor: pointer; font-size: 18px;
-      padding: 4px; border-radius: 6px; transition: color 0.15s;
-    }
+    .logout-btn { margin-left: auto; background: none; border: none; color: var(--gray-400); cursor: pointer; font-size: 16px; }
     .logout-btn:hover { color: var(--red); }
-
-    /* ── MAIN ────────────────────────────────── */
-    .main { margin-left: var(--sidebar-w); min-height: 100vh; display: flex; flex-direction: column; }
-    .topbar {
-      background: var(--white); padding: 14px 28px; display: flex; align-items: center;
-      justify-content: space-between; border-bottom: 1px solid var(--gray-200);
-      position: sticky; top: 0; z-index: 50;
-    }
-    .topbar-title h2 { font-size: 18px; font-weight: 800; }
-    .topbar-title p { font-size: 12.5px; color: var(--gray-400); margin-top: 2px; }
-    .topbar-right { display: flex; align-items: center; gap: 12px; }
-    .topbar-date { font-size: 12px; color: var(--gray-400); }
-    .refresh-btn {
-      background: var(--orange-light); color: var(--orange); border: none; padding: 8px 16px;
-      border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.15s;
-      font-family: var(--font);
-    }
+    .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
+    .topbar { background: var(--white); padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--gray-200); position: sticky; top: 0; z-index: 50; }
+    .topbar-title h2 { font-size: 18px; font-weight: 700; }
+    .topbar-title p { font-size: 13px; color: var(--gray-400); }
+    .topbar-right { display: flex; align-items: center; gap: 14px; }
+    .topbar-date { font-size: 13px; color: var(--gray-400); }
+    .refresh-btn { background: var(--orange-light); color: var(--orange); border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.15s; }
     .refresh-btn:hover { background: var(--orange-mid); }
-    .content { padding: 26px 28px; flex: 1; }
-
-    /* ── STATS ───────────────────────────────── */
-    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 24px; }
-    .stat-card {
-      background: var(--white); border-radius: 14px; padding: 20px;
-      display: flex; align-items: center; gap: 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06); transition: transform 0.15s, box-shadow 0.15s;
-    }
-    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    .stat-icon {
-      width: 50px; height: 50px; border-radius: 13px; display: flex;
-      align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
-    }
+    .content { padding: 28px; flex: 1; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; margin-bottom: 28px; }
+    .stat-card { background: var(--white); border-radius: 14px; padding: 22px; display: flex; align-items: center; gap: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); transition: transform 0.15s; }
+    .stat-card:hover { transform: translateY(-2px); }
+    .stat-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
     .stat-icon.orange { background: var(--orange-mid); }
-    .stat-icon.green  { background: var(--green-bg); }
-    .stat-icon.red    { background: var(--red-bg); }
-    .stat-icon.blue   { background: var(--blue-bg); }
+    .stat-icon.green  { background: #DCFCE7; }
+    .stat-icon.red    { background: #FEE2E2; }
+    .stat-icon.blue   { background: #DBEAFE; }
     .stat-info h3 { font-size: 26px; font-weight: 800; line-height: 1; }
-    .stat-info p  { font-size: 12.5px; color: var(--gray-400); margin-top: 4px; }
-    .stat-warn    { font-size: 11px; color: var(--yellow); font-weight: 600; margin-top: 4px; }
-
-    /* ── LAYOUT ──────────────────────────────── */
-    .two-col { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; margin-bottom: 18px; }
-    .card { background: var(--white); border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden; }
-    .card-header {
-      padding: 16px 22px; display: flex; align-items: center; justify-content: space-between;
-      border-bottom: 1px solid var(--gray-100);
-    }
-    .card-header h3 { font-size: 14.5px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-    .view-all {
-      font-size: 12.5px; color: var(--orange); cursor: pointer; font-weight: 600;
-      background: none; border: none; font-family: var(--font);
-    }
-
-    /* ── TABLE ───────────────────────────────── */
+    .stat-info p { font-size: 13px; color: var(--gray-400); margin-top: 4px; }
+    .trend.warn { color: var(--yellow); font-size: 12px; font-weight: 600; margin-top: 4px; }
+    .three-col { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .card { background: var(--white); border-radius: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden; }
+    .card-header { padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--gray-200); }
+    .card-header h3 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .card-body { padding: 0; }
+    .view-all { font-size: 13px; color: var(--orange); cursor: pointer; font-weight: 600; background: none; border: none; }
     .table { width: 100%; border-collapse: collapse; }
-    .table th {
-      padding: 11px 20px; text-align: left; font-size: 10.5px; font-weight: 700;
-      color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.06em;
-      background: var(--gray-50); border-bottom: 1px solid var(--gray-100);
-    }
-    .table td { padding: 13px 20px; font-size: 13px; border-bottom: 1px solid var(--gray-100); vertical-align: middle; }
+    .table th { padding: 12px 22px; text-align: left; font-size: 11px; font-weight: 700; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.05em; background: var(--gray-100); border-bottom: 1px solid var(--gray-200); }
+    .table td { padding: 14px 22px; font-size: 13px; border-bottom: 1px solid var(--gray-200); vertical-align: middle; }
     .table tr:last-child td { border-bottom: none; }
-    .table tr:hover td { background: var(--gray-50); }
-
-    /* ── BADGES ──────────────────────────────── */
+    .table tr:hover td { background: var(--gray-100); }
     .badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; gap: 4px; }
-    .badge-verified            { background: var(--green-bg); color: var(--green-text); }
-    .badge-pending             { background: var(--yellow-bg); color: var(--yellow-text); }
-    .badge-verification-needed { background: var(--red-bg); color: var(--red-text); }
-    .badge-live                { background: var(--blue-bg); color: var(--blue-text); }
-    .badge-cancelled           { background: var(--gray-100); color: var(--gray-500); }
-    .badge-update-needed       { background: var(--orange-mid); color: #9A3412; }
-    .badge-completed           { background: #F0FDF4; color: #166534; }
-    .badge-draft               { background: var(--gray-100); color: var(--gray-500); }
-
-    /* ── BUTTONS ─────────────────────────────── */
-    .btn {
-      padding: 7px 13px; border-radius: 8px; font-size: 12px; font-weight: 600;
-      cursor: pointer; border: none; transition: all 0.15s;
-      display: inline-flex; align-items: center; gap: 5px; font-family: var(--font);
-    }
-    .btn-review  { background: var(--blue-bg);  color: var(--blue-text); }
-    .btn-review:hover  { background: #BFDBFE; }
-    .btn-verify  { background: var(--green-bg); color: var(--green-text); }
-    .btn-verify:hover  { background: #BBF7D0; }
-    .btn-cancel  { background: var(--red-bg);   color: var(--red-text); }
-    .btn-cancel:hover  { background: #FECACA; }
-    .btn-release { background: var(--blue-bg);  color: var(--blue-text); }
+    .badge-verified            { background: #DCFCE7; color: #15803D; }
+    .badge-pending             { background: #FEF9C3; color: #92400E; }
+    .badge-verification-needed { background: #FEE2E2; color: #991B1B; }
+    .badge-live                { background: #DBEAFE; color: #1D4ED8; }
+    .badge-cancelled           { background: #F3F4F6; color: #6B7280; }
+    .badge-update-needed       { background: #FFEDD5; color: #9A3412; }
+    .btn { padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; display: inline-flex; align-items: center; gap: 5px; }
+    .btn-review  { background: #DBEAFE; color: #1D4ED8; }
+    .btn-review:hover { background: #BFDBFE; }
+    .btn-verify  { background: #DCFCE7; color: #15803D; }
+    .btn-verify:hover { background: #BBF7D0; }
+    .btn-cancel  { background: #FEE2E2; color: #991B1B; }
+    .btn-cancel:hover { background: #FECACA; }
+    .btn-release { background: #DBEAFE; color: #1D4ED8; }
     .btn-release:hover { background: #BFDBFE; }
-
-    /* ── PRIORITY ITEMS ──────────────────────── */
-    .priority-item {
-      padding: 13px 20px; display: flex; align-items: center; gap: 12px;
-      border-bottom: 1px solid var(--gray-100); transition: background 0.15s;
-    }
+    .priority-item { padding: 14px 22px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--gray-200); transition: background 0.15s; }
     .priority-item:last-child { border-bottom: none; }
-    .priority-item:hover { background: var(--gray-50); }
-    .priority-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .priority-item:hover { background: var(--gray-100); }
+    .priority-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
     .dot-red    { background: var(--red); }
     .dot-yellow { background: var(--yellow); }
-    .priority-info { flex: 1; min-width: 0; }
-    .priority-info h4 { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .priority-info p  { font-size: 11.5px; color: var(--gray-400); margin-top: 2px; }
-    .priority-actions { display: flex; gap: 6px; flex-shrink: 0; }
-
-    /* ── AUDIT ITEMS ─────────────────────────── */
-    .audit-item {
-      padding: 12px 20px; display: flex; align-items: flex-start; gap: 12px;
-      border-bottom: 1px solid var(--gray-100);
-    }
+    .priority-info { flex: 1; }
+    .priority-info h4 { font-size: 13px; font-weight: 600; }
+    .priority-info p { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+    .audit-item { padding: 12px 22px; display: flex; align-items: flex-start; gap: 12px; border-bottom: 1px solid var(--gray-200); }
     .audit-item:last-child { border-bottom: none; }
-    .audit-icon {
-      width: 32px; height: 32px; border-radius: 8px;
-      display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;
-    }
-    .audit-icon.verify  { background: var(--green-bg); }
-    .audit-icon.cancel  { background: var(--red-bg); }
-    .audit-icon.release { background: var(--blue-bg); }
+    .audit-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+    .audit-icon.verify  { background: #DCFCE7; }
+    .audit-icon.cancel  { background: #FEE2E2; }
+    .audit-icon.release { background: #DBEAFE; }
     .audit-icon.login   { background: var(--orange-mid); }
     .audit-content h4 { font-size: 13px; font-weight: 600; }
-    .audit-content p  { font-size: 11.5px; color: var(--gray-400); margin-top: 2px; }
-    .audit-time { margin-left: auto; font-size: 11px; color: var(--gray-400); white-space: nowrap; padding-top: 2px; }
-
-    /* ── LOADING / EMPTY ─────────────────────── */
-    .loading {
-      display: flex; align-items: center; justify-content: center;
-      padding: 40px; color: var(--gray-400); font-size: 13.5px; gap: 10px;
-    }
-    .spinner {
-      width: 20px; height: 20px; border: 3px solid var(--gray-200);
-      border-top-color: var(--orange); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .empty { text-align: center; padding: 40px; color: var(--gray-400); }
-    .empty .empty-icon { font-size: 34px; margin-bottom: 8px; }
-    .empty p { font-size: 13.5px; }
-    .hidden { display: none !important; }
-
-    /* ── LOGIN ───────────────────────────────── */
-    .login-screen {
-      display: flex; align-items: center; justify-content: center;
-      min-height: 100vh; background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 50%, #FED7AA 100%);
-    }
-    .login-card {
-      background: white; border-radius: 20px; padding: 40px; width: 420px;
-      box-shadow: 0 20px 60px rgba(249,115,22,0.15);
-    }
-    .login-logo { display: flex; align-items: center; gap: 14px; margin-bottom: 32px; justify-content: center; }
-    .login-logo-icon {
-      width: 50px; height: 50px; background: var(--orange); border-radius: 14px;
-      display: flex; align-items: center; justify-content: center; font-size: 26px;
-    }
-    .login-logo h1 { font-size: 26px; font-weight: 800; }
-    .login-logo p  { font-size: 12px; color: var(--gray-400); }
-    .login-card h2 { font-size: 20px; font-weight: 800; margin-bottom: 4px; text-align: center; }
-    .login-subtitle { font-size: 13.5px; color: var(--gray-400); text-align: center; margin-bottom: 28px; }
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-size: 12.5px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; }
-    .form-group input {
-      width: 100%; padding: 11px 14px; border: 1.5px solid var(--gray-200);
-      border-radius: 10px; font-size: 14px; outline: none; transition: border 0.15s; font-family: var(--font);
-    }
-    .form-group input:focus { border-color: var(--orange); }
-    .login-btn {
-      width: 100%; padding: 13px; background: var(--orange); color: white; border: none;
-      border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px;
-      transition: background 0.15s; font-family: var(--font);
-    }
-    .login-btn:hover { background: var(--orange-dark); }
-    .login-btn:disabled { background: var(--gray-400); cursor: not-allowed; }
-    .error-msg {
-      background: var(--red-bg); color: var(--red-text); padding: 10px 14px;
-      border-radius: 8px; font-size: 13px; margin-bottom: 14px; display: none; border-left: 3px solid var(--red);
-    }
-
-    /* ── MODALS ──────────────────────────────── */
-    .modal-overlay {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-      z-index: 200; align-items: center; justify-content: center;
-    }
+    .audit-content p  { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+    .audit-time { margin-left: auto; font-size: 11px; color: var(--gray-400); white-space: nowrap; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; }
     .modal-overlay.show { display: flex; }
-    .modal {
-      background: var(--white); border-radius: 16px; padding: 28px; width: 480px;
-      max-width: 90vw; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-    }
-    .modal h3 { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
-    .modal p  { color: var(--gray-500); font-size: 13.5px; margin-bottom: 20px; line-height: 1.6; }
-    .modal-input {
-      width: 100%; padding: 10px 14px; border: 1.5px solid var(--gray-200);
-      border-radius: 8px; font-size: 14px; margin-bottom: 16px; outline: none; font-family: var(--font);
-    }
+    .modal { background: var(--white); border-radius: 16px; padding: 28px; width: 480px; max-width: 90vw; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+    .modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .modal p  { color: var(--gray-600); font-size: 14px; margin-bottom: 20px; }
+    .modal-input { width: 100%; padding: 10px 14px; border: 1px solid var(--gray-200); border-radius: 8px; font-size: 14px; margin-bottom: 16px; outline: none; }
     .modal-input:focus { border-color: var(--orange); }
     .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
-    .btn-modal-cancel {
-      padding: 9px 20px; border-radius: 8px; font-size: 14px; font-weight: 600;
-      cursor: pointer; border: 1.5px solid var(--gray-200); background: var(--white);
-      color: var(--gray-600); font-family: var(--font); transition: background 0.15s;
-    }
-    .btn-modal-cancel:hover { background: var(--gray-50); }
-    .btn-modal-confirm {
-      padding: 9px 20px; border-radius: 8px; font-size: 14px; font-weight: 600;
-      cursor: pointer; border: none; background: var(--orange); color: white;
-      font-family: var(--font); transition: background 0.15s;
-    }
-    .btn-modal-confirm:hover { background: var(--orange-dark); }
-    .btn-modal-confirm.danger { background: var(--red); }
+    .btn-modal-cancel  { padding: 9px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: 1px solid var(--gray-200); background: var(--white); color: var(--gray-600); }
+    .btn-modal-confirm { padding: 9px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; background: var(--orange); color: white; }
+    .btn-modal-confirm:hover       { background: var(--orange-dark); }
+    .btn-modal-confirm.danger      { background: var(--red); }
     .btn-modal-confirm.danger:hover { background: #DC2626; }
-
-    /* ── REVIEW MODAL ────────────────────────── */
-    .review-overlay {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
-      z-index: 300; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto;
-    }
-    .review-overlay.show { display: flex; }
-    .review-modal {
-      background: var(--white); border-radius: 16px; padding: 28px; max-width: 820px; width: 100%;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3); margin: auto;
-    }
-    .review-modal-header {
-      display: flex; justify-content: space-between; align-items: center; margin-bottom: 22px;
-    }
-    .review-modal-header h3 { font-size: 18px; font-weight: 800; }
-    .review-close-btn { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--gray-400); line-height: 1; }
-    .review-close-btn:hover { color: var(--gray-700); }
-    .review-section { background: var(--gray-50); border-radius: 12px; padding: 18px; margin-bottom: 14px; }
-    .review-section h4 { font-size: 13.5px; font-weight: 700; margin-bottom: 14px; color: var(--gray-800); }
-    .review-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .review-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-    .review-cell { padding: 10px 12px; background: white; border-radius: 8px; border: 1px solid var(--gray-200); }
-    .review-cell .rc-label { font-size: 10.5px; color: var(--gray-400); margin-bottom: 3px; }
-    .review-cell .rc-value { font-size: 13px; font-weight: 600; }
-
-    /* ── TOAST ───────────────────────────────── */
-    .toast {
-      position: fixed; bottom: 24px; right: 24px; background: var(--gray-900);
-      color: white; padding: 13px 20px; border-radius: 10px; font-size: 13.5px; font-weight: 600;
-      z-index: 9999; transform: translateY(80px); opacity: 0; transition: all 0.3s;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-    }
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--gray-800); color: white; padding: 14px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; z-index: 9999; transform: translateY(80px); opacity: 0; transition: all 0.3s; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
     .toast.show    { transform: translateY(0); opacity: 1; }
     .toast.success { border-left: 4px solid var(--green); }
     .toast.error   { border-left: 4px solid var(--red); }
     .toast.info    { border-left: 4px solid var(--orange); }
+    .login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; width: 100%; background: linear-gradient(135deg,#FFF7ED 0%,#FFEDD5 100%); }
+    .login-card { background: white; border-radius: 20px; padding: 40px; width: 420px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+    .login-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; justify-content: center; }
+    .login-logo-icon { width: 48px; height: 48px; background: var(--orange); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    .login-logo h1 { font-size: 24px; font-weight: 800; }
+    .login-logo p  { font-size: 12px; color: var(--gray-400); }
+    .login-card h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; text-align: center; }
+    .login-card .subtitle { font-size: 14px; color: var(--gray-400); text-align: center; margin-bottom: 28px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; }
+    .form-group input { width: 100%; padding: 11px 14px; border: 1px solid var(--gray-200); border-radius: 10px; font-size: 14px; outline: none; transition: border 0.15s; }
+    .form-group input:focus { border-color: var(--orange); }
+    .login-btn { width: 100%; padding: 13px; background: var(--orange); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px; transition: background 0.15s; }
+    .login-btn:hover    { background: var(--orange-dark); }
+    .login-btn:disabled { background: var(--gray-400); cursor: not-allowed; }
+    .error-msg { background: #FEE2E2; color: #991B1B; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; display: none; }
+    .loading { display: flex; align-items: center; justify-content: center; padding: 40px; color: var(--gray-400); font-size: 14px; gap: 10px; }
+    .spinner { width: 20px; height: 20px; border: 3px solid var(--gray-200); border-top: 3px solid var(--orange); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty { text-align: center; padding: 40px; color: var(--gray-400); }
+    .empty .empty-icon { font-size: 36px; margin-bottom: 8px; }
+    .empty p { font-size: 14px; }
+    .hidden { display: none !important; }
 
-    /* ── RELEASES FORM ───────────────────────── */
-    .releases-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 14px; align-items: end; }
-    .field-label { font-size: 12.5px; font-weight: 600; color: var(--gray-600); display: block; margin-bottom: 6px; }
-    .field-input {
-      width: 100%; padding: 10px 14px; border: 1.5px solid var(--gray-200);
-      border-radius: 8px; font-size: 14px; outline: none; font-family: var(--font); transition: border 0.15s;
-    }
-    .field-input:focus { border-color: var(--orange); }
-
-    /* ── BLACKLIST SECTION ───────────────────── */
-    .blacklist-badge {
-      display: inline-flex; align-items: center; gap: 5px; background: #FEF2F2;
-      border: 1px solid #FCA5A5; color: #DC2626; padding: 3px 10px;
-      border-radius: 20px; font-size: 11px; font-weight: 700;
-    }
-
-    @media (max-width: 1100px) {
-      .stats-grid { grid-template-columns: repeat(2,1fr); }
-      .two-col    { grid-template-columns: 1fr; }
-    }
+    /* Review Modal specific */
+    .review-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 300; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
+    .review-modal-overlay.show { display: flex; }
+    .review-modal { background: var(--white); border-radius: 16px; padding: 28px; max-width: 800px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); margin: auto; }
+    .review-section { background: var(--gray-100); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+    .review-section h4 { font-size: 14px; font-weight: 700; margin-bottom: 14px; color: var(--gray-800); }
+    .review-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .review-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .review-cell { padding: 10px 12px; background: white; border-radius: 8px; border: 1px solid var(--gray-200); }
+    .review-cell .rc-label { font-size: 11px; color: var(--gray-400); margin-bottom: 3px; }
+    .review-cell .rc-value { font-size: 13px; font-weight: 600; }
   </style>
 </head>
 <body>
 
-<!-- ════════════════════════════════════════
-     LOGIN SCREEN
-════════════════════════════════════════ -->
+<!-- LOGIN SCREEN -->
 <div class="login-screen" id="loginScreen">
   <div class="login-card">
     <div class="login-logo">
@@ -346,75 +162,54 @@
       <div><h1>MediTrust</h1><p>Admin Portal</p></div>
     </div>
     <h2>Welcome Back</h2>
-    <p class="login-subtitle">Sign in to manage campaigns and verifications</p>
+    <p class="subtitle">Sign in to manage campaigns and verifications</p>
     <div class="error-msg" id="loginError"></div>
-    <div class="form-group">
-      <label>Email Address</label>
-      <input type="email" id="loginEmail" placeholder="admin@meditrust.com" />
+    <div id="loginStep1">
+      <div class="form-group"><label>Email Address</label><input type="email" id="loginEmail" placeholder="admin@meditrust.com" /></div>
+      <div class="form-group"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••••" /></div>
+      <div class="form-group"><label>Admin Secret Key</label><input type="password" id="loginSecret" placeholder="Admin secret key" /></div>
+      <button class="login-btn" onclick="doLogin()">Continue →</button>
     </div>
-    <div class="form-group">
-      <label>Password</label>
-      <input type="password" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" />
+    <div id="loginStep2" class="hidden">
+      <p style="text-align:center;color:var(--green);font-size:14px;margin-bottom:20px;">✅ OTP sent to your email</p>
+      <div class="form-group">
+        <label>Enter OTP</label>
+        <input type="text" id="loginOTP" placeholder="6-digit OTP" maxlength="6" style="text-align:center;font-size:22px;letter-spacing:8px;" />
+      </div>
+      <button class="login-btn" onclick="verifyOTP()">Verify & Login</button>
     </div>
-    <div class="form-group">
-      <label>Admin Secret Key</label>
-      <input type="password" id="loginSecret" placeholder="Admin secret key" onkeydown="if(event.key==='Enter')doLogin()" />
-    </div>
-    <button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In →</button>
   </div>
 </div>
 
-<!-- ════════════════════════════════════════
-     DASHBOARD SCREEN
-════════════════════════════════════════ -->
-<div id="dashboardScreen" class="hidden" style="display:none; width:100%;">
+<!-- DASHBOARD -->
+<div id="dashboardScreen" class="hidden" style="display:none;width:100%;">
 
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sidebar-logo">
       <div class="logo-icon">🏥</div>
-      <div class="logo-text"><span>MediTrust</span><small>Admin Portal</small></div>
+      <div><span>MediTrust</span><small>Admin Portal</small></div>
     </div>
     <nav class="sidebar-nav">
       <div class="nav-section">Overview</div>
-      <div class="nav-item active" onclick="showSection('overview', this)">
-        <span class="icon">📊</span> Dashboard
-      </div>
+      <div class="nav-item active" onclick="showSection('overview')"><span class="icon">📊</span> Dashboard</div>
       <div class="nav-section">Verification</div>
-      <div class="nav-item" onclick="showSection('pending', this)">
-        <span class="icon">⏳</span> Pending Review
-        <span class="nav-badge" id="pendingBadge">0</span>
-      </div>
-      <div class="nav-item" onclick="showSection('urgent', this)">
-        <span class="icon">🚨</span> Urgent Cases
-        <span class="nav-badge" id="urgentBadge">0</span>
-      </div>
+      <div class="nav-item" onclick="showSection('pending')"><span class="icon">⏳</span> Pending Review <span class="nav-badge" id="pendingBadge">0</span></div>
+      <div class="nav-item" onclick="showSection('urgent')"><span class="icon">🚨</span> Urgent Cases <span class="nav-badge" id="urgentBadge">0</span></div>
       <div class="nav-section">Finance</div>
-      <div class="nav-item" onclick="showSection('releases', this)">
-        <span class="icon">💸</span> Fund Releases
-      </div>
-      <div class="nav-item" onclick="showSection('campaigns', this)">
-        <span class="icon">📋</span> All Campaigns
-      </div>
+      <div class="nav-item" onclick="showSection('releases')"><span class="icon">💸</span> Fund Releases</div>
+      <div class="nav-item" onclick="showSection('campaigns')"><span class="icon">📋</span> All Campaigns</div>
       <div class="nav-section">System</div>
-      <div class="nav-item" onclick="showSection('blacklist', this)">
-        <span class="icon">🚫</span> Blacklist
-      </div>
-      <div class="nav-item" onclick="showSection('audit', this)">
-        <span class="icon">📝</span> Audit Log
-      </div>
+      <div class="nav-item" onclick="showSection('audit')"><span class="icon">📝</span> Audit Log</div>
     </nav>
     <div class="sidebar-footer">
       <div class="admin-avatar" id="adminAvatar">A</div>
-      <div class="admin-info">
-        <span id="adminName">Admin</span>
-        <small>Administrator</small>
-      </div>
+      <div class="admin-info"><span id="adminName">Admin</span><small>Administrator</small></div>
       <button class="logout-btn" onclick="doLogout()" title="Logout">⏻</button>
     </div>
   </div>
 
-  <!-- MAIN AREA -->
+  <!-- MAIN -->
   <div class="main">
     <div class="topbar">
       <div class="topbar-title">
@@ -423,190 +218,120 @@
       </div>
       <div class="topbar-right">
         <span class="topbar-date" id="currentDate"></span>
-        <button class="refresh-btn" onclick="loadCurrentSection()">🔄 Refresh</button>
+        <button class="refresh-btn" onclick="loadDashboard()">🔄 Refresh</button>
       </div>
     </div>
 
     <div class="content">
 
-      <!-- ── OVERVIEW ─────────────────────── -->
+      <!-- OVERVIEW -->
       <div id="section-overview">
         <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon orange">📋</div>
-            <div class="stat-info"><h3 id="stat-total">—</h3><p>Total Campaigns</p></div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon green">🟢</div>
-            <div class="stat-info"><h3 id="stat-live">—</h3><p>Live Campaigns</p></div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon red">⏳</div>
-            <div class="stat-info">
-              <h3 id="stat-pending">—</h3><p>Pending Review</p>
-              <div class="stat-warn" id="trend-pending"></div>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon blue">💰</div>
-            <div class="stat-info"><h3 id="stat-donations">—</h3><p>Total Donations</p></div>
-          </div>
+          <div class="stat-card"><div class="stat-icon orange">📋</div><div class="stat-info"><h3 id="stat-total">—</h3><p>Total Campaigns</p></div></div>
+          <div class="stat-card"><div class="stat-icon green">✅</div><div class="stat-info"><h3 id="stat-live">—</h3><p>Live Campaigns</p></div></div>
+          <div class="stat-card"><div class="stat-icon red">⏳</div><div class="stat-info"><h3 id="stat-pending">—</h3><p>Pending Review</p><span class="trend warn" id="trend-pending"></span></div></div>
+          <div class="stat-card"><div class="stat-icon blue">💰</div><div class="stat-info"><h3 id="stat-donations">—</h3><p>Total Donations</p></div></div>
         </div>
-
-        <div class="two-col">
+        <div class="three-col">
           <div class="card">
-            <div class="card-header">
-              <h3>⏳ Pending Verifications</h3>
-              <button class="view-all" onclick="showSection('pending', document.querySelector('.nav-item:nth-child(4)'))">View All →</button>
-            </div>
-            <div id="pendingList"><div class="loading"><div class="spinner"></div> Loading...</div></div>
+            <div class="card-header"><h3>⏳ Pending Verifications</h3><button class="view-all" onclick="showSection('pending')">View All →</button></div>
+            <div class="card-body" id="pendingList"><div class="loading"><div class="spinner"></div> Loading...</div></div>
           </div>
           <div class="card">
             <div class="card-header"><h3>🚨 Priority Queue</h3></div>
-            <div id="priorityList"><div class="loading"><div class="spinner"></div> Loading...</div></div>
+            <div class="card-body" id="priorityList"><div class="loading"><div class="spinner"></div> Loading...</div></div>
           </div>
         </div>
-
         <div class="card">
-          <div class="card-header">
-            <h3>📝 Recent Activity</h3>
-            <button class="view-all" onclick="showSection('audit', null)">Full Log →</button>
-          </div>
-          <div id="recentAudit"><div class="loading"><div class="spinner"></div> Loading...</div></div>
+          <div class="card-header"><h3>📝 Recent Activity</h3><button class="view-all" onclick="showSection('audit')">Full Log →</button></div>
+          <div class="card-body" id="recentAudit"><div class="loading"><div class="spinner"></div> Loading...</div></div>
         </div>
       </div>
 
-      <!-- ── PENDING ─────────────────────── -->
+      <!-- PENDING -->
       <div id="section-pending" class="hidden">
         <div class="card">
           <div class="card-header"><h3>⏳ Campaigns Pending Review</h3></div>
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Campaign</th><th>Patient</th><th>Amount</th>
-                <th>Status</th><th>Submitted</th><th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="pendingTable">
-              <tr><td colspan="6"><div class="loading"><div class="spinner"></div> Loading...</div></td></tr>
-            </tbody>
-          </table>
+          <div class="card-body">
+            <table class="table">
+              <thead><tr><th>Campaign</th><th>Patient</th><th>Amount</th><th>Status</th><th>Submitted</th><th>Actions</th></tr></thead>
+              <tbody id="pendingTable"><tr><td colspan="6"><div class="loading"><div class="spinner"></div> Loading...</div></td></tr></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- ── URGENT ──────────────────────── -->
+      <!-- URGENT -->
       <div id="section-urgent" class="hidden">
         <div class="card">
           <div class="card-header"><h3>🚨 Verification Needed — Urgent Cases</h3></div>
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Campaign</th><th>Patient</th><th>Risk Score</th>
-                <th>Issues</th><th>Submitted</th><th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="urgentTable">
-              <tr><td colspan="6"><div class="loading"><div class="spinner"></div> Loading...</div></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- ── FUND RELEASES ───────────────── -->
-      <div id="section-releases" class="hidden">
-        <div class="card" style="margin-bottom:18px;">
-          <div class="card-header"><h3>💸 Trigger Fund Release</h3></div>
-          <div style="padding: 22px;">
-            <div class="releases-grid">
-              <div>
-                <label class="field-label">Campaign ID</label>
-                <input type="number" id="releaseCampaignId" class="field-input" placeholder="Enter campaign ID" />
-              </div>
-              <div>
-                <label class="field-label">Amount (₹)</label>
-                <input type="number" id="releaseAmount" class="field-input" placeholder="Enter amount" />
-              </div>
-              <button class="btn btn-release" style="padding:10px 20px;font-size:13.5px;" onclick="triggerRelease()">💸 Release Funds</button>
-            </div>
-            <p style="font-size:12px;color:var(--gray-400);margin-top:12px;">
-              ⚠️ 3 pre-release checks run automatically: Is hospital verified? Is patient active? What is outstanding amount?
-            </p>
+          <div class="card-body">
+            <table class="table">
+              <thead><tr><th>Campaign</th><th>Patient</th><th>Risk Score</th><th>Issue</th><th>Submitted</th><th>Actions</th></tr></thead>
+              <tbody id="urgentTable"><tr><td colspan="6"><div class="loading"><div class="spinner"></div> Loading...</div></td></tr></tbody>
+            </table>
           </div>
         </div>
+      </div>
+
+      <!-- RELEASES -->
+      <div id="section-releases" class="hidden">
         <div class="card">
-          <div class="card-header"><h3>📄 Release History</h3></div>
-          <div id="releaseHistoryBody"><div class="loading"><div class="spinner"></div> Loading...</div></div>
+          <div class="card-header"><h3>💸 Trigger Fund Release</h3></div>
+          <div class="card-body" style="padding:22px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;align-items:end;">
+              <div>
+                <label style="font-size:13px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:6px;">Campaign ID</label>
+                <input type="number" id="releaseCampaignId" placeholder="Enter campaign ID" style="width:100%;padding:10px 14px;border:1px solid var(--gray-200);border-radius:8px;font-size:14px;outline:none;" />
+              </div>
+              <div>
+                <label style="font-size:13px;font-weight:600;color:var(--gray-600);display:block;margin-bottom:6px;">Amount (Rs.)</label>
+                <input type="number" id="releaseAmount" placeholder="Enter amount" style="width:100%;padding:10px 14px;border:1px solid var(--gray-200);border-radius:8px;font-size:14px;outline:none;" />
+              </div>
+              <button class="btn btn-release" style="padding:10px 20px;font-size:14px;" onclick="triggerRelease()">💸 Release Funds</button>
+            </div>
+            <p style="font-size:12px;color:var(--gray-400);margin-top:10px;">⚠️ 3 pre-release checks will run automatically: Hospital verified? Patient active? Outstanding amount?</p>
+          </div>
         </div>
       </div>
 
-      <!-- ── ALL CAMPAIGNS ───────────────── -->
+      <!-- ALL CAMPAIGNS -->
       <div id="section-campaigns" class="hidden">
         <div class="card">
-          <div class="card-header">
-            <h3>📋 All Campaigns</h3>
-            <div style="display:flex;gap:8px;">
-              <select id="campaignStatusFilter" onchange="loadAllCampaigns()"
-                style="padding:7px 12px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:12.5px;font-family:var(--font);outline:none;cursor:pointer;">
-                <option value="">All Statuses</option>
-                <option value="LIVE_CAMPAIGN">Live</option>
-                <option value="PENDING">Pending</option>
-                <option value="VERIFICATION_NEEDED">Urgent</option>
-                <option value="VERIFIED">Verified</option>
-                <option value="CANCELLED">Cancelled</option>
-                <option value="COMPLETED">Completed</option>
-              </select>
-            </div>
+          <div class="card-header"><h3>📋 All Campaigns</h3></div>
+          <div class="card-body">
+            <table class="table">
+              <thead><tr><th>ID</th><th>Title</th><th>Patient</th><th>Collected</th><th>Status</th><th>Created</th></tr></thead>
+              <tbody id="allCampaignsTable"><tr><td colspan="6"><div class="loading"><div class="spinner"></div> Loading...</div></td></tr></tbody>
+            </table>
           </div>
-          <table class="table">
-            <thead>
-              <tr><th>ID</th><th>Title</th><th>Patient</th><th>Collected</th><th>Status</th><th>Created</th></tr>
-            </thead>
-            <tbody id="allCampaignsTable">
-              <tr><td colspan="6"><div class="loading"><div class="spinner"></div> Loading...</div></td></tr>
-            </tbody>
-          </table>
         </div>
       </div>
 
-      <!-- ── BLACKLIST ───────────────────── -->
-      <div id="section-blacklist" class="hidden">
-        <div class="card">
-          <div class="card-header"><h3>🚫 Blacklisted Patients</h3></div>
-          <table class="table">
-            <thead>
-              <tr><th>Aadhaar</th><th>Reason</th><th>Blacklisted By</th><th>Date</th></tr>
-            </thead>
-            <tbody id="blacklistTable">
-              <tr><td colspan="4"><div class="loading"><div class="spinner"></div> Loading...</div></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- ── AUDIT LOG ───────────────────── -->
+      <!-- AUDIT -->
       <div id="section-audit" class="hidden">
         <div class="card">
           <div class="card-header"><h3>📝 Admin Audit Log</h3></div>
-          <div id="auditLogFull"><div class="loading"><div class="spinner"></div> Loading...</div></div>
+          <div class="card-body" id="auditLogFull"><div class="loading"><div class="spinner"></div> Loading...</div></div>
         </div>
       </div>
 
-    </div><!-- /content -->
-  </div><!-- /main -->
-</div><!-- /dashboardScreen -->
+    </div>
+  </div>
+</div>
 
-
-<!-- ════════════════════════════════════════
+<!-- ═══════════════════════════════════════
      REVIEW MODAL
-════════════════════════════════════════ -->
-<div class="review-overlay" id="reviewOverlay">
+═══════════════════════════════════════ -->
+<div class="review-modal-overlay" id="reviewModal">
   <div class="review-modal">
-    <div class="review-modal-header">
-      <h3>🔍 Campaign Review</h3>
-      <button class="review-close-btn" onclick="closeReviewModal()">✕</button>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h3 style="font-size:18px;font-weight:800;">🔍 Campaign Review</h3>
+      <button onclick="closeReviewModal()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9CA3AF;line-height:1;">✕</button>
     </div>
 
-    <!-- Loading state -->
+    <!-- Loading -->
     <div id="reviewLoading" style="text-align:center;padding:48px;">
       <div class="spinner" style="margin:0 auto 16px;width:36px;height:36px;border-width:4px;"></div>
       <p style="color:var(--gray-400);">Loading campaign data...</p>
@@ -614,27 +339,38 @@
 
     <!-- Content -->
     <div id="reviewContent" class="hidden">
+
+      <!-- Section 1: Patient -->
       <div class="review-section">
         <h4>👤 Patient Details</h4>
         <div class="review-grid-2" id="reviewPatient"></div>
       </div>
+
+      <!-- Section 2: Documents -->
       <div class="review-section">
         <h4>📄 Documents Uploaded</h4>
         <div id="reviewDocs"></div>
       </div>
+
+      <!-- Section 3: AI Verification -->
       <div class="review-section">
         <h4>🤖 AI Verification Result</h4>
         <div id="reviewAI"></div>
       </div>
+
+      <!-- Section 4: HMS -->
       <div class="review-section">
         <h4>🏥 HMS Database Check</h4>
         <div id="reviewHMS"></div>
       </div>
+
+      <!-- Actions -->
       <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px;">
         <button class="btn-modal-cancel" onclick="closeReviewModal()">Close</button>
-        <button class="btn-modal-confirm danger" onclick="closeReviewModal(); openCancelModal(selectedCampaignId)">❌ Reject Campaign</button>
+        <button class="btn-modal-confirm danger" onclick="closeReviewModal(); openCancelModal(selectedCampaignId)">❌ Reject</button>
         <button class="btn-modal-confirm" onclick="closeReviewModal(); openVerifyModal(selectedCampaignId)">✅ Verify Campaign</button>
       </div>
+
     </div>
   </div>
 </div>
@@ -643,7 +379,7 @@
 <div class="modal-overlay" id="verifyModal">
   <div class="modal">
     <h3>✅ Verify Campaign</h3>
-    <p>Are you sure you want to verify this campaign? The patient will be notified and the campaign will proceed to story writing.</p>
+    <p>Are you sure you want to verify this campaign? Patient will be notified.</p>
     <input class="modal-input" id="verifyNotes" placeholder="Admin notes (optional)" />
     <div class="modal-actions">
       <button class="btn-modal-cancel" onclick="closeModal('verifyModal')">Cancel</button>
@@ -652,15 +388,79 @@
   </div>
 </div>
 
+<!-- REVIEW MODAL -->
+<div class="modal-overlay" id="reviewModal" style="align-items:flex-start; padding:20px; overflow-y:auto;">
+  <div class="modal" style="max-width:760px; width:100%; max-height:90vh; overflow-y:auto;">
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <h3 style="font-size:18px; font-weight:800;">🔍 Campaign Review</h3>
+      <button onclick="closeModal('reviewModal')"
+        style="background:none; border:none; font-size:20px; cursor:pointer; color:#9CA3AF;">✕</button>
+    </div>
+
+    <div id="reviewLoading" style="text-align:center; padding:40px;">
+      <div class="spinner" style="margin:0 auto 16px; width:32px; height:32px; border-width:4px;"></div>
+      <p>Loading review data...</p>
+    </div>
+
+    <div id="reviewContent" class="hidden">
+
+      <!-- SECTION 1: Patient Details -->
+      <div style="background:#F9FAFB; border-radius:12px; padding:20px; margin-bottom:16px;">
+        <h4 style="font-size:14px; font-weight:700; margin-bottom:14px; color:#1F2937;">
+          👤 Patient Details
+        </h4>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;" id="reviewPatient"></div>
+      </div>
+
+      <!-- SECTION 2: Documents -->
+      <div style="background:#F9FAFB; border-radius:12px; padding:20px; margin-bottom:16px;">
+        <h4 style="font-size:14px; font-weight:700; margin-bottom:14px; color:#1F2937;">
+          📄 Documents Uploaded
+        </h4>
+        <div id="reviewDocs"></div>
+      </div>
+
+      <!-- SECTION 3: AI Verification -->
+      <div style="background:#F9FAFB; border-radius:12px; padding:20px; margin-bottom:16px;">
+        <h4 style="font-size:14px; font-weight:700; margin-bottom:14px; color:#1F2937;">
+          🤖 AI Verification Result
+        </h4>
+        <div id="reviewAI"></div>
+      </div>
+
+      <!-- SECTION 4: HMS Status -->
+      <div style="background:#F9FAFB; border-radius:12px; padding:20px; margin-bottom:20px;">
+        <h4 style="font-size:14px; font-weight:700; margin-bottom:14px; color:#1F2937;">
+          🏥 HMS Database Check
+        </h4>
+        <div id="reviewHMS"></div>
+      </div>
+
+      <!-- Actions -->
+      <div style="display:flex; gap:12px; justify-content:flex-end;">
+        <button class="btn-modal-cancel" onclick="closeModal('reviewModal')">Close</button>
+        <button class="btn-modal-confirm danger" onclick="closeModal('reviewModal'); openCancelModal(selectedCampaignId)">
+          ❌ Reject Campaign
+        </button>
+        <button class="btn-modal-confirm" onclick="closeModal('reviewModal'); openVerifyModal(selectedCampaignId)">
+          ✅ Verify Campaign
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- CANCEL MODAL -->
 <div class="modal-overlay" id="cancelModal">
   <div class="modal">
     <h3>❌ Cancel Campaign</h3>
-    <p>This will permanently cancel the campaign and <strong>blacklist the patient's Aadhaar and phone</strong>. This action cannot be undone.</p>
+    <p>This will cancel the campaign and blacklist the patient's Aadhaar. Cannot be undone.</p>
     <input class="modal-input" id="cancelReason" placeholder="Reason for cancellation (required)" />
     <div class="modal-actions">
       <button class="btn-modal-cancel" onclick="closeModal('cancelModal')">Cancel</button>
-      <button class="btn-modal-confirm danger" onclick="confirmCancel()">Confirm Cancel & Blacklist</button>
+      <button class="btn-modal-confirm danger" onclick="confirmCancel()">Confirm Cancel</button>
     </div>
   </div>
 </div>
@@ -668,481 +468,570 @@
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-
-<!-- ════════════════════════════════════════
-     JAVASCRIPT
-════════════════════════════════════════ -->
 <script>
   const API = 'http://localhost:3000/api';
   let adminToken         = localStorage.getItem('adminToken');
-  let adminData          = JSON.parse(localStorage.getItem('adminData') || 'null');
+  let adminId            = null;
   let selectedCampaignId = null;
-  let currentSection     = 'overview';
 
-  // ── INIT ───────────────────────────────────
+  // ── INIT ─────────────────────────────────
   window.onload = () => {
     document.getElementById('currentDate').textContent =
-      new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-
-    if (adminToken && adminData) {
-      setAdminUI(adminData);
-      showDashboard();
-    }
+      new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+    if (adminToken) showDashboard();
   };
 
-  // ── LOGIN ──────────────────────────────────
+  // ── AUTH ─────────────────────────────────
   async function doLogin() {
     const email    = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
-    const secret   = document.getElementById('loginSecret').value.trim();
-
-    if (!email || !password || !secret) {
-      showLoginError('All fields are required');
-      return;
-    }
-
-    const btn = document.getElementById('loginBtn');
-    btn.disabled = true;
-    btn.textContent = 'Signing in...';
-
+    const secret   = document.getElementById('loginSecret').value;
+    if (!email || !password || !secret) { showLoginError('All fields are required'); return; }
     try {
-      const res  = await fetch(`${API}/admin/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, admin_secret: secret })
-      });
+      const res  = await fetch(`${API}/admin/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email, password, admin_secret:secret}) });
       const data = await res.json();
-
-      if (data.success && data.token) {
-        adminToken = data.token;
-        adminData  = data.admin;
-        localStorage.setItem('adminToken', adminToken);
-        localStorage.setItem('adminData',  JSON.stringify(adminData));
-        setAdminUI(adminData);
-        showDashboard();
-      } else {
-        showLoginError(data.error || 'Login failed. Check your credentials.');
-      }
-    } catch (e) {
-      showLoginError('Cannot connect to server. Make sure the backend is running.');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = 'Sign In →';
-    }
+      if (data.success) {
+        adminId = data.admin_id;
+        document.getElementById('loginStep1').classList.add('hidden');
+        document.getElementById('loginStep2').classList.remove('hidden');
+        document.getElementById('loginError').style.display = 'none';
+      } else { showLoginError(data.error || 'Login failed'); }
+    } catch(e) { showLoginError('Server not reachable'); }
   }
 
-  function setAdminUI(admin) {
-    if (!admin) return;
-    document.getElementById('adminName').textContent   = admin.name || 'Admin';
-    document.getElementById('adminAvatar').textContent = (admin.name || 'A').charAt(0).toUpperCase();
+  async function verifyOTP() {
+    const otp = document.getElementById('loginOTP').value.trim();
+    if (!otp) { showLoginError('Enter OTP'); return; }
+    try {
+      const res  = await fetch(`${API}/admin/verify-otp`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({admin_id:adminId, otp_code:otp}) });
+      const data = await res.json();
+      if (data.success) {
+        adminToken = data.token;
+        localStorage.setItem('adminToken', adminToken);
+        document.getElementById('adminName').textContent   = data.admin.name;
+        document.getElementById('adminAvatar').textContent = data.admin.name.charAt(0).toUpperCase();
+        showDashboard();
+      } else { showLoginError(data.error || 'Invalid OTP'); }
+    } catch(e) { showLoginError('Server not reachable'); }
   }
 
   function showLoginError(msg) {
     const el = document.getElementById('loginError');
-    el.textContent  = msg;
-    el.style.display = 'block';
+    el.textContent = msg; el.style.display = 'block';
   }
 
-  function doLogout() {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminData');
-    adminToken = null;
-    adminData  = null;
-    document.getElementById('dashboardScreen').style.display = 'none';
-    document.getElementById('dashboardScreen').classList.add('hidden');
-    document.getElementById('loginScreen').style.display = 'flex';
-    document.getElementById('loginEmail').value    = '';
-    document.getElementById('loginPassword').value = '';
-    document.getElementById('loginSecret').value   = '';
-    document.getElementById('loginError').style.display = 'none';
+  // ─────────────────────────────────────────
+  // REVIEW MODAL
+  // ─────────────────────────────────────────
+  async function openReviewModal(campaignId) {
+    selectedCampaignId = campaignId;
+
+    // Show modal with loading
+    document.getElementById('reviewLoading').classList.remove('hidden');
+    document.getElementById('reviewContent').classList.add('hidden');
+    document.getElementById('reviewModal').style.display = 'flex';
+
+    try {
+      const res  = await authFetch(`${API}/admin/campaigns/${campaignId}/review`);
+      const data = await res.json();
+
+      if (!data.success) {
+        showToast('Failed to load review', 'error');
+        closeModal('reviewModal');
+        return;
+      }
+
+      renderReview(data);
+
+      document.getElementById('reviewLoading').classList.add('hidden');
+      document.getElementById('reviewContent').classList.remove('hidden');
+
+    } catch(e) {
+      showToast('Server error loading review', 'error');
+      closeModal('reviewModal');
+    }
+  }
+
+  function renderReview(data) {
+    const { patient, documents, ai_verification, hms } = data;
+
+    // ── Patient Details ──────────────────────
+    const docTypes = {
+      ESTIMATE          : '🏥 Hospital Estimate',
+      AADHAAR           : '🪪 Aadhaar Card',
+      ADMISSION_SUMMARY : '📋 Admission Summary',
+      BILL              : '🧾 Hospital Bill',
+      DISCHARGE_SUMMARY : '📄 Discharge Summary',
+      INCOME_CERTIFICATE: '📜 Income Certificate'
+    };
+
+    document.getElementById('reviewPatient').innerHTML = [
+      { label: '👤 Full Name',    value: patient.full_name },
+      { label: '🎂 Age',          value: patient.age + ' years' },
+      { label: '⚧ Gender',        value: patient.gender },
+      { label: '🪪 Aadhaar',      value: patient.aadhaar },
+      { label: '🏙️ City',         value: patient.city + ', ' + patient.state },
+      { label: '📧 Email',        value: patient.email },
+      { label: '📱 Phone',        value: patient.phone || '—' },
+      { label: '🤝 Relationship', value: patient.relationship }
+    ].map(item => `
+      <div style="padding:8px 12px; background:white; border-radius:8px; border:1px solid #F3F4F6;">
+        <p style="font-size:11px; color:#9CA3AF; margin-bottom:3px;">${item.label}</p>
+        <p style="font-size:13px; font-weight:600; color:#1F2937;">${item.value || '—'}</p>
+      </div>
+    `).join('');
+
+    // ── Documents ────────────────────────────
+    const mandatoryTypes = ['ESTIMATE', 'AADHAAR'];
+    const allTypes       = ['ESTIMATE','AADHAAR','ADMISSION_SUMMARY','BILL','DISCHARGE_SUMMARY','INCOME_CERTIFICATE'];
+    const uploadedTypes  = documents.map(d => d.document_type);
+
+    document.getElementById('reviewDocs').innerHTML = `
+      <div class="review-grid-3" style="margin-bottom:16px;">
+        ${allTypes.map(type => {
+          const doc       = documents.find(d => d.document_type === type);
+          const mandatory = mandatoryTypes.includes(type);
+          const uploaded  = !!doc;
+          return `
+            <div style="padding:10px 12px; background:${uploaded ? '#DCFCE7' : mandatory ? '#FEE2E2' : 'white'};
+               border-radius:8px; border:1.5px solid ${uploaded ? '#86EFAC' : mandatory ? '#FCA5A5' : '#F3F4F6'};">
+              <p style="font-size:12px; font-weight:700; color:#1F2937;">${docTypes[type] || type}</p>
+              <p style="font-size:11px; color:${uploaded ? '#16A34A' : '#DC2626'}; margin-top:3px;">
+                ${uploaded ? '✅ ' + doc.file_name : mandatory ? '❌ Missing' : '— Not uploaded'}
+              </p>
+              ${uploaded ? `<button onclick="viewDocument(${doc.id}, '${doc.file_name}')"
+                style="margin-top:8px;padding:4px 10px;background:#3B82F6;color:white;
+                border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">
+                👁️ View
+              </button>` : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+      <p style="font-size:12px; color:#9CA3AF;">
+        ${documents.length} document(s) uploaded
+        ${!uploadedTypes.includes('ESTIMATE') ? ' • ⚠️ Hospital Estimate missing!' : ''}
+        ${!uploadedTypes.includes('AADHAAR')  ? ' • ⚠️ Aadhaar missing!' : ''}
+      </p>
+    `;
+
+    // ── AI Verification ───────────────────────
+    const ai        = ai_verification;
+    const risk      = ai.risk_score || 0;
+    const riskColor = risk < 30 ? '#16A34A' : risk < 60 ? '#D97706' : '#DC2626';
+    const ext       = ai.extracted_data || {};
+
+    document.getElementById('reviewAI').innerHTML = `
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+        <div style="padding:10px 12px; background:white; border-radius:8px; border:1px solid #F3F4F6;">
+          <p style="font-size:11px; color:#9CA3AF; margin-bottom:3px;">AI Status</p>
+          <p style="font-size:13px; font-weight:700; color:${ai.status === 'VERIFIED' ? '#16A34A' : '#D97706'}">
+            ${ai.status === 'VERIFIED' ? '✅ Verified' : '⏳ ' + (ai.status || 'Pending')}
+          </p>
+        </div>
+        <div style="padding:10px 12px; background:white; border-radius:8px; border:1px solid #F3F4F6;">
+          <p style="font-size:11px; color:#9CA3AF; margin-bottom:3px;">Risk Score</p>
+          <p style="font-size:13px; font-weight:700; color:${riskColor}">${risk}/100</p>
+        </div>
+        <div style="padding:10px 12px; background:white; border-radius:8px; border:1px solid #F3F4F6;">
+          <p style="font-size:11px; color:#9CA3AF; margin-bottom:3px;">Tampering</p>
+          <p style="font-size:13px; font-weight:700; color:${ai.has_tampering ? '#DC2626' : '#16A34A'}">
+            ${ai.has_tampering ? '🚨 Detected' : '✅ None'}
+          </p>
+        </div>
+        <div style="padding:10px 12px; background:white; border-radius:8px; border:1px solid #F3F4F6;">
+          <p style="font-size:11px; color:#9CA3AF; margin-bottom:3px;">Expired Docs</p>
+          <p style="font-size:13px; font-weight:700; color:${ai.has_expired ? '#DC2626' : '#16A34A'}">
+            ${ai.has_expired ? '🚨 Expired' : '✅ Valid'}
+          </p>
+        </div>
+      </div>
+      ${(ext.hospital_name || ext.amount || ext.patient_name) ? `
+        <div style="background:white; border-radius:8px; padding:12px; border:1px solid #F3F4F6;">
+          <p style="font-size:12px; font-weight:700; margin-bottom:8px;">📋 Extracted Data</p>
+          ${ext.hospital_name ? `<p style="font-size:12px; color:#4B5563; margin-bottom:4px;">🏥 Hospital: <b>${ext.hospital_name}</b></p>` : ''}
+          ${ext.patient_name  ? `<p style="font-size:12px; color:#4B5563; margin-bottom:4px;">👤 Patient: <b>${ext.patient_name}</b></p>` : ''}
+          ${ext.amount        ? `<p style="font-size:12px; color:#4B5563; margin-bottom:4px;">💰 Amount: <b style="color:#F97316">₹${parseFloat(ext.amount).toLocaleString('en-IN')}</b></p>` : ''}
+          ${(ext.diseases && ext.diseases.length) ? `<p style="font-size:12px; color:#4B5563;">🩺 Disease: <b>${Array.isArray(ext.diseases) ? ext.diseases[0] : ext.diseases}</b></p>` : ''}
+        </div>` : ''}
+      `;
+
+    // ── HMS Status ────────────────────────────
+    document.getElementById('reviewHMS').innerHTML = hms.found ? `
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+        <div style="padding:10px 12px; background:#DCFCE7; border-radius:8px; border:1.5px solid #86EFAC; grid-column:1/-1;">
+          <p style="font-size:13px; font-weight:700; color:#16A34A;">✅ Patient Found in HMS Database</p>
+          <p style="font-size:12px; color:#4B5563; margin-top:4px;">HMS Patient: ${hms.hms_patient?.patient_name || '—'} | Status: ${hms.hms_patient?.status || '—'}</p>
+        </div>
+        <div style="padding:10px 12px; background:${hms.name_match ? '#DCFCE7' : '#FEE2E2'}; border-radius:8px; border:1.5px solid ${hms.name_match ? '#86EFAC' : '#FCA5A5'};">
+          <p style="font-size:12px; font-weight:700; color:${hms.name_match ? '#16A34A' : '#DC2626'};">
+            ${hms.name_match ? '✅' : '❌'} Name Match
+          </p>
+          <p style="font-size:11px; color:#6B7280; margin-top:2px;">
+            HMS: ${hms.hms_patient?.patient_name || '—'}
+          </p>
+        </div>
+        <div style="padding:10px 12px; background:${hms.aadhaar_match ? '#DCFCE7' : '#FEE2E2'}; border-radius:8px; border:1.5px solid ${hms.aadhaar_match ? '#86EFAC' : '#FCA5A5'};">
+          <p style="font-size:12px; font-weight:700; color:${hms.aadhaar_match ? '#16A34A' : '#DC2626'};">
+            ${hms.aadhaar_match ? '✅' : '❌'} Aadhaar Match
+          </p>
+        </div>
+        <div style="padding:10px 12px; background:${hms.amount_match ? '#DCFCE7' : '#FEF3C7'}; border-radius:8px; border:1.5px solid ${hms.amount_match ? '#86EFAC' : '#FCD34D'};">
+          <p style="font-size:12px; font-weight:700; color:${hms.amount_match ? '#16A34A' : '#D97706'};">
+            ${hms.amount_match ? '✅' : '⚠️'} Amount Match
+          </p>
+          <p style="font-size:11px; color:#6B7280; margin-top:2px;">
+            HMS Estimate: ₹${parseFloat(hms.payment_status?.total_estimate || 0).toLocaleString('en-IN')}
+          </p>
+        </div>
+        <div style="padding:10px 12px; background:white; border-radius:8px; border:1px solid #F3F4F6;">
+          <p style="font-size:12px; font-weight:700; color:#1F2937;">💰 Amount Paid</p>
+          <p style="font-size:11px; color:#6B7280; margin-top:2px;">
+            ₹${parseFloat(hms.payment_status?.amount_paid || 0).toLocaleString('en-IN')}
+          </p>
+        </div>
+        <div style="padding:10px 12px; background:white; border-radius:8px; border:1px solid #F3F4F6;">
+          <p style="font-size:12px; font-weight:700; color:#1F2937;">⚡ Outstanding</p>
+          <p style="font-size:11px; color:#F97316; margin-top:2px; font-weight:700;">
+            ₹${parseFloat(hms.payment_status?.outstanding || 0).toLocaleString('en-IN')}
+          </p>
+        </div>
+      </div>
+    </div>
+  ` : ` 
+    <div style="padding:16px; background:#FEF3C7; border-radius:10px; border:1.5px solid #FCD34D;">
+      <p style="font-size:14px; font-weight:700; color:#D97706; margin-bottom:6px;">
+        ⚠️ Patient NOT Found in HMS Database
+      </p>
+      <p style="font-size:13px; color:#4B5563; line-height:1.6;">
+        This patient has not been registered in the Hospital Management System yet.
+        This is normal for new patients. You can still verify the campaign based on documents.
+      </p>
+      ${hms.error ? `<p style="font-size:12px; color:#DC2626; margin-top:8px;">Error: ${hms.error}</p>` : ''}
+    </div>
+  `;
+  }
+
+  async function viewDocument(docId, fileName) {
+    try {
+      const res = await authFetch(`${API}/admin/documents/${docId}`);
+      const data = await res.json();
+      if (!data.success) {
+        showToast('Failed to load document', 'error');
+        return;
+      }
+      
+      // Create a blob from the base64 data and open in new tab
+      const byteCharacters = atob(data.document_data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      
+      const url = URL.createObjectURL(blob);
+      const newWindow = window.open(url, '_blank');
+      newWindow.onload = () => URL.revokeObjectURL(url);
+      
+    } catch(e) {
+      showToast('Error loading document', 'error');
+      console.error('Document view error:', e);
+    }
   }
 
   // ── DASHBOARD ─────────────────────────────
   function showDashboard() {
-    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('loginScreen').classList.add('hidden');
     const dash = document.getElementById('dashboardScreen');
     dash.classList.remove('hidden');
     dash.style.display = 'flex';
-    loadDashboardOverview();
+    loadDashboard();
   }
 
-  async function loadDashboardOverview() {
+  async function loadDashboard() {
     await Promise.all([loadStats(), loadPendingPreview(), loadPriorityQueue(), loadRecentAudit()]);
   }
 
-  function loadCurrentSection() {
-    switch (currentSection) {
-      case 'overview':  loadDashboardOverview(); break;
-      case 'pending':   loadPendingFull();   break;
-      case 'urgent':    loadUrgentFull();    break;
-      case 'releases':  loadReleaseHistory();break;
-      case 'campaigns': loadAllCampaigns();  break;
-      case 'blacklist': loadBlacklist();     break;
-      case 'audit':     loadAuditFull();     break;
-    }
-  }
-
-  // ── STATS ──────────────────────────────────
   async function loadStats() {
     try {
       const res  = await authFetch(`${API}/admin/dashboard`);
       const data = await res.json();
       if (data.success) {
         const s = data.stats;
-        document.getElementById('stat-total').textContent     = s.total_campaigns      || 0;
-        document.getElementById('stat-live').textContent      = s.live_campaigns        || 0;
-        document.getElementById('stat-pending').textContent   = (s.pending_verification || 0) + (s.verification_needed || 0);
-        document.getElementById('stat-donations').textContent = '₹' + formatAmount(s.total_donations || 0);
+        document.getElementById('stat-total').textContent     = s.total_campaigns || 0;
+        document.getElementById('stat-live').textContent      = s.live_campaigns  || 0;
+        document.getElementById('stat-pending').textContent   = (s.pending_verification||0) + (s.verification_needed||0);
+        document.getElementById('stat-donations').textContent = 'Rs. ' + formatAmount(s.total_donations||0);
         document.getElementById('pendingBadge').textContent   = s.pending_verification || 0;
         document.getElementById('urgentBadge').textContent    = s.verification_needed  || 0;
-        const total = (s.pending_verification || 0) + (s.verification_needed || 0);
-        document.getElementById('trend-pending').textContent = total > 0 ? '⚠️ Needs attention' : '';
+        if ((s.pending_verification + s.verification_needed) > 0)
+          document.getElementById('trend-pending').textContent = '⚠️ Needs attention';
       }
-    } catch (e) { console.warn('Stats error:', e); }
+    } catch(e) { console.log('Stats error:', e); }
   }
 
-  // ── PENDING PREVIEW (Overview) ─────────────
   async function loadPendingPreview() {
-    const el = document.getElementById('pendingList');
     try {
       const res  = await authFetch(`${API}/admin/pending`);
       const data = await res.json();
-      if (!data.success || !data.campaigns?.length) {
+      const el   = document.getElementById('pendingList');
+      if (!data.success || !data.campaigns.length) {
         el.innerHTML = `<div class="empty"><div class="empty-icon">✅</div><p>No pending cases</p></div>`; return;
       }
-      el.innerHTML = data.campaigns.slice(0, 5).map(c => `
+      el.innerHTML = data.campaigns.slice(0,5).map(c => `
         <div class="priority-item">
           <div class="priority-dot dot-yellow"></div>
-          <div class="priority-info">
-            <h4>${esc(c.title)}</h4>
-            <p>${esc(c.patient_full_name || c.patient?.name || '—')} • ${formatDate(c.created_at)}</p>
+          <div class="priority-info"><h4>${c.title}</h4><p>${c.patient_full_name} • ${formatDate(c.created_at)}</p></div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-review" onclick="openReviewModal(${c.id})">🔍 Review</button>
+            <button class="btn btn-verify" onclick="openVerifyModal(${c.id})">✅ Verify</button>
+            <button class="btn btn-cancel" onclick="openCancelModal(${c.id})">✕ Cancel</button>
           </div>
-          <div class="priority-actions">
-            <button class="btn btn-review"  onclick="openReviewModal(${c.id})">🔍 Review</button>
-            <button class="btn btn-verify"  onclick="openVerifyModal(${c.id})">✅</button>
-            <button class="btn btn-cancel"  onclick="openCancelModal(${c.id})">✕</button>
-          </div>
-        </div>`).join('');
-    } catch (e) {
-      el.innerHTML = `<div class="empty"><p>Failed to load</p></div>`;
-    }
+        </div>
+      `).join('');
+    } catch(e) { document.getElementById('pendingList').innerHTML = `<div class="empty"><p>Failed to load</p></div>`; }
   }
 
-  // ── PRIORITY QUEUE (Overview) ──────────────
   async function loadPriorityQueue() {
-    const el = document.getElementById('priorityList');
     try {
       const res  = await authFetch(`${API}/admin/verification-needed`);
       const data = await res.json();
-      if (!data.success || !data.campaigns?.length) {
+      const el   = document.getElementById('priorityList');
+      if (!data.success || !data.campaigns.length) {
         el.innerHTML = `<div class="empty"><div class="empty-icon">✅</div><p>No urgent cases</p></div>`; return;
       }
-      el.innerHTML = data.campaigns.slice(0, 5).map(c => `
+      el.innerHTML = data.campaigns.slice(0,5).map(c => `
         <div class="priority-item">
           <div class="priority-dot dot-red"></div>
-          <div class="priority-info">
-            <h4>${esc(c.title)}</h4>
-            <p>🚨 Tampering / Mismatch detected</p>
-          </div>
-          <div class="priority-actions">
-            <button class="btn btn-review" onclick="openReviewModal(${c.id})">🔍 Review</button>
+          <div class="priority-info"><h4>${c.title}</h4><p>🚨 Tampering / Mismatch detected</p></div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-review" onclick="openReviewModal(${c.id})">🔍</button>
+            <button class="btn btn-verify" onclick="openVerifyModal(${c.id})">✅ Verify</button>
             <button class="btn btn-cancel" onclick="openCancelModal(${c.id})">✕</button>
           </div>
         </div>`).join('');
-    } catch (e) {
-      el.innerHTML = `<div class="empty"><p>Failed to load</p></div>`;
-    }
+    } catch(e) { document.getElementById('priorityList').innerHTML = `<div class="empty"><p>Failed to load</p></div>`; }
   }
 
-  // ── RECENT AUDIT (Overview) ────────────────
   async function loadRecentAudit() {
-    const el = document.getElementById('recentAudit');
     try {
       const res  = await authFetch(`${API}/admin/audit-log?limit=6`);
       const data = await res.json();
-      if (!data.success || !data.logs?.length) {
-        el.innerHTML = `<div class="empty"><p>No activity yet</p></div>`; return;
-      }
-      el.innerHTML = data.logs.map(log => renderAuditItem(log)).join('');
-    } catch (e) {
-      el.innerHTML = `<div class="empty"><p>Failed to load</p></div>`;
-    }
+      const el   = document.getElementById('recentAudit');
+      if (!data.success || !data.logs.length) { el.innerHTML = `<div class="empty"><p>No activity yet</p></div>`; return; }
+      el.innerHTML = data.logs.map(log => `
+        <div class="audit-item">
+          <div class="audit-icon ${getAuditIcon(log.action).cls}">${getAuditIcon(log.action).icon}</div>
+          <div class="audit-content"><h4>${formatAction(log.action)}</h4><p>${log.notes||''} • By ${log.admin?.name||'Admin'}</p></div>
+          <div class="audit-time">${formatDate(log.performed_at)}</div>
+        </div>`).join('');
+    } catch(e) { document.getElementById('recentAudit').innerHTML = `<div class="empty"><p>Failed to load</p></div>`; }
   }
 
-  // ── PENDING FULL TABLE ─────────────────────
   async function loadPendingFull() {
-    const tbody = document.getElementById('pendingTable');
-    tbody.innerHTML = `<tr><td colspan="6"><div class="loading"><div class="spinner"></div> Loading...</div></td></tr>`;
     try {
       const res  = await authFetch(`${API}/admin/pending`);
       const data = await res.json();
-      if (!data.success || !data.campaigns?.length) {
+      const tbody = document.getElementById('pendingTable');
+      if (!data.success || !data.campaigns.length) {
         tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><p>No pending cases</p></div></td></tr>`; return;
       }
       tbody.innerHTML = data.campaigns.map(c => `
         <tr>
-          <td><strong>${esc(c.title)}</strong><br/><small style="color:var(--gray-400)">#${c.id}</small></td>
-          <td>${esc(c.patient_full_name || c.patient?.name || '—')}<br/><small style="color:var(--gray-400)">${esc(c.patient?.email || '')}</small></td>
-          <td>₹${formatAmount(c.verified_amount || 0)}</td>
+          <td><strong>${c.title}</strong><br/><small style="color:var(--gray-400)">#${c.id}</small></td>
+          <td>${c.patient_full_name}<br/><small style="color:var(--gray-400)">${c.patient?.email||''}</small></td>
+          <td>Rs. ${formatAmount(c.verified_amount||0)}</td>
           <td><span class="badge badge-pending">⏳ Pending</span></td>
           <td>${formatDate(c.created_at)}</td>
-          <td>
-            <div style="display:flex;gap:6px;">
-              <button class="btn btn-review" onclick="openReviewModal(${c.id})">🔍 Review</button>
-              <button class="btn btn-verify" onclick="openVerifyModal(${c.id})">✅ Verify</button>
-              <button class="btn btn-cancel" onclick="openCancelModal(${c.id})">✕ Cancel</button>
-            </div>
+          <td style="display:flex;gap:6px;">
+            <button class="btn btn-review" onclick="openReviewModal(${c.id})">🔍 Review</button>
+            <button class="btn btn-verify" onclick="openVerifyModal(${c.id})">✅ Verify</button>
+            <button class="btn btn-cancel" onclick="openCancelModal(${c.id})">✕ Cancel</button>
           </td>
         </tr>`).join('');
-    } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><p>Failed to load</p></div></td></tr>`;
-    }
+    } catch(e) { document.getElementById('pendingTable').innerHTML = `<tr><td colspan="6"><div class="empty"><p>Failed to load</p></div></td></tr>`; }
   }
 
-  // ── URGENT FULL TABLE ──────────────────────
   async function loadUrgentFull() {
-    const tbody = document.getElementById('urgentTable');
-    tbody.innerHTML = `<tr><td colspan="6"><div class="loading"><div class="spinner"></div> Loading...</div></td></tr>`;
     try {
       const res  = await authFetch(`${API}/admin/verification-needed`);
       const data = await res.json();
-      if (!data.success || !data.campaigns?.length) {
+      const tbody = document.getElementById('urgentTable');
+      if (!data.success || !data.campaigns.length) {
         tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><p>No urgent cases</p></div></td></tr>`; return;
       }
       tbody.innerHTML = data.campaigns.map(c => {
         const r = c.verification_records?.[0];
-        const issues = [
-          r?.has_tampering ? '🚨 Tampering' : '',
-          r?.has_expired   ? '📅 Expired docs' : ''
-        ].filter(Boolean).join(', ') || '—';
         return `
           <tr>
-            <td><strong>${esc(c.title)}</strong><br/><small style="color:var(--gray-400)">#${c.id}</small></td>
-            <td>${esc(c.patient_full_name || '—')}</td>
-            <td><span style="color:var(--red);font-weight:700;">${r?.risk_score || '—'}/100</span></td>
-            <td style="font-size:12px;color:var(--gray-600);">${issues}</td>
+            <td><strong>${c.title}</strong><br/><small style="color:var(--gray-400)">#${c.id}</small></td>
+            <td>${c.patient_full_name}</td>
+            <td><span style="color:var(--red);font-weight:700;">${r?.risk_score||'—'}/100</span></td>
+            <td style="font-size:12px;color:var(--gray-600);">
+              ${r?.has_tampering?'🚨 Tampering ':''}${r?.has_expired?'📅 Expired docs':''}
+            </td>
             <td>${formatDate(c.created_at)}</td>
-            <td>
-              <div style="display:flex;gap:6px;">
-                <button class="btn btn-review" onclick="openReviewModal(${c.id})">🔍 Review</button>
-                <button class="btn btn-verify" onclick="openVerifyModal(${c.id})">✅ Verify</button>
-                <button class="btn btn-cancel" onclick="openCancelModal(${c.id})">✕ Cancel</button>
-              </div>
+            <td style="display:flex;gap:6px;">
+              <button class="btn btn-review" onclick="openReviewModal(${c.id})">🔍 Review</button>
+              <button class="btn btn-verify" onclick="openVerifyModal(${c.id})">✅ Verify</button>
+              <button class="btn btn-cancel" onclick="openCancelModal(${c.id})">✕ Cancel</button>
             </td>
           </tr>`;
       }).join('');
-    } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><p>Failed to load</p></div></td></tr>`;
-    }
+    } catch(e) { document.getElementById('urgentTable').innerHTML = `<tr><td colspan="6"><div class="empty"><p>Failed to load</p></div></td></tr>`; }
   }
 
-  // ── ALL CAMPAIGNS ──────────────────────────
   async function loadAllCampaigns() {
-    const tbody  = document.getElementById('allCampaignsTable');
-    const status = document.getElementById('campaignStatusFilter')?.value || '';
-    tbody.innerHTML = `<tr><td colspan="6"><div class="loading"><div class="spinner"></div> Loading...</div></td></tr>`;
     try {
-      const url  = `${API}/admin/campaigns?limit=50${status ? '&status=' + status : ''}`;
-      const res  = await authFetch(url);
+      const res  = await fetch(`${API}/campaigns?limit=50`);
       const data = await res.json();
-      if (!data.success || !data.campaigns?.length) {
-        tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><p>No campaigns found</p></div></td></tr>`; return;
+      const tbody = document.getElementById('allCampaignsTable');
+      if (!data.success || !data.campaigns.length) {
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><p>No campaigns yet</p></div></td></tr>`; return;
       }
       tbody.innerHTML = data.campaigns.map(c => `
         <tr>
           <td>#${c.id}</td>
-          <td><strong>${esc(c.title)}</strong></td>
-          <td>${esc(c.patient_full_name || c.patient?.name || '—')}</td>
-          <td>₹${formatAmount(c.collected_amount || 0)}</td>
+          <td><strong>${c.title}</strong></td>
+          <td>${c.patient_full_name}</td>
+          <td>Rs. ${formatAmount(c.collected_amount||0)}</td>
           <td>${statusBadge(c.status)}</td>
           <td>${formatDate(c.created_at)}</td>
         </tr>`).join('');
-    } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><p>Failed to load</p></div></td></tr>`;
-    }
+    } catch(e) { document.getElementById('allCampaignsTable').innerHTML = `<tr><td colspan="6"><div class="empty"><p>Failed to load</p></div></td></tr>`; }
   }
 
-  // ── RELEASE HISTORY ────────────────────────
-  async function loadReleaseHistory() {
-    const el = document.getElementById('releaseHistoryBody');
-    el.innerHTML = `<div class="loading"><div class="spinner"></div> Loading...</div>`;
-    try {
-      const res  = await authFetch(`${API}/releases?limit=30`);
-      const data = await res.json();
-      if (!data.success || !data.releases?.length) {
-        el.innerHTML = `<div class="empty"><p>No fund releases yet</p></div>`; return;
-      }
-      el.innerHTML = `
-        <table class="table">
-          <thead><tr><th>Release ID</th><th>Campaign</th><th>Amount</th><th>Hospital Confirmed</th><th>Date</th></tr></thead>
-          <tbody>
-            ${data.releases.map(r => `
-              <tr>
-                <td>#${r.id}</td>
-                <td>Campaign #${r.campaign_id}</td>
-                <td style="font-weight:700;color:var(--orange);">₹${formatAmount(r.amount)}</td>
-                <td>${r.hospital_confirmed
-                  ? '<span class="badge badge-verified">✅ Confirmed</span>'
-                  : '<span class="badge badge-pending">⏳ Pending</span>'}</td>
-                <td>${formatDate(r.released_at)}</td>
-              </tr>`).join('')}
-          </tbody>
-        </table>`;
-    } catch (e) {
-      el.innerHTML = `<div class="empty"><p>Failed to load</p></div>`;
-    }
-  }
-
-  // ── BLACKLIST ──────────────────────────────
-  async function loadBlacklist() {
-    const tbody = document.getElementById('blacklistTable');
-    tbody.innerHTML = `<tr><td colspan="4"><div class="loading"><div class="spinner"></div> Loading...</div></td></tr>`;
-    try {
-      const res  = await authFetch(`${API}/admin/blacklist`);
-      const data = await res.json();
-      if (!data.success || !data.blacklist?.length) {
-        tbody.innerHTML = `<tr><td colspan="4"><div class="empty"><p>No blacklisted patients</p></div></td></tr>`; return;
-      }
-      tbody.innerHTML = data.blacklist.map(b => `
-        <tr>
-          <td><span class="blacklist-badge">🚫 ${esc(b.aadhaar_number)}</span></td>
-          <td style="font-size:12.5px;color:var(--gray-600);">${esc(b.reason || '—')}</td>
-          <td>${esc(b.admin?.name || 'Admin')}</td>
-          <td>${formatDate(b.blacklisted_at)}</td>
-        </tr>`).join('');
-    } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="4"><div class="empty"><p>Failed to load</p></div></td></tr>`;
-    }
-  }
-
-  // ── AUDIT LOG FULL ─────────────────────────
   async function loadAuditFull() {
-    const el = document.getElementById('auditLogFull');
-    el.innerHTML = `<div class="loading"><div class="spinner"></div> Loading...</div>`;
     try {
       const res  = await authFetch(`${API}/admin/audit-log?limit=50`);
       const data = await res.json();
-      if (!data.success || !data.logs?.length) {
-        el.innerHTML = `<div class="empty"><p>No activity yet</p></div>`; return;
-      }
-      el.innerHTML = data.logs.map(log => renderAuditItem(log, true)).join('');
-    } catch (e) {
-      el.innerHTML = `<div class="empty"><p>Failed to load</p></div>`;
-    }
+      const el   = document.getElementById('auditLogFull');
+      if (!data.success || !data.logs.length) { el.innerHTML = `<div class="empty"><p>No activity yet</p></div>`; return; }
+      el.innerHTML = data.logs.map(log => `
+        <div class="audit-item">
+          <div class="audit-icon ${getAuditIcon(log.action).cls}">${getAuditIcon(log.action).icon}</div>
+          <div class="audit-content"><h4>${formatAction(log.action)}</h4><p>${log.notes||''} • By ${log.admin?.name||'Admin'} • Target: ${log.target_type} #${log.target_id}</p></div>
+          <div class="audit-time">${formatDate(log.performed_at)}</div>
+        </div>`).join('');
+    } catch(e) { document.getElementById('auditLogFull').innerHTML = `<div class="empty"><p>Failed to load</p></div>`; }
   }
 
-  function renderAuditItem(log, detailed = false) {
-    const ai = getAuditIconInfo(log.action);
-    return `
-      <div class="audit-item">
-        <div class="audit-icon ${ai.cls}">${ai.icon}</div>
-        <div class="audit-content">
-          <h4>${formatAction(log.action)}</h4>
-          <p>${log.notes || ''}${detailed ? ` • Target: ${log.target_type} #${log.target_id}` : ''} • By ${log.admin?.name || 'Admin'}</p>
-        </div>
-        <div class="audit-time">${formatDate(log.performed_at)}</div>
-      </div>`;
-  }
-
-  // ── REVIEW MODAL ───────────────────────────
+  // ── REVIEW MODAL ─────────────────────────
   async function openReviewModal(campaignId) {
     selectedCampaignId = campaignId;
-    document.getElementById('reviewLoading').classList.remove('hidden');
+    document.getElementById('reviewLoading').style.display  = 'block';
     document.getElementById('reviewContent').classList.add('hidden');
-    document.getElementById('reviewOverlay').classList.add('show');
+    document.getElementById('reviewModal').classList.add('show');
 
     try {
       const res  = await authFetch(`${API}/admin/campaigns/${campaignId}/review`);
       const data = await res.json();
-      if (!data.success) {
-        showToast('Failed to load campaign review', 'error');
-        closeReviewModal(); return;
-      }
+      if (!data.success) { showToast('Failed to load review', 'error'); closeReviewModal(); return; }
       renderReview(data);
-      document.getElementById('reviewLoading').classList.add('hidden');
+      document.getElementById('reviewLoading').style.display = 'none';
       document.getElementById('reviewContent').classList.remove('hidden');
-    } catch (e) {
+    } catch(e) {
       showToast('Server error loading review', 'error');
       closeReviewModal();
     }
   }
 
   function closeReviewModal() {
-    document.getElementById('reviewOverlay').classList.remove('show');
+    document.getElementById('reviewModal').classList.remove('show');
   }
 
   function renderReview(data) {
     const { patient, documents, ai_verification, hms } = data;
 
     const DOC_LABELS = {
-      ESTIMATE          : '🏥 Hospital Estimate',
-      AADHAAR           : '🪪 Aadhaar Card',
-      ADMISSION_SUMMARY : '📋 Admission Summary',
-      BILL              : '🧾 Hospital Bill',
-      DISCHARGE_SUMMARY : '📄 Discharge Summary',
-      INCOME_CERTIFICATE: '📜 Income Certificate',
-      RATION_CARD       : '📑 Ration Card'
+      AADHAAR          :'🪪 Aadhaar Card',
+      RATION_CARD      :'📑 Ration Card',
+      INCOME_CERTIFICATE:'📜 Income Certificate',
+      ESTIMATE         :'🏥 Hospital Estimate',
+      ADMISSION_SUMMARY:'📋 Admission Summary',
+      DISCHARGE_SUMMARY:'📄 Discharge Summary',
+      BILL             :'🧾 Hospital Bill',
     };
-    const ALL_TYPES = ['AADHAAR','ESTIMATE','ADMISSION_SUMMARY','DISCHARGE_SUMMARY','INCOME_CERTIFICATE','RATION_CARD'];
-    const MANDATORY = ['AADHAAR','ESTIMATE'];
 
-    // Patient details
-    document.getElementById('reviewPatient').innerHTML = [
-      { label: '👤 Full Name',    value: patient?.full_name },
-      { label: '🎂 Age',          value: patient?.age ? patient.age + ' years' : '—' },
-      { label: '⚧ Gender',        value: patient?.gender },
-      { label: '🪪 Aadhaar',      value: patient?.aadhaar },
-      { label: '🏙️ Location',     value: [patient?.city, patient?.state].filter(Boolean).join(', ') || '—' },
-      { label: '📧 Email',        value: patient?.email },
-      { label: '📱 Phone',        value: patient?.phone || '—' },
-      { label: '🤝 Relationship', value: patient?.relationship || '—' }
-    ].map(item => `
-      <div class="review-cell">
-        <div class="rc-label">${item.label}</div>
-        <div class="rc-value">${esc(item.value || '—')}</div>
-      </div>`).join('');
+    // Fundraiser + Patient info combined
+    const { campaign } = data;
+    document.getElementById('reviewPatient').innerHTML = `
+      <div style="background:#F0FDF4;border-radius:8px;padding:10px 14px;margin-bottom:10px;border:1px solid #86EFAC;">
+        <p style="font-size:11px;font-weight:700;color:#16A34A;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">👤 Patient Details</p>
+        <div class="review-grid-2">
+          ${[
+            { label:'Full Name',    value: patient.full_name },
+            { label:'Age',          value: patient.age ? patient.age + ' years' : '—' },
+            { label:'Gender',       value: patient.gender },
+            { label:'Aadhaar',      value: patient.aadhaar || '—' },
+            { label:'Location',     value: ((patient.city||'') + (patient.state ? ', '+patient.state : '')) || '—' },
+            { label:'Languages',    value: (patient.languages||[]).join(', ') || '—' },
+          ].map(item => `
+            <div class="review-cell">
+              <div class="rc-label">${item.label}</div>
+              <div class="rc-value">${item.value || '—'}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+      <div style="background:#EFF6FF;border-radius:8px;padding:10px 14px;border:1px solid #BFDBFE;">
+        <p style="font-size:11px;font-weight:700;color:#1D4ED8;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">🙋 Fundraiser Details</p>
+        <div class="review-grid-2">
+          ${[
+            { label:'Fundraiser Email',  value: patient.email },
+            { label:'Fundraiser Phone',  value: patient.phone || '—' },
+            { label:'Relationship',      value: campaign?.relationship_to_fundraiser || '—' },
+            { label:'Campaign Title',    value: campaign?.title || '—' },
+            { label:'Verified Amount',   value: campaign?.verified_amount ? '₹'+parseFloat(campaign.verified_amount).toLocaleString('en-IN') : '—' },
+            { label:'Submitted',         value: campaign?.created_at ? new Date(campaign.created_at).toLocaleDateString('en-IN') : '—' },
+          ].map(item => `
+            <div class="review-cell">
+              <div class="rc-label">${item.label}</div>
+              <div class="rc-value">${item.value || '—'}</div>
+            </div>`).join('')}
+        </div>
+      </div>`;
 
     // Documents
-    const uploadedTypes = (documents || []).map(d => d.document_type);
+    const allTypes  = ['AADHAAR','RATION_CARD','INCOME_CERTIFICATE','ESTIMATE','ADMISSION_SUMMARY','DISCHARGE_SUMMARY'];
+    const mandatory = ['AADHAAR','RATION_CARD','INCOME_CERTIFICATE','ESTIMATE','ADMISSION_SUMMARY'];
+    const uploadedTypes = documents.map(d => d.document_type);
     document.getElementById('reviewDocs').innerHTML = `
       <div class="review-grid-3">
-        ${ALL_TYPES.map(type => {
-          const doc = (documents || []).find(d => d.document_type === type);
-          const req = MANDATORY.includes(type);
-          const has = !!doc;
+        ${allTypes.map(type => {
+          const doc  = documents.find(d => d.document_type === type);
+          const req  = mandatory.includes(type);
+          const has  = !!doc;
           return `
-            <div style="padding:10px 12px;background:${has ? '#DCFCE7' : req ? '#FEE2E2' : 'white'};
-              border-radius:8px;border:1.5px solid ${has ? '#86EFAC' : req ? '#FCA5A5' : '#E5E7EB'};">
-              <p style="font-size:12px;font-weight:700;">${DOC_LABELS[type] || type}</p>
-              <p style="font-size:11px;color:${has ? '#16A34A' : '#DC2626'};margin-top:3px;">
-                ${has ? '✅ ' + esc(doc.file_name) : req ? '❌ Missing (mandatory)' : '— Not uploaded'}
+            <div style="padding:10px 12px;background:${has?'#DCFCE7':req?'#FEE2E2':'white'};border-radius:8px;border:1.5px solid ${has?'#86EFAC':req?'#FCA5A5':'#F3F4F6'};">
+              <p style="font-size:12px;font-weight:700;">${DOC_LABELS[type]||type}</p>
+              <p style="font-size:11px;color:${has?'#16A34A':'#DC2626'};margin-top:3px;">
+                ${has ? '✅ '+doc.file_name : req ? '❌ Missing (mandatory)' : '— Not uploaded'}
               </p>
-              ${has ? `<button onclick="viewDocument(${doc.id})"
-                style="margin-top:8px;padding:4px 10px;background:var(--blue);color:white;border:none;
-                border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--font);">
+              ${has ? `<button onclick="viewDocument(${doc.id}, '${doc.file_name}')"
+                style="margin-top:8px;padding:4px 10px;background:#3B82F6;color:white;
+                border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">
                 👁️ View
               </button>` : ''}
             </div>`;
         }).join('')}
       </div>
       <p style="font-size:12px;color:var(--gray-400);margin-top:8px;">
-        ${(documents || []).length} document(s) uploaded
+        ${documents.length} document(s) uploaded
         ${!uploadedTypes.includes('ESTIMATE') ? ' • ⚠️ Estimate missing!' : ''}
         ${!uploadedTypes.includes('AADHAAR')  ? ' • ⚠️ Aadhaar missing!' : ''}
       </p>`;
 
     // AI Verification
-    const ai   = ai_verification || {};
-    const risk = ai.risk_score || 0;
-    const rc   = risk < 30 ? '#16A34A' : risk < 60 ? '#D97706' : '#DC2626';
-    const ext  = ai.extracted_data || {};
+    const ai        = ai_verification || {};
+    const risk      = ai.risk_score || 0;
+    const rc        = risk < 30 ? '#16A34A' : risk < 60 ? '#D97706' : '#DC2626';
+    const ext       = ai.extracted_data || {};
     document.getElementById('reviewAI').innerHTML = `
       <div class="review-grid-2" style="margin-bottom:12px;">
         <div class="review-cell">
           <div class="rc-label">AI Status</div>
-          <div class="rc-value" style="color:${ai.status === 'VERIFIED' ? '#16A34A' : '#D97706'}">
-            ${ai.status === 'VERIFIED' ? '✅ Verified' : '⏳ ' + (ai.status || 'Pending')}
-          </div>
+          <div class="rc-value" style="color:${ai.status==='VERIFIED'?'#16A34A':'#D97706'}">${ai.status==='VERIFIED'?'✅ Verified':'⏳ '+(ai.status||'Pending')}</div>
         </div>
         <div class="review-cell">
           <div class="rc-label">Risk Score</div>
@@ -1150,78 +1039,58 @@
         </div>
         <div class="review-cell">
           <div class="rc-label">Tampering</div>
-          <div class="rc-value" style="color:${ai.has_tampering ? '#DC2626' : '#16A34A'}">
-            ${ai.has_tampering ? '🚨 Detected' : '✅ None'}
-          </div>
+          <div class="rc-value" style="color:${ai.has_tampering?'#DC2626':'#16A34A'}">${ai.has_tampering?'🚨 Detected':'✅ None'}</div>
         </div>
         <div class="review-cell">
           <div class="rc-label">Expired Docs</div>
-          <div class="rc-value" style="color:${ai.has_expired ? '#DC2626' : '#16A34A'}">
-            ${ai.has_expired ? '🚨 Expired' : '✅ Valid'}
-          </div>
+          <div class="rc-value" style="color:${ai.has_expired?'#DC2626':'#16A34A'}">${ai.has_expired?'🚨 Expired':'✅ Valid'}</div>
         </div>
       </div>
-      ${(ext.hospital_name || ext.amount || ext.patient_name) ? `
-        <div style="background:white;border-radius:8px;padding:12px;border:1px solid #E5E7EB;">
+      ${(ext.hospital_name||ext.amount||ext.patient_name) ? `
+        <div style="background:white;border-radius:8px;padding:12px;border:1px solid #F3F4F6;">
           <p style="font-size:12px;font-weight:700;margin-bottom:8px;">📋 Extracted from Documents</p>
-          ${ext.hospital_name ? `<p style="font-size:12px;color:var(--gray-600);margin-bottom:4px;">🏥 Hospital: <b>${esc(ext.hospital_name)}</b></p>` : ''}
-          ${ext.patient_name  ? `<p style="font-size:12px;color:var(--gray-600);margin-bottom:4px;">👤 Patient: <b>${esc(ext.patient_name)}</b></p>` : ''}
-          ${ext.amount        ? `<p style="font-size:12px;color:var(--gray-600);margin-bottom:4px;">💰 Amount: <b style="color:var(--orange)">₹${parseFloat(ext.amount).toLocaleString('en-IN')}</b></p>` : ''}
-          ${ext.diseases?.length ? `<p style="font-size:12px;color:var(--gray-600);">🩺 Diagnosis: <b>${esc(Array.isArray(ext.diseases) ? ext.diseases[0] : ext.diseases)}</b></p>` : ''}
+          ${ext.hospital_name ? `<p style="font-size:12px;color:#4B5563;margin-bottom:4px;">🏥 Hospital: <b>${ext.hospital_name}</b></p>` : ''}
+          ${ext.patient_name  ? `<p style="font-size:12px;color:#4B5563;margin-bottom:4px;">👤 Patient: <b>${ext.patient_name}</b></p>` : ''}
+          ${ext.amount        ? `<p style="font-size:12px;color:#4B5563;margin-bottom:4px;">💰 Amount: <b style="color:#F97316">₹${parseFloat(ext.amount).toLocaleString('en-IN')}</b></p>` : ''}
+          ${(ext.diseases&&ext.diseases.length) ? `<p style="font-size:12px;color:#4B5563;">🩺 Diagnosis: <b>${Array.isArray(ext.diseases)?ext.diseases[0]:ext.diseases}</b></p>` : ''}
         </div>` : ''}`;
 
     // HMS
-    document.getElementById('reviewHMS').innerHTML = hms?.found ? `
+    document.getElementById('reviewHMS').innerHTML = hms.found ? `
       <div class="review-grid-2">
-        <div style="padding:12px;background:var(--green-bg);border-radius:8px;border:1.5px solid var(--green-border);grid-column:1/-1;">
-          <p style="font-size:13px;font-weight:700;color:var(--green-text);">✅ Patient Found in HMS Database</p>
-          <p style="font-size:12px;color:var(--gray-600);margin-top:4px;">
-            HMS Patient: ${esc(hms.hms_patient?.patient_name || '—')} | Status: ${esc(hms.hms_patient?.status || '—')}
-          </p>
+        <div style="padding:12px;background:#DCFCE7;border-radius:8px;border:1.5px solid #86EFAC;grid-column:1/-1;">
+          <p style="font-size:13px;font-weight:700;color:#16A34A;">✅ Patient Found in HMS</p>
+          <p style="font-size:12px;color:#4B5563;margin-top:4px;">Name: ${hms.hms_patient?.patient_name||'—'} | Status: ${hms.hms_patient?.status||'—'}</p>
         </div>
-        <div style="padding:10px 12px;background:${hms.name_match ? 'var(--green-bg)' : 'var(--red-bg)'};border-radius:8px;border:1.5px solid ${hms.name_match ? 'var(--green-border)' : 'var(--red-border)'};">
-          <p style="font-size:12px;font-weight:700;color:${hms.name_match ? 'var(--green-text)' : 'var(--red-text)'};">
-            ${hms.name_match ? '✅' : '❌'} Name Match
-          </p>
-          <p style="font-size:11px;color:var(--gray-500);margin-top:2px;">HMS: ${esc(hms.hms_patient?.patient_name || '—')}</p>
+        <div style="padding:10px 12px;background:${hms.name_match?'#DCFCE7':'#FEE2E2'};border-radius:8px;border:1.5px solid ${hms.name_match?'#86EFAC':'#FCA5A5'};">
+          <p style="font-size:12px;font-weight:700;color:${hms.name_match?'#16A34A':'#DC2626'}">${hms.name_match?'✅':'❌'} Name Match</p>
         </div>
-        <div style="padding:10px 12px;background:${hms.aadhaar_match ? 'var(--green-bg)' : 'var(--red-bg)'};border-radius:8px;border:1.5px solid ${hms.aadhaar_match ? 'var(--green-border)' : 'var(--red-border)'};">
-          <p style="font-size:12px;font-weight:700;color:${hms.aadhaar_match ? 'var(--green-text)' : 'var(--red-text)'};">
-            ${hms.aadhaar_match ? '✅' : '❌'} Aadhaar Match
-          </p>
+        <div style="padding:10px 12px;background:${hms.aadhaar_match?'#DCFCE7':'#FEE2E2'};border-radius:8px;border:1.5px solid ${hms.aadhaar_match?'#86EFAC':'#FCA5A5'};">
+          <p style="font-size:12px;font-weight:700;color:${hms.aadhaar_match?'#16A34A':'#DC2626'}">${hms.aadhaar_match?'✅':'❌'} Aadhaar Match</p>
         </div>
-        <div style="padding:10px 12px;background:${hms.amount_match ? 'var(--green-bg)' : '#FEF3C7'};border-radius:8px;border:1.5px solid ${hms.amount_match ? 'var(--green-border)' : 'var(--yellow-border)'};">
-          <p style="font-size:12px;font-weight:700;color:${hms.amount_match ? 'var(--green-text)' : 'var(--yellow-text)'};">
-            ${hms.amount_match ? '✅' : '⚠️'} Amount Match
-          </p>
-          <p style="font-size:11px;color:var(--gray-500);margin-top:2px;">
-            HMS Estimate: ₹${parseFloat(hms.payment_status?.total_estimate || 0).toLocaleString('en-IN')}
-          </p>
+        <div style="padding:10px 12px;background:${hms.amount_match?'#DCFCE7':'#FEF3C7'};border-radius:8px;border:1.5px solid ${hms.amount_match?'#86EFAC':'#FCD34D'};">
+          <p style="font-size:12px;font-weight:700;color:${hms.amount_match?'#16A34A':'#D97706'}">${hms.amount_match?'✅':'⚠️'} Amount Match</p>
+          <p style="font-size:11px;color:#6B7280;margin-top:2px;">HMS: ₹${parseFloat(hms.payment_status?.total_estimate||0).toLocaleString('en-IN')}</p>
         </div>
         <div class="review-cell">
           <div class="rc-label">💰 Amount Paid</div>
-          <div class="rc-value">₹${parseFloat(hms.payment_status?.amount_paid || 0).toLocaleString('en-IN')}</div>
+          <div class="rc-value">₹${parseFloat(hms.payment_status?.amount_paid||0).toLocaleString('en-IN')}</div>
         </div>
         <div class="review-cell">
           <div class="rc-label">⚡ Outstanding</div>
-          <div class="rc-value" style="color:var(--orange)">₹${parseFloat(hms.payment_status?.outstanding || 0).toLocaleString('en-IN')}</div>
+          <div class="rc-value" style="color:var(--orange)">₹${parseFloat(hms.payment_status?.outstanding||0).toLocaleString('en-IN')}</div>
         </div>
       </div>` :
-      `<div style="padding:16px;background:#FEF3C7;border-radius:10px;border:1.5px solid var(--yellow-border);">
-        <p style="font-size:14px;font-weight:700;color:var(--yellow-text);margin-bottom:6px;">⚠️ Patient NOT Found in HMS Database</p>
-        <p style="font-size:13px;color:var(--gray-600);line-height:1.6;">
-          This patient has not been registered in HMS yet. This is normal for new patients.
-          You can still verify the campaign based on documents.
+      `<div style="padding:16px;background:#FEF3C7;border-radius:10px;border:1.5px solid #FCD34D;">
+        <p style="font-size:14px;font-weight:700;color:#D97706;margin-bottom:6px;">⚠️ Patient NOT Found in HMS</p>
+        <p style="font-size:13px;color:#4B5563;line-height:1.6;">
+          Patient not yet registered in HMS. Normal for new patients. You can still verify based on documents.
         </p>
-        ${hms?.error ? `<p style="font-size:12px;color:var(--red);margin-top:8px;">⚠️ ${esc(hms.error)}</p>` : ''}
+        ${hms.error ? `<p style="font-size:12px;color:#DC2626;margin-top:8px;">⚠️ ${hms.error}</p>` : ''}
       </div>`;
   }
 
-  function viewDocument(docId) {
-    window.open(`${API}/admin/documents/${docId}`, '_blank');
-  }
-
-  // ── VERIFY / CANCEL ────────────────────────
+  // ── VERIFY / CANCEL ───────────────────────
   function openVerifyModal(id) {
     selectedCampaignId = id;
     document.getElementById('verifyNotes').value = '';
@@ -1241,163 +1110,100 @@
   async function confirmVerify() {
     const notes = document.getElementById('verifyNotes').value;
     try {
-      const res  = await authFetch(`${API}/admin/campaigns/${selectedCampaignId}/verify`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes })
-      });
+      const res  = await authFetch(`${API}/admin/campaigns/${selectedCampaignId}/verify`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({notes}) });
       const data = await res.json();
       closeModal('verifyModal');
-      if (data.success) {
-        showToast('✅ Campaign verified successfully!', 'success');
-        loadCurrentSection();
-        loadStats();
-      } else {
-        showToast(data.error || 'Failed to verify campaign', 'error');
-      }
-    } catch (e) { showToast('Server error', 'error'); }
+      if (data.success) { showToast('✅ Campaign verified!', 'success'); loadDashboard(); }
+      else showToast(data.error || 'Failed to verify', 'error');
+    } catch(e) { showToast('Server error', 'error'); }
   }
 
   async function confirmCancel() {
     const reason = document.getElementById('cancelReason').value.trim();
-    if (!reason) { showToast('Cancellation reason is required', 'error'); return; }
+    if (!reason) { showToast('Reason is required', 'error'); return; }
     try {
-      const res  = await authFetch(`${API}/admin/campaigns/${selectedCampaignId}/cancel`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason })
-      });
+      const res  = await authFetch(`${API}/admin/campaigns/${selectedCampaignId}/cancel`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({reason}) });
       const data = await res.json();
       closeModal('cancelModal');
-      if (data.success) {
-        showToast('Campaign cancelled and patient blacklisted', 'error');
-        loadCurrentSection();
-        loadStats();
-      } else {
-        showToast(data.error || 'Failed to cancel campaign', 'error');
-      }
-    } catch (e) { showToast('Server error', 'error'); }
+      if (data.success) { showToast('Campaign cancelled', 'error'); loadDashboard(); }
+      else showToast(data.error || 'Failed to cancel', 'error');
+    } catch(e) { showToast('Server error', 'error'); }
   }
 
-  // ── FUND RELEASE ───────────────────────────
   async function triggerRelease() {
     const campaignId = document.getElementById('releaseCampaignId').value;
     const amount     = document.getElementById('releaseAmount').value;
-    if (!campaignId || !amount) { showToast('Campaign ID and amount are required', 'error'); return; }
+    if (!campaignId || !amount) { showToast('Campaign ID and amount required', 'error'); return; }
     try {
-      const res  = await authFetch(`${API}/releases/trigger`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ campaign_id: parseInt(campaignId), amount: parseFloat(amount) })
-      });
+      const res  = await authFetch(`${API}/releases/trigger`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({campaign_id:parseInt(campaignId), amount:parseFloat(amount)}) });
       const data = await res.json();
-      if (data.success) {
-        showToast(`💸 ₹${formatAmount(data.amount_released || amount)} released to hospital!`, 'success');
-        document.getElementById('releaseCampaignId').value = '';
-        document.getElementById('releaseAmount').value     = '';
-        loadReleaseHistory();
-      } else {
-        showToast(data.error || 'Fund release failed', 'error');
-      }
-    } catch (e) { showToast('Server error', 'error'); }
+      if (data.success) { showToast(`💸 Rs. ${data.amount_released} released!`, 'success'); document.getElementById('releaseCampaignId').value=''; document.getElementById('releaseAmount').value=''; }
+      else showToast(data.error || 'Release failed', 'error');
+    } catch(e) { showToast('Server error', 'error'); }
   }
 
-  // ── NAVIGATION ─────────────────────────────
-  function showSection(name, navEl) {
-    currentSection = name;
-
+  // ── NAVIGATION ────────────────────────────
+  function showSection(name) {
     document.querySelectorAll('[id^="section-"]').forEach(el => el.classList.add('hidden'));
-    document.getElementById(`section-${name}`)?.classList.remove('hidden');
-
+    document.getElementById(`section-${name}`).classList.remove('hidden');
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    if (navEl) navEl.classList.add('active');
-
+    event?.currentTarget?.classList.add('active');
     const titles = {
-      overview : ['Dashboard Overview',     "Welcome back! Here's what's happening today."],
-      pending  : ['Pending Verifications',   'Campaigns waiting for admin review'],
-      urgent   : ['Urgent Cases',            'High-risk cases requiring immediate attention'],
-      releases : ['Fund Releases',           'Trigger and track phased fund releases to hospitals'],
-      campaigns: ['All Campaigns',           'View and manage all campaigns across all statuses'],
-      blacklist: ['Blacklist',               'Patients blacklisted due to confirmed fraud'],
-      audit    : ['Audit Log',               'Complete record of all admin actions'],
+      overview : ['Dashboard Overview',    "Welcome back! Here's what's happening today."],
+      pending  : ['Pending Verifications', 'Campaigns waiting for admin review'],
+      urgent   : ['Urgent Cases',          'High risk cases requiring immediate attention'],
+      releases : ['Fund Releases',         'Trigger phased fund releases'],
+      campaigns: ['All Campaigns',         'View and manage all campaigns'],
+      audit    : ['Audit Log',             'Complete record of all admin actions']
     };
     if (titles[name]) {
       document.getElementById('sectionTitle').textContent    = titles[name][0];
       document.getElementById('sectionSubtitle').textContent = titles[name][1];
     }
-
-    switch (name) {
-      case 'overview':  loadDashboardOverview(); break;
-      case 'pending':   loadPendingFull();    break;
-      case 'urgent':    loadUrgentFull();     break;
-      case 'releases':  loadReleaseHistory(); break;
-      case 'campaigns': loadAllCampaigns();   break;
-      case 'blacklist': loadBlacklist();      break;
-      case 'audit':     loadAuditFull();      break;
-    }
+    if (name === 'pending')   loadPendingFull();
+    if (name === 'urgent')    loadUrgentFull();
+    if (name === 'campaigns') loadAllCampaigns();
+    if (name === 'audit')     loadAuditFull();
   }
 
-  // ── HELPERS ────────────────────────────────
-  function authFetch(url, opts = {}) {
-    return fetch(url, {
-      ...opts,
-      headers: { ...opts.headers, 'Authorization': `Bearer ${adminToken}` }
-    });
+  // ── HELPERS ───────────────────────────────
+  function authFetch(url, opts={}) {
+    return fetch(url, {...opts, headers:{...opts.headers,'Authorization':`Bearer ${adminToken}`}});
   }
 
-  function showToast(msg, type = 'info') {
+  function showToast(msg, type='info') {
     const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className   = `toast ${type} show`;
+    t.textContent = msg; t.className = `toast ${type} show`;
     setTimeout(() => t.classList.remove('show'), 3500);
   }
 
-  function formatAmount(a) {
-    return parseFloat(a || 0).toLocaleString('en-IN');
-  }
+  function formatAmount(a) { return parseFloat(a||0).toLocaleString('en-IN'); }
 
   function formatDate(d) {
     if (!d) return '—';
-    return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    return new Date(d).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'});
   }
 
   function formatAction(a) {
-    const map = {
-      CAMPAIGN_VERIFIED: '✅ Campaign Verified',
-      CAMPAIGN_CANCELLED: '❌ Campaign Cancelled',
-      FUND_RELEASED: '💸 Fund Released',
-      ADMIN_LOGIN: '🔐 Admin Login',
-      CREATE_ADMIN: '👤 Admin Created',
-      BLACKLISTED: '🚫 Patient Blacklisted'
-    };
-    return map[a] || a;
+    return {CAMPAIGN_VERIFIED:'✅ Campaign Verified',CAMPAIGN_CANCELLED:'❌ Campaign Cancelled',FUND_RELEASED:'💸 Fund Released',ADMIN_LOGIN:'🔐 Admin Login',CREATE_ADMIN:'👤 Admin Created',BLACKLISTED:'🚫 Patient Blacklisted'}[a] || a;
   }
 
-  function getAuditIconInfo(a) {
-    if (!a) return { cls: 'login', icon: '📝' };
-    if (a.includes('VERIFIED'))  return { cls: 'verify',  icon: '✅' };
-    if (a.includes('CANCELLED')) return { cls: 'cancel',  icon: '❌' };
-    if (a.includes('RELEASED'))  return { cls: 'release', icon: '💸' };
-    return { cls: 'login', icon: '🔐' };
+  function getAuditIcon(a) {
+    if (a?.includes('VERIFIED'))  return {cls:'verify',  icon:'✅'};
+    if (a?.includes('CANCELLED')) return {cls:'cancel',  icon:'❌'};
+    if (a?.includes('RELEASED'))  return {cls:'release', icon:'💸'};
+    return {cls:'login', icon:'🔐'};
   }
 
   function statusBadge(s) {
-    const map = {
-      LIVE_CAMPAIGN       : '<span class="badge badge-live">🟢 Live</span>',
-      VERIFIED            : '<span class="badge badge-verified">✅ Verified</span>',
-      PENDING             : '<span class="badge badge-pending">⏳ Pending</span>',
-      VERIFICATION_NEEDED : '<span class="badge badge-verification-needed">🚨 Urgent</span>',
-      CANCELLED           : '<span class="badge badge-cancelled">❌ Cancelled</span>',
-      UPDATE_NEEDED       : '<span class="badge badge-update-needed">📅 Update Needed</span>',
-      COMPLETED           : '<span class="badge badge-completed">🏁 Completed</span>',
-      DRAFT               : '<span class="badge badge-draft">📝 Draft</span>',
-    };
-    return map[s] || `<span class="badge">${esc(s)}</span>`;
-  }
-
-  function esc(str) {
-    if (str == null) return '—';
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return {
+      LIVE_CAMPAIGN       :'<span class="badge badge-live">🟢 Live</span>',
+      VERIFIED            :'<span class="badge badge-verified">✅ Verified</span>',
+      PENDING             :'<span class="badge badge-pending">⏳ Pending</span>',
+      VERIFICATION_NEEDED :'<span class="badge badge-verification-needed">🚨 Urgent</span>',
+      CANCELLED           :'<span class="badge badge-cancelled">❌ Cancelled</span>',
+      UPDATE_NEEDED       :'<span class="badge badge-update-needed">📅 Update</span>',
+    }[s] || `<span class="badge">${s}</span>`;
   }
 </script>
 </body>

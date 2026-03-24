@@ -240,11 +240,41 @@ class MedicalEntityExtractor:
 
     # ── PINCODE ───────────────────────────────────────────────────────────────
     def _extract_pincode(self, text):
+        """
+        Extract hospital pincode.
+        Prefer pincode near hospital name / city.
+        Avoid pincode from patient's home address on Aadhaar.
+        """
+        # Priority 1: Pincode after hospital name or address line
+        hosp_pin = re.search(
+            r'(?:Hospital|Hospitals|Medical|Clinic|Centre|Center)'
+            r'[^\n]*?[-,\s]+(\d{6})\b',
+            text, re.IGNORECASE
+        )
+        if hosp_pin:
+            pin = hosp_pin.group(1)
+            if pin[0] in '12345678':
+                return pin
+
+        # Priority 2: Pincode in first 3 lines (hospital header)
+        lines = text.strip().split('\n')
+        for line in lines[:4]:
+            m = re.search(r'\b([1-8][0-9]{5})\b', line)
+            if m:
+                return m.group(1)
+
+        # Priority 3: Any valid pincode not near DOB/Aadhaar number
         pattern = r'\b([1-8][0-9]{5})\b'
-        matches = re.findall(pattern, text)
-        for match in matches:
-            if not match.startswith(('19', '20', '18')):
-                return match
+        for m in re.finditer(pattern, text):
+            pin = m.group(1)
+            # Skip pincodes that appear right after Aadhaar number context
+            context = text[max(0, m.start()-100):m.start()]
+            if re.search(r'\d{4}\s+\d{4}\s+\d{4}', context):
+                continue  # Skip — near Aadhaar number
+            if re.search(r'DOB|Date of Birth|S/O|D/O|W/O', context, re.IGNORECASE):
+                continue  # Skip — near Aadhaar personal details
+            return pin
+
         return None
 
     # ── DISEASES ──────────────────────────────────────────────────────────────
@@ -269,6 +299,20 @@ class MedicalEntityExtractor:
                 return [disease.title()]
 
         # ── Priority 2: Inline diagnosis patterns ────────────────────────────
+        # Blacklist — phrases that look like diagnoses but are NOT
+        disease_blacklist = [
+            'details', 'n/a', 'none', 'procedure', 'unknown',
+            'is currently characterized by', 'currently characterized',
+            'characterized by', 'is characterized', 'requiring immediate',
+            'needing treatment', 'the patient', 'this patient',
+            'patient is', 'patient has', 'who is', 'which is',
+            'is currently', 'currently suffering', 'suffering from the',
+            'is a condition', 'is known as', 'also known',
+            'defined as', 'refers to', 'which affects',
+            'a serious', 'an acute', 'a chronic', 'a rare',
+            'the condition', 'this condition', 'said condition',
+        ]
+
         inline_patterns = [
             r'[Dd]iagnosis[\s:\-]+([A-Za-z][A-Za-z\s,]+?)(?:\n|\.|$)',
             r'[Dd]iagnosed\s+(?:with|as)[\s:\-]+([A-Za-z][A-Za-z\s,]+?)(?:\n|\.|$)',
@@ -281,7 +325,12 @@ class MedicalEntityExtractor:
             matches = re.findall(pattern, text)
             for m in matches:
                 d = m.strip()
-                if len(d) > 4 and d.lower() not in ['details','n/a','none','procedure']:
+                d_lower = d.lower()
+                # Skip blacklisted phrases
+                if any(bl in d_lower for bl in disease_blacklist):
+                    continue
+                # Must be reasonably short (real diagnoses are < 60 chars)
+                if len(d) > 4 and len(d) <= 60:
                     return [d.title()]
 
         # ── Priority 3: Only if no explicit label — return MOST SPECIFIC term ──
@@ -406,9 +455,19 @@ class MedicalEntityExtractor:
                 return val
 
         # ── Fallback: largest reasonable number in doc ────────────────────────
+        # But skip 6-digit numbers that look like Indian pincodes (100000-899999)
         for m in re.finditer(r'\b(\d{1,2},\d{2},\d{3}|\d{5,7})\b', text):
+            raw = m.group(1).replace(',', '')
             val = self._clean_amount(m.group(1))
-            if val and 5000 <= val <= 9999999:
+            if not val:
+                continue
+            # Skip if it looks like a pincode (6 digits, starts 1-8, no comma formatting)
+            if len(raw) == 6 and raw[0] in '12345678' and ',' not in m.group(1):
+                continue
+            # Skip if it looks like a year
+            if 1990 <= val <= 2100:
+                continue
+            if 5000 <= val <= 9999999:
                 return val
 
         return None

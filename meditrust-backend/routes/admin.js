@@ -81,10 +81,10 @@ router.post('/verify-otp', async (req, res) => {
     }
 
     // OTP DISABLED FOR DEVELOPMENT — re-enable before production
-    //const result = await verifyOTP(parseInt(admin_id), otp_code, 'ADMIN_LOGIN');
-    //if (!result.valid) {
-      //return res.status(400).json({ success: false, error: result.error });
-    //}
+    // const result = await verifyOTP(parseInt(admin_id), otp_code, 'ADMIN_LOGIN');
+    // if (!result.valid) {
+    //   return res.status(400).json({ success: false, error: result.error });
+    // }
 
     // Get admin details
     const admin = await prisma.user.findUnique({
@@ -200,7 +200,7 @@ router.get('/dashboard', verifyAdmin, async (req, res) => {
     ] = await Promise.all([
       prisma.campaign.count(),
       prisma.campaign.count({ where: { status: 'LIVE_CAMPAIGN' } }),
-      prisma.campaign.count({ where: { status: { in: ['PENDING', 'PENDING_VERIFICATION'] } } }),
+      prisma.campaign.count({ where: { status: { in: ['PENDING', 'PENDING_VERIFICATION', 'VERIFIED', 'VERIFICATION_NEEDED'] } } }),
       prisma.campaign.count({ where: { status: 'VERIFICATION_NEEDED' } }),
       prisma.donation.aggregate({ _sum: { amount: true }, where: { status: 'SUCCESS' } }),
       prisma.user.count({ where: { role: 'PATIENT' } }),
@@ -365,7 +365,7 @@ router.get('/campaigns/:id/review', verifyAdmin, async (req, res) => {
 router.get('/pending', verifyAdmin, async (req, res) => {
   try {
     const campaigns = await prisma.campaign.findMany({
-      where  : { status: { in: ['PENDING', 'PENDING_VERIFICATION', 'VERIFICATION_NEEDED'] } },
+      where  : { status: { in: ['PENDING', 'PENDING_VERIFICATION', 'VERIFICATION_NEEDED', 'VERIFIED'] } },
       include: {
         patient            : { select: { name: true, email: true } },
         verification_records: { orderBy: { verified_at: 'desc' }, take: 1 },
@@ -661,7 +661,28 @@ router.get('/documents/:id', verifyAdmin, async (req, res) => {
       where: { id: parseInt(req.params.id) }
     });
     if (!doc) return res.status(404).json({ success: false, error: 'Document not found' });
-    res.json({ success: true, document: doc });
+
+    // file_url is stored as base64 data URL: "data:application/pdf;base64,..."
+    const fileUrl = doc.file_url || '';
+
+    if (fileUrl.startsWith('data:')) {
+      // Extract mime type and base64 data
+      const matches = fileUrl.match(/^data:([^;]+);base64,(.+)$/);
+      if (matches) {
+        const mimeType = matches[1];
+        const base64Data = matches[2];
+        const buffer = Buffer.from(base64Data, 'base64');
+
+        res.setHeader('Content-Type', mimeType);
+        res.setHeader('Content-Disposition', `inline; filename="${doc.file_name || 'document'}"`);
+        res.setHeader('Content-Length', buffer.length);
+        return res.send(buffer);
+      }
+    }
+
+    // Fallback — return JSON if not base64
+    res.json({ success: true, document: { id: doc.id, file_name: doc.file_name, document_type: doc.document_type } });
+
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

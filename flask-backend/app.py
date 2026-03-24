@@ -256,16 +256,23 @@ def verify_documents():
 
         for doc in documents:
             doc_type    = doc.get('document_type', 'UNKNOWN')
-            file_content= doc.get('file_content', '')
+            # Frontend sends file_url (data URL) OR file_content (raw base64)
+            file_url    = doc.get('file_url', '') or doc.get('file_content', '')
             mime_type   = doc.get('mime_type', 'application/pdf')
             file_name   = doc.get('file_name', '')
 
             logger.info(f"Processing document: {file_name} ({doc_type})")
 
             try:
-                # Decode base64 content
+                # Decode base64 content — handle both data URL and raw base64
                 import tempfile
-                file_bytes = base64.b64decode(file_content)
+                if file_url.startswith('data:'):
+                    # data:application/pdf;base64,XXXXX
+                    header, b64data = file_url.split(',', 1)
+                    mime_type = header.split(':')[1].split(';')[0]
+                    file_bytes = base64.b64decode(b64data)
+                else:
+                    file_bytes = base64.b64decode(file_url)
 
                 # Determine extension
                 if mime_type == 'application/pdf' or file_name.endswith('.pdf'):

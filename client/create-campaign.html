@@ -1039,18 +1039,19 @@
       if (!ok) toast('⚠️ Please upload all 5 mandatory documents');
     }
     if (s === 3) {
-      // AI extraction must have completed (s3next button unlocks it)
-      // Only check language selection here
+      // Only block if AI extraction has NOT been run at all
+      // Name mismatch / missing entities / income > 3L = PENDING not block
       if (!langs.length) {
         const el = document.getElementById('e_lang'); if (el) el.classList.add('show');
         toast('⚠️ Please select at least one language'); ok = false;
       }
-      if (!window._previewVerification) {
+      if (!window._previewVerification && $('s3next').disabled) {
         toast('⚠️ Please click "Start AI Extraction" first'); ok = false;
       }
     }
     if (s === 4) {
-      if (!confirmed) { toast('⚠️ Please complete AI extraction and confirm HMS data'); ok = false; }
+      // No blocking here — HMS not found / name mismatch = PENDING not block
+      // s4next is always enabled after HMS runs
     }
     if (s === 5) {
       if (gv('story').length < 100) { err('story'); toast('⚠️ Story must be at least 100 characters'); ok = false; }
@@ -1200,15 +1201,19 @@
       $('p1b').className   = 'pbadge ok'; $('p1b').textContent = 'Done ✓';
       btn.innerHTML        = '✅ Extraction Complete'; btn.style.background = 'var(--green-mid)';
 
-      if (!incOk && exData.annualIncome > 0) {
-        toast('❌ Income exceeds ₹3L limit — campaign cannot proceed', 6000);
-        $('p1b').className = 'pbadge err'; $('p1b').textContent = 'Rejected'; return;
-      }
-
-      // ✅ Extraction done — unlock Step 3 Continue button
+      // ✅ Extraction done — unlock Step 3 Continue button always
+      // (income > 3L just sets PENDING — does not block flow)
       const s3btn = $('s3next');
       if (s3btn) s3btn.disabled = false;
-      toast('✅ Extraction complete! Select languages then click Continue.', 4000);
+
+      // Show result toast — never block regardless of income or name mismatch
+      if (!incOk && exData.annualIncome > 0) {
+        toast('ℹ️ Income noted — admin will review campaign before going live', 4000);
+      } else if (!exData.namesMatch) {
+        toast('ℹ️ Name mismatch noted — admin will review before going live', 4000);
+      } else {
+        toast('✅ Extraction complete! Select languages then click Continue.', 4000);
+      }
 
       // Pre-run HMS in background so Step 4 loads fast
       runHMS(exData);
@@ -1324,19 +1329,25 @@
 
     $('confirmAmt').textContent = fmt(hmsData.outstanding);
     $('confirmRow').style.display = 'flex';
+    // Always auto-confirm so user is never blocked
+    confirmed = true;
+    $('s4next').disabled = false;
 
     // Show source info in confirm row
     const confirmP = $('confirmRow').querySelector('p:last-child');
     if (confirmP) confirmP.textContent = hospitalSource === 'HMS_API'
       ? 'Live from hospital HMS system — most accurate'
       : 'Based on hospital estimate document — admin will verify before fund release';
+
+    // Always enable s4next after HMS runs — name mismatch/HMS not found = PENDING not BLOCK
+    $('s4next').disabled = false;
   }
 
   function confirmIt() {
     confirmed = true; $('s4next').disabled = false;
     $('confirmRow').style.background = 'var(--green-mid)';
-    $('confirmRow').querySelector('.btn-confirm').textContent = '✓ Confirmed';
-    $('confirmRow').querySelector('.btn-confirm').disabled = true;
+    const confirmBtn = $('confirmRow').querySelector('.btn-confirm');
+    if (confirmBtn) { confirmBtn.textContent = '✓ Confirmed'; confirmBtn.disabled = true; }
     toast('✅ Confirmed! Campaign goal set to ' + fmt(hmsData.outstanding));
   }
 
@@ -1350,58 +1361,120 @@
     });
   }
 
-  // ── Step 5: Story Polish ──────────────────────────────
-  // Level 1 — Local JS corrections (instant, always works)
-  // Level 2 — Backend Gemini (if configured)
+  // ── Step 5: Gemini Story Polish ───────────────────────
   async function polishStory() {
     const original = $('f_story').value.trim();
     if (original.length < 50) {
-      toast('⚠️ Please write your story first (at least 50 characters)');
+      toast('⚠️ Please write your story first before polishing it');
       return;
     }
 
     const btn = $('polishBtn');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Polishing…';
+    btn.innerHTML = '<span class="spinner"></span> Sending to Gemini…';
+
+    // Hide previous result
     $('polishPanel').classList.remove('show');
 
-    // ── LEVEL 1: Local JS Polish (instant, always works) ─────────────
-    const localPolished = localPolish(original);
+    const prompt = `You are a compassionate editor helping with a medical crowdfunding campaign on MediTrust, a platform that helps underprivileged patients in India raise funds for genuine medical treatment.
 
-    // ── LEVEL 2: Try backend Gemini ───────────────────────────────────
-    let geminiPolished = '';
-    const token      = localStorage.getItem('patientToken');
-    const campaignId = localStorage.getItem('campaignId') || localStorage.getItem('draftCampaignId');
+The fundraiser has written the following campaign story. Your task is to:
+1. Correct all spelling mistakes and grammatical errors
+2. Improve sentence flow and readability
+3. Keep the EXACT same emotional tone, personal feelings, and heart of the original — do not make it sound corporate or formal
+4. Preserve all specific details (names, places, amounts, conditions, relationships)
+5. Keep it in the same person's voice — if they wrote in first person, keep it first person
+6. Do NOT add any new facts, claims, or embellishments that were not in the original
+7. Keep approximately the same length
 
-    if (token && campaignId) {
-      try {
-        btn.innerHTML = '<span class="spinner"></span> Checking Gemini…';
-        const ctrl = new AbortController();
-        const tid  = setTimeout(() => ctrl.abort(), 15000);
-        const res  = await fetch(`${API}/story/generate`, {
+Original story:
+"""
+${original}
+"""
+
+Return ONLY the polished story text — no introductory lines, no commentary, no explanations. Just the improved story.`;
+
+    let polished = '';
+
+    try {
+      // PRIMARY: Route through Node.js backend (uses Vertex AI / Gemini)
+      const token = localStorage.getItem('patientToken');
+      const campaignId = localStorage.getItem('campaignId') || localStorage.getItem('draftCampaignId');
+
+      if (token && campaignId) {
+        // Save story first, then generate via backend
+        const saveRes = await fetch(`${API}/story/generate`, {
           method : 'POST',
           headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
           body   : JSON.stringify({
             campaign_id   : parseInt(campaignId),
             story_original: original,
             language      : 'en'
-          }),
-          signal: ctrl.signal
+          })
         });
-        clearTimeout(tid);
-        const data = await res.json();
-        if (data.success && data.story_gemini) {
-          geminiPolished = data.story_gemini;
-          console.log('✅ Gemini polish successful');
+        const saveData = await saveRes.json();
+        if (saveData.success && saveData.story_gemini) {
+          polished = saveData.story_gemini;
+        } else if (saveData.success && !saveData.story_gemini) {
+          // Gemini not configured on backend — use basic polish
+          throw new Error('backend_no_gemini');
         }
-      } catch(e) {
-        console.log('Gemini unavailable:', e.message, '— using local polish only');
+      } else {
+        throw new Error('no_token');
+      }
+    } catch(backendErr) {
+      // FALLBACK: Direct Gemini API call (if key is set)
+      if (GEMINI_KEY && GEMINI_KEY !== 'YOUR_GEMINI_API_KEY') {
+        try {
+          const res = await fetch(`${GEMINI_URL}?key=${GEMINI_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { temperature: 0.4, maxOutputTokens: 1500 }
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            polished = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          }
+        } catch(e) {
+          console.log('Direct Gemini failed:', e.message);
+        }
+      }
+
+      // FINAL FALLBACK: Basic local polish (always works, no API needed)
+      if (!polished) {
+        polished = original
+          .replace(/i/g, 'I')
+          .replace(/\s{2,}/g, ' ')
+          .replace(/\.([A-Za-z])/g, '. $1')
+          .replace(/ur/g, 'your')
+          .replace(/u/g, 'you')
+          .replace(/thnk/gi, 'thank')
+          .replace(/pls/gi, 'please')
+          .replace(/wud/gi, 'would')
+          .replace(/cud/gi, 'could')
+          .replace(/shud/gi, 'should')
+          .replace(/ruppess/gi, 'rupees')
+          .replace(/affrod/gi, 'afford')
+          .trim();
+        // Capitalize first letter
+        polished = polished.charAt(0).toUpperCase() + polished.slice(1);
+        toast('ℹ️ Basic corrections applied. Gemini not configured on backend.', 4000);
       }
     }
 
-    // ── Show best available result ─────────────────────────────────────
-    polishedStory = geminiPolished || localPolished;
+    if (!polished) {
+      toast('❌ Could not polish story — please try again');
+      btn.disabled = false;
+      btn.innerHTML = '✨ Correct &amp; Improve';
+      return;
+    }
 
+    polishedStory = polished.trim();
+
+    // Show comparison panel
     $('origText').textContent     = original;
     $('polishedText').textContent = polishedStory;
     $('polishPanel').classList.add('show');
@@ -1409,74 +1482,8 @@
     btn.disabled = false;
     btn.innerHTML = '✨ Correct &amp; Improve';
 
-    if (geminiPolished) {
-      toast('✨ Gemini AI polished your story!', 3000);
-    } else {
-      toast('✅ Basic corrections applied!', 3000);
-    }
-
+    // Scroll to comparison
     setTimeout(() => $('polishPanel').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-  }
-
-  // ── LOCAL POLISH — Pure JS, no API, always works ──────────────────────
-  function localPolish(text) {
-    let t = text;
-
-    // Fix capitalisation of 'i'
-    t = t.replace(/\bi\b/g,    'I');
-    t = t.replace(/\bi\'m\b/gi, "I'm");
-    t = t.replace(/\bi\'ve\b/gi,"I've");
-    t = t.replace(/\bi\'ll\b/gi,"I'll");
-    t = t.replace(/\bi\'d\b/gi, "I'd");
-
-    // Fix SMS/chat abbreviations
-    t = t.replace(/\bur\b/g,    'your');
-    t = t.replace(/\bu\b/g,     'you');
-    t = t.replace(/\br\b/g,     'are');
-    t = t.replace(/\bthnk\b/gi, 'thank');
-    t = t.replace(/\bthx\b/gi,  'thanks');
-    t = t.replace(/\bpls\b/gi,  'please');
-    t = t.replace(/\bplz\b/gi,  'please');
-    t = t.replace(/\bwud\b/gi,  'would');
-    t = t.replace(/\bcud\b/gi,  'could');
-    t = t.replace(/\bshud\b/gi, 'should');
-    t = t.replace(/\bdnt\b/gi,  "don't");
-    t = t.replace(/\bcant\b/g,  "can't");
-    t = t.replace(/\bwont\b/g,  "won't");
-    t = t.replace(/\bdoesnt\b/g,"doesn't");
-
-    // Fix common Indian English typos
-    t = t.replace(/\bruppess\b/gi,    'rupees');
-    t = t.replace(/\brupess\b/gi,     'rupees');
-    t = t.replace(/\baffrod\b/gi,     'afford');
-    t = t.replace(/\btreatement\b/gi, 'treatment');
-    t = t.replace(/\boperatoin\b/gi,  'operation');
-    t = t.replace(/\bhospitol\b/gi,   'hospital');
-    t = t.replace(/\bdocters\b/gi,    'doctors');
-    t = t.replace(/\bdocter\b/gi,     'doctor');
-    t = t.replace(/\bmedecine\b/gi,   'medicine');
-    t = t.replace(/\bhelth\b/gi,      'health');
-    t = t.replace(/\bsurgury\b/gi,    'surgery');
-    t = t.replace(/\bsurgrey\b/gi,    'surgery');
-
-    // Fix spacing and punctuation
-    t = t.replace(/\s{2,}/g,       ' ');
-    t = t.replace(/\.([A-Za-z])/g, '. $1');
-    t = t.replace(/,([A-Za-z])/g,   ', $1');
-    t = t.replace(/\s+\./g,       '.');
-    t = t.replace(/\s+,/g,         ',');
-
-    // Capitalise first letter of each sentence
-    t = t.replace(/(^|[.!?]\s+)([a-z])/g, (m, p1, p2) => p1 + p2.toUpperCase());
-
-    // Capitalise first letter
-    t = t.charAt(0).toUpperCase() + t.slice(1);
-
-    // Ensure ends with full stop
-    t = t.trim();
-    if (t && !'.!?'.includes(t[t.length - 1])) t += '.';
-
-    return t;
   }
 
   function usePolished() {
@@ -1564,7 +1571,27 @@
       });
       const d = await res.json();
       if (!d.success) {
-        toast('❌ ' + (d.error || 'Campaign creation failed')); 
+        // Check if it is a duplicate campaign error
+        if (d.error && d.error.includes('active campaign already exists')) {
+          toast('🚫 ' + d.error, 8000);
+          // Show hard stop message
+          document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+          $('spage').innerHTML = `
+            <div style="text-align:center;padding:30px;">
+              <div style="font-size:52px;margin-bottom:16px;">🚫</div>
+              <h2 style="color:#DC2626;font-size:20px;margin-bottom:12px;">Active Campaign Already Exists</h2>
+              <div style="background:#FEE2E2;border-radius:12px;padding:16px;margin-bottom:20px;text-align:left;">
+                <p style="font-size:14px;color:#7F1D1D;line-height:1.6;">${d.error}</p>
+              </div>
+              <button type="button" class="btn-next" onclick="window.location.href='dashboard.html'">
+                📋 Go to Dashboard
+              </button>
+            </div>`;
+          $('spage').classList.add('show');
+          $('stepper').style.display = 'none';
+        } else {
+          toast('❌ ' + (d.error || 'Campaign creation failed'));
+        }
         btn.disabled = false; btn.innerHTML = '🚀 Submit Campaign'; return;
       }
       cid = d.campaign_id;
@@ -1760,9 +1787,10 @@
           <p style="font-size:11px;color:var(--ink-soft);margin-top:5px;">${risk<30?'✅ Low risk — documents look authentic':risk<60?'⚠️ Medium risk — admin will review':'🚨 High risk — admin will check carefully'}</p>
         </div>
         ${entityRows}
-         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-            <button type="button" class="btn-next" onclick="${c.act}">${c.btn}</button>
-          </div>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+          <button type="button" class="btn-next" onclick="${c.act}">${c.btn}</button>
+          <button type="button" class="btn-back" onclick="window.location.href='dashboard.html'">📋 Dashboard</button>
+        </div>
       </div>`;
 
     localStorage.removeItem('draftCampaignId');
