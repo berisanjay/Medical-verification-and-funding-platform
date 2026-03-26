@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediTrust — Admin Login</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --orange      : #F97316;
+      --orange-dark : #EA580C;
+      --orange-light: #FFF7ED;
+      --orange-mid  : #FFEDD5;
+      --white       : #FFFFFF;
+      --gray-100    : #F9FAFB;
+      --gray-200    : #F3F4F6;
+      --gray-400    : #9CA3AF;
+      --gray-600    : #4B5563;
+      --gray-800    : #1F2937;
+      --green       : #22C55E;
+      --red         : #EF4444;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background : var(--gray-100);
+      min-height : 100vh;
+      display    : flex;
+      flex-direction: column;
+    }
+
+    .navbar {
+      background: var(--white);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .navbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--gray-800);
+    }
+
+    .navbar-brand .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--orange);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: white;
+    }
+
+    .navbar-links {
+      display: flex;
+      gap: 20px;
+    }
+
+    .navbar-links a {
+      text-decoration: none;
+      color: var(--gray-600);
+      font-weight: 500;
+      font-size: 14px;
+      transition: color 0.15s;
+    }
+
+    .navbar-links a:hover {
+      color: var(--orange);
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .login-card {
+      background: var(--white);
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 420px;
+      padding: 40px;
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .login-header h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--gray-800);
+      margin-bottom: 8px;
+    }
+
+    .login-header p {
+      color: var(--gray-600);
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--gray-800);
+      margin-bottom: 8px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .form-group input:focus {
+      border-color: var(--orange);
+    }
+
+    .form-group input::placeholder {
+      color: var(--gray-400);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--orange);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--orange-dark);
+    }
+
+    .btn-primary:disabled {
+      background: var(--gray-400);
+      cursor: not-allowed;
+    }
+
+    .error {
+      background: var(--red);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .error.show {
+      display: block;
+    }
+
+    .back-link {
+      text-align: center;
+      margin-top: 24px;
+    }
+
+    .back-link a {
+      color: var(--gray-600);
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .back-link a:hover {
+      color: var(--orange);
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-brand">
+    <div class="logo-icon">🏥</div>
+    <span>MediTrust</span>
+  </div>
+  <div class="navbar-links">
+    <a href="../login.html">Patient Login</a>
+    <a href="../index.html">Browse Campaigns</a>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="login-card">
+    <div class="login-header">
+      <h1>Admin Login</h1>
+      <p>Access MediTrust Admin Dashboard</p>
+    </div>
+
+    <div class="error" id="errorBox"></div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" placeholder="admin@meditrust.in" required />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Enter admin password" required />
+      </div>
+
+      <div class="form-group">
+        <label for="adminSecret">Admin Secret Key</label>
+        <input type="password" id="adminSecret" placeholder="Enter admin secret key" required />
+      </div>
+
+      <button type="submit" class="btn btn-primary" id="loginBtn">
+        Login to Admin Dashboard
+      </button>
+    </form>
+
+    <div class="back-link">
+      <a href="../login.html">← Back to Patient Login</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:3000/api';
+
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const adminSecret = document.getElementById('adminSecret').value;
+    const errorBox = document.getElementById('errorBox');
+    const loginBtn = document.getElementById('loginBtn');
+
+    if (!email || !password || !adminSecret) {
+      errorBox.textContent = 'All fields are required';
+      errorBox.classList.add('show');
+      return;
+    }
+
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Logging in...';
+
+    try {
+      const response = await fetch(`${API}/admin/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          admin_secret: adminSecret
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        localStorage.setItem('adminToken', data.token);
+        localStorage.setItem('adminUser', JSON.stringify(data.admin));
+        window.location.href = 'dashboard.html';
+      } else {
+        errorBox.textContent = data.error || 'Login failed';
+        errorBox.classList.add('show');
+      }
+    } catch (error) {
+      errorBox.textContent = 'Network error. Please try again.';
+      errorBox.classList.add('show');
+    } finally {
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Login to Admin Dashboard';
+    }
+  });
+</script>
+
+</body>
+</html>

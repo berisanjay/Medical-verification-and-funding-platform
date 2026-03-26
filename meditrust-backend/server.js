@@ -28,11 +28,12 @@ app.use(express.static(path.join(__dirname, '..', 'client'), {
 app.use('/api/auth',        require('./routes/auth'));
 app.use('/api/admin',       require('./routes/admin'));
 app.use('/api/campaigns',   require('./routes/campaigns'));
+app.use('/api/hospitals',   require('./routes/hospitals'));
 app.use('/api/donations',   require('./routes/donations'));
 app.use('/api/releases',    require('./routes/releases'));
 app.use('/api/story',       require('./routes/story'));
 app.use('/api/suggestions', require('./routes/suggestions'));
-app.use('/api/ngo',         require('./routes/ngo'));        // Phase 11 — NGO Matching
+app.use('/api/ngo',         require('./routes/ngo'));
 app.use('/internal',        require('./routes/internal'));
 
 app.get('/', (req, res) => {

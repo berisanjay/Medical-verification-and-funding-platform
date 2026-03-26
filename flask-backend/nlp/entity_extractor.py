@@ -63,7 +63,12 @@ class MedicalEntityExtractor:
             'hospital_pincode': None,
             'diseases'        : [],
             'date'            : None,
-            'amount'          : None
+            'amount'          : None,
+            'aadhaar_number'  : None,
+            'age'             : None,
+            'gender'          : None,
+            'city'            : None,
+            'state'           : None,
         }
 
         doc = self.nlp(text)
@@ -77,6 +82,11 @@ class MedicalEntityExtractor:
         entities['diseases']         = self._extract_diseases(text, doc)
         entities['date']             = self._extract_date(text, doc)
         entities['amount']           = self._extract_amount(text)
+        entities['aadhaar_number']   = self._extract_aadhaar(text)
+        entities['age']              = self._extract_age(text)
+        entities['gender']           = self._extract_gender(text)
+        entities['city']             = self._extract_city(text)
+        entities['state']            = self._extract_state(text)
 
         logger.info(f"Extracted entities: {entities}")
         return entities
@@ -479,6 +489,106 @@ class MedicalEntityExtractor:
             return float(clean)
         except (ValueError, AttributeError):
             return None
+
+
+    # ── AADHAAR NUMBER ───────────────────────────────────────────────────────
+    def _extract_aadhaar(self, text):
+        """Extract 12-digit Aadhaar number from Aadhaar card."""
+        # Format: 2672 4988 6241
+        match = re.search(r'\b(\d{4})\s(\d{4})\s(\d{4})\b', text)
+        if match:
+            return match.group(1) + match.group(2) + match.group(3)
+        # Format with dashes
+        match = re.search(r'\b(\d{4})-(\d{4})-(\d{4})\b', text)
+        if match:
+            return match.group(1) + match.group(2) + match.group(3)
+        # After label
+        match = re.search(r'(?:Aadhaar|AADHAAR|Aadhar)[\s:\-No.]*([\d\s]{14,17})', text, re.IGNORECASE)
+        if match:
+            num = re.sub(r'\s', '', match.group(1))
+            if len(num) == 12:
+                return num
+        return None
+
+    # ── AGE ──────────────────────────────────────────────────────────────────
+    def _extract_age(self, text):
+        """Extract age from DOB on Aadhaar or direct age mention."""
+        # Direct: "Age: 21" or "Age - 21 Years"
+        match = re.search(r'\bAge[:\s\-]+(\d{1,3})\s*(?:Yrs|Years|yr)?', text, re.IGNORECASE)
+        if match:
+            age = int(match.group(1))
+            if 1 <= age <= 120:
+                return str(age)
+        # DOB from Aadhaar: "DOB: 06/11/2004"
+        match = re.search(r'(?:DOB|Date\s+of\s+Birth)[:\s]+(\d{2}[/\-]\d{2}[/\-]\d{4})', text, re.IGNORECASE)
+        if match:
+            try:
+                for fmt in ['%d/%m/%Y', '%d-%m-%Y']:
+                    try:
+                        dob = datetime.strptime(match.group(1), fmt)
+                        today = datetime.now()
+                        age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                        if 1 <= age <= 120:
+                            return str(age)
+                    except:
+                        continue
+            except:
+                pass
+        return None
+
+    # ── GENDER ───────────────────────────────────────────────────────────────
+    def _extract_gender(self, text):
+        """Extract gender from Aadhaar card."""
+        text_lower = text.lower()
+        if re.search(r'\bgender\s*:?\s*male\b', text_lower): return 'Male'
+        if re.search(r'\bgender\s*:?\s*female\b', text_lower): return 'Female'
+        if re.search(r'^\s*MALE\s*$', text, re.MULTILINE): return 'Male'
+        if re.search(r'^\s*FEMALE\s*$', text, re.MULTILINE): return 'Female'
+        if '\u092a\u0941\u0930\u0941\u0937' in text: return 'Male'
+        if '\u092e\u0939\u093f\u0932\u093e' in text: return 'Female'
+        match = re.search(r'(?:Sex|Gender)[\s:\-]+(Male|Female|M\b|F\b)', text, re.IGNORECASE)
+        if match:
+            g = match.group(1).upper()
+            if g in ['M', 'MALE']: return 'Male'
+            if g in ['F', 'FEMALE']: return 'Female'
+        return None
+
+    # ── CITY ─────────────────────────────────────────────────────────────────
+    def _extract_city(self, text):
+        """Extract city from Aadhaar address."""
+        known_cities = [
+            'visakhapatnam', 'vizag', 'hyderabad', 'vijayawada', 'guntur',
+            'tirupati', 'nellore', 'rajahmundry', 'kakinada', 'warangal',
+            'nizamabad', 'karimnagar', 'khammam', 'bengaluru', 'bangalore',
+            'chennai', 'mumbai', 'delhi', 'kolkata', 'pune', 'ahmedabad',
+            'surat', 'jaipur', 'vinukonda', 'tenali', 'eluru', 'kurnool'
+        ]
+        text_lower = text.lower()
+        for city in known_cities:
+            if city in text_lower:
+                return city.title()
+        match = re.search(r'(?:District|Dist)[\s:\-]+([A-Za-z]+)', text, re.IGNORECASE)
+        if match:
+            return match.group(1).strip().title()
+        return None
+
+    # ── STATE ────────────────────────────────────────────────────────────────
+    def _extract_state(self, text):
+        """Extract state from Aadhaar address."""
+        known_states = [
+            'andhra pradesh', 'telangana', 'karnataka', 'tamil nadu',
+            'kerala', 'maharashtra', 'gujarat', 'rajasthan',
+            'uttar pradesh', 'madhya pradesh', 'west bengal',
+            'bihar', 'odisha', 'punjab', 'haryana', 'delhi'
+        ]
+        text_lower = text.lower()
+        for state in known_states:
+            if state in text_lower:
+                return state.title()
+        match = re.search(r'State[\s:\-]+([A-Za-z\s]+?)(?:\n|,|\d)', text, re.IGNORECASE)
+        if match:
+            return match.group(1).strip().title()
+        return None
 
     # ── EXPIRY CHECK ──────────────────────────────────────────────────────────
     def check_document_expiry(self, text):

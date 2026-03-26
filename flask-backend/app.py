@@ -470,6 +470,7 @@ def verify_documents():
         logger.info(f"Verification complete: {final_status}, risk: {risk_score}")
 
         return jsonify({
+            'status'                : final_status,
             'final_status'          : final_status,
             'risk_score'            : risk_score,
             'total_documents'       : len(documents),

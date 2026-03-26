@@ -1,777 +1,551 @@
 const express = require('express');
-const axios = require('axios');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const prisma = require('../utils/prisma');
-const { verifyAdmin } = require('../middleware/auth');
+const { verifyToken } = require('../middleware/auth');
 const { createOTP, verifyOTP } = require('../utils/otp');
+const axios = require('axios');
+const { v4: uuidv4 } = require('uuid');
+const QRCode = require('qrcode');
 
 // ─────────────────────────────────────────
-// ADMIN LOGIN — Step 1: Password + Admin Key
+// HELPER — Call HMS
 // ─────────────────────────────────────────
-router.post('/login', async (req, res) => {
+const callHMS = async (method, path, data = null) => {
+  const url = `${process.env.HMS_BASE_URL}${path}`;
+  const config = { method, url };
+  if (data) config.data = data;
+  const response = await axios(config);
+  return response.data;
+};
+
+// ─────────────────────────────────────────
+// HELPER — Notify Flask
+// ─────────────────────────────────────────
+const notifyFlask = async (path, data) => {
   try {
-    const { email, password, admin_secret } = req.body;
+    await axios.post(`${process.env.FLASK_BASE_URL}${path}`, data, {
+      headers: { 'x-flask-secret': process.env.FLASK_INTERNAL_SECRET }
+    });
+  } catch (err) {
+    console.log(`Notification failed ${path}:`, err.message);
+  }
+};
 
-    if (!email || !password || !admin_secret) {
-      return res.status(400).json({
-        success: false,
-        error: 'Email, password and admin secret required'
-      });
-    }
+// ─────────────────────────────────────────
+// STEP 1 — Request OTP before campaign creation
+// ─────────────────────────────────────────
+router.post('/request-otp', verifyToken, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id }
+    });
 
-    // Check admin secret key
-    if (admin_secret !== process.env.ADMIN_SECRET_KEY) {
+    if (user.is_blacklisted) {
       return res.status(403).json({
         success: false,
-        error: 'Invalid admin secret key'
+        error: 'Your account is suspended'
       });
     }
 
-    // Find admin user
-    const admin = await prisma.user.findUnique({ where: { email } });
-    if (!admin || admin.role !== 'ADMIN') {
-      return res.status(401).json({
-        success: false,
-        error: 'Invalid credentials'
-      });
-    }
-
-    // Check password
-    const valid = await bcrypt.compare(password, admin.password_hash);
-    if (!valid) {
-      return res.status(401).json({
-        success: false,
-        error: 'Invalid credentials'
-      });
-    }
-
-    // Generate token directly without OTP
-    const token = jwt.sign(
-      { id: admin.id, email: admin.email, role: 'ADMIN' },
-      process.env.JWT_ADMIN_SECRET,
-      { expiresIn: '8h' }
-    );
+    await createOTP(req.user.id, user.email, 'CAMPAIGN_CREATION');
 
     res.json({
       success: true,
-      token,
-      admin: { id: admin.id, name: admin.name, email: admin.email }
+      message: 'OTP sent to your email. Enter OTP to proceed with campaign creation.'
     });
 
   } catch (error) {
-    console.error('Admin login error:', error);
-    res.status(500).json({ success: false, error: 'Login failed' });
+    console.error('Campaign OTP error:', error);
+    res.status(500).json({ success: false, error: 'Failed to send OTP' });
   }
 });
 
 // ─────────────────────────────────────────
-// ADMIN LOGIN — Step 2: Verify OTP → Get Token
+// STEP 2 — Create Campaign (after OTP verified)
 // ─────────────────────────────────────────
-router.post('/verify-otp', async (req, res) => {
+router.post('/', verifyToken, async (req, res) => {
   try {
-    const { admin_id, otp_code } = req.body;
-
-    if (!admin_id || !otp_code) {
-      return res.status(400).json({
-        success: false,
-        error: 'admin_id and otp_code required'
-      });
-    }
+    const {
+      otp_code,
+      patient_full_name,
+      patient_age,
+      patient_gender,
+      patient_aadhaar,
+      patient_city,
+      patient_state,
+      patient_languages,
+      relationship_to_fundraiser,
+      title
+    } = req.body;
 
     // OTP DISABLED FOR DEVELOPMENT — re-enable before production
-    // const result = await verifyOTP(parseInt(admin_id), otp_code, 'ADMIN_LOGIN');
-    // if (!result.valid) {
-    //   return res.status(400).json({ success: false, error: result.error });
+    // const otpResult = await verifyOTP(req.user.id, otp_code, 'CAMPAIGN_CREATION');
+    // if (!otpResult.valid) {
+    //   return res.status(400).json({ success: false, error: otpResult.error });
     // }
 
-    // Get admin details
-    const admin = await prisma.user.findUnique({
-      where: { id: parseInt(admin_id) }
+    // Check fundraiser blacklist
+    const fundraiser = await prisma.user.findUnique({
+      where: { id: req.user.id }
     });
-
-    // Generate admin JWT
-    const token = jwt.sign(
-      { id: admin.id, email: admin.email, role: 'ADMIN' },
-      process.env.JWT_ADMIN_SECRET,
-      { expiresIn: '8h' }
-    );
-
-    // Log admin login
-    await prisma.adminAuditLog.create({
-      data: {
-        admin_id    : admin.id,
-        action      : 'ADMIN_LOGIN',
-        target_type : 'auth',
-        target_id   : admin.id,
-        notes       : 'Admin logged in successfully'
-      }
-    });
-
-    res.json({
-      success : true,
-      message : 'Admin login successful',
-      token,
-      admin   : {
-        id    : admin.id,
-        name  : admin.name,
-        email : admin.email,
-        role  : admin.role
-      }
-    });
-
-  } catch (error) {
-    console.error('Admin OTP verify error:', error);
-    res.status(500).json({ success: false, error: 'OTP verification failed' });
-  }
-});
-
-// ─────────────────────────────────────────
-// CREATE ADMIN — Only existing admin can create new admin
-// ─────────────────────────────────────────
-router.post('/create-admin', verifyAdmin, async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-
-    if (!name || !email || !password) {
-      return res.status(400).json({
+    if (fundraiser.is_blacklisted) {
+      return res.status(403).json({
         success: false,
-        error: 'Name, email and password required'
+        error: 'Your account is suspended'
       });
     }
 
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
-      return res.status(400).json({
+    // Check patient aadhaar blacklist
+    const blacklisted = await prisma.blacklist.findUnique({
+      where: { aadhaar_number: patient_aadhaar }
+    });
+    if (blacklisted) {
+      return res.status(403).json({
         success: false,
-        error: 'Email already exists'
+        error: 'This patient Aadhaar is blacklisted'
       });
     }
 
-    const password_hash = await bcrypt.hash(password, 12);
-
-    const admin = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password_hash,
-        role         : 'ADMIN',
-        otp_verified : true
+    // ── Check duplicate active campaign for same patient Aadhaar ──────────
+    if (patient_aadhaar) {
+      const existingCampaign = await prisma.campaign.findFirst({
+        where: {
+          patient_aadhaar: patient_aadhaar,
+          status: { notIn: ['CANCELLED', 'COMPLETED', 'CLOSED', 'EXPIRED'] }
+        }
+      });
+      if (existingCampaign) {
+        return res.status(400).json({
+          success: false,
+          error  : `An active campaign already exists for this patient (ID: ${existingCampaign.id}, Status: ${existingCampaign.status}). Only one active campaign is allowed per patient.`
+        });
       }
-    });
+    }
 
-    // Log action
-    await prisma.adminAuditLog.create({
+    // Create campaign in DRAFT status
+    const campaign = await prisma.campaign.create({
       data: {
-        admin_id    : req.admin.id,
-        action      : 'CREATE_ADMIN',
-        target_type : 'user',
-        target_id   : admin.id,
-        notes       : `Created admin account for ${email}`
+        patient_id                 : req.user.id,
+        patient_full_name,
+        patient_age                : parseInt(patient_age),
+        patient_gender,
+        patient_aadhaar,
+        patient_city,
+        patient_state,
+        patient_languages          : patient_languages || ['en'],
+        relationship_to_fundraiser : relationship_to_fundraiser || 'SELF',
+        title,
+        status                     : 'DRAFT'
       }
     });
 
     res.status(201).json({
-      success : true,
-      message : 'Admin account created',
-      admin   : { id: admin.id, name: admin.name, email: admin.email }
+      success    : true,
+      message    : 'Campaign created. Please upload documents for verification.',
+      campaign_id: campaign.id
     });
 
   } catch (error) {
-    console.error('Create admin error:', error);
-    res.status(500).json({ success: false, error: 'Failed to create admin' });
+    console.error('Create campaign error:', error);
+    res.status(500).json({ success: false, error: 'Failed to create campaign' });
   }
 });
 
 // ─────────────────────────────────────────
-// DASHBOARD STATS
+// PREVIEW VERIFY — Extract entities WITHOUT creating a campaign
+// Called from Step 4 of create-campaign.html
+// No campaign_id needed — just calls Flask /verify and returns extracted_data
 // ─────────────────────────────────────────
-router.get('/dashboard', verifyAdmin, async (req, res) => {
+router.post('/preview-verify', verifyToken, async (req, res) => {
   try {
-    const [
-      totalCampaigns,
-      liveCampaigns,
-      pendingVerification,
-      verificationNeeded,
-      totalDonations,
-      totalUsers,
-      blacklisted
-    ] = await Promise.all([
-      prisma.campaign.count(),
-      prisma.campaign.count({ where: { status: 'LIVE_CAMPAIGN' } }),
-      prisma.campaign.count({ where: { status: { in: ['PENDING', 'PENDING_VERIFICATION', 'VERIFIED', 'VERIFICATION_NEEDED'] } } }),
-      prisma.campaign.count({ where: { status: 'VERIFICATION_NEEDED' } }),
-      prisma.donation.aggregate({ _sum: { amount: true }, where: { status: 'SUCCESS' } }),
-      prisma.user.count({ where: { role: 'PATIENT' } }),
-      prisma.blacklist.count()
-    ]);
+    const { documents, patient_name } = req.body;
+
+    if (!documents || documents.length === 0) {
+      return res.status(400).json({ success: false, error: 'Documents required' });
+    }
+
+    console.log('\n🔍 === PREVIEW VERIFY (no campaign) ===');
+    console.log('📄 Documents:', documents.length);
+    console.log('👤 Patient:', patient_name);
+
+    // Map documents for Flask
+    const flaskDocs = documents.map(doc => ({
+      document_type: doc.document_type,
+      file_name    : doc.file_name,
+      file_content : doc.file_url.includes('base64,')
+        ? doc.file_url.split('base64,')[1]
+        : doc.file_url,
+      mime_type    : doc.file_url.includes('data:')
+        ? doc.file_url.split(';')[0].replace('data:', '')
+        : 'application/pdf'
+    }));
+
+    // Call Flask /verify
+    const verificationResponse = await axios.post(
+      `${process.env.FLASK_BASE_URL}/verify`,
+      { patient_name: patient_name || 'Patient', documents: flaskDocs },
+      {
+        headers: {
+          'x-flask-secret': process.env.FLASK_INTERNAL_SECRET,
+          'Content-Type'  : 'application/json'
+        },
+        timeout         : 120000,
+        maxBodyLength   : Infinity,
+        maxContentLength: Infinity
+      }
+    ).catch(err => {
+      console.error('❌ Flask preview-verify failed:', err.message);
+      // Return error — do NOT fake a PENDING result
+      return { data: { success: false, error: 'Flask AI service is not responding: ' + err.message } };
+    });
+
+    const verResult = verificationResponse.data;
+
+    // If Flask failed — return error, don't fake a result
+    if (!verResult.final_status && verResult.error) {
+      return res.status(503).json({
+        success: false,
+        error  : 'AI service unavailable: ' + verResult.error,
+        hint   : 'Make sure Flask is running on port 5000 (python app.py)'
+      });
+    }
+
+    console.log('✅ Preview result:', verResult.final_status, '| Risk:', verResult.risk_score);
+    console.log('📋 Extracted:', JSON.stringify(verResult.extracted_data, null, 2));
 
     res.json({
-      success: true,
-      stats  : {
-        total_campaigns      : totalCampaigns,
-        live_campaigns       : liveCampaigns,
-        pending_verification : pendingVerification,
-        verification_needed  : verificationNeeded,
-        total_donations      : totalDonations._sum.amount || 0,
-        total_patients       : totalUsers,
-        blacklisted_count    : blacklisted
-      }
+      success              : true,
+      status               : verResult.final_status,
+      risk_score           : verResult.risk_score || 0,
+      extracted_data       : verResult.extracted_data || {},
+      cross_document_issues: verResult.cross_document_issues || [],
+      has_tampering        : verResult.has_tampering || false,
+      has_expired_docs     : verResult.has_expired_docs || false,
+      document_results     : verResult.document_results || []
     });
 
   } catch (error) {
-    console.error('Dashboard error:', error);
-    res.status(500).json({ success: false, error: 'Failed to get dashboard stats' });
+    console.error('Preview verify error:', error);
+    res.status(500).json({ success: false, error: 'Preview verification failed: ' + error.message });
   }
 });
-// ─────────────────────────────────────────
-// GET CAMPAIGN FULL REVIEW (Admin)
-// Returns patient details + documents + HMS check
-// ─────────────────────────────────────────
-router.get('/campaigns/:id/review', verifyAdmin, async (req, res) => {
-  try {
-    const campaignId = parseInt(req.params.id);
 
-    // ── 1. Get campaign + patient details ──
+// ─────────────────────────────────────────
+// STEP 3 — Submit Documents for Verification
+// ─────────────────────────────────────────
+router.post('/:id/verify-documents', verifyToken, async (req, res) => {
+  try {
+    console.log('=== VERIFY DOCUMENTS CALLED ===');
+    console.log('Campaign ID:', req.params.id);
+    console.log('Docs count:', req.body.documents?.length);
+    const campaignId = parseInt(req.params.id);
+    const { documents } = req.body;
+
+    // documents = array of { document_type, file_url, file_name }
+    if (!documents || documents.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Documents required'
+      });
+    }
+
     const campaign = await prisma.campaign.findUnique({
-      where  : { id: campaignId },
-      include: {
-        patient             : { select: { email: true, phone: true, created_at: true } },
-        documents           : true,
-        verification_records: { orderBy: { verified_at: 'desc' }, take: 1 }
-      }
+      where: { id: campaignId }
     });
 
-    if (!campaign) {
+    if (!campaign || campaign.patient_id !== req.user.id) {
       return res.status(404).json({ success: false, error: 'Campaign not found' });
     }
 
-    // ── 2. HMS Verification ──────────────────
-    let hmsResult = {
-      found           : false,
-      name_match      : false,
-      aadhaar_match   : false,
-      amount_match    : false,
-      payment_status  : null,
-      hms_patient     : null,
-      error           : null
-    };
+    // Save documents to DB
+    await prisma.campaignDocument.createMany({
+      data: documents.map(doc => ({
+        campaign_id  : campaignId,
+        document_type: doc.document_type,
+        file_url     : doc.file_url,
+        file_name    : doc.file_name
+      }))
+    });
 
-    try {
-      // Search HMS by Aadhaar number
-      const hmsRes = await axios.get(
-        `${process.env.HMS_BASE_URL}/hms/patients/search`,
-        {
-          params: { aadhaar: campaign.patient_aadhaar },
-          timeout: 5000
-        }
-      );
+    // Update campaign status
+    await prisma.campaign.update({
+      where: { id: campaignId },
+      data : { status: 'PENDING_VERIFICATION' }
+    });
 
-      if (hmsRes.data.success && hmsRes.data.patients?.length > 0) {
-        const hmsPatient = hmsRes.data.patients[0];
-        hmsResult.found        = true;
-        hmsResult.hms_patient  = hmsPatient;
+    // Call Flask AI verification — send actual documents
+    const flaskDocs = documents.map(doc => ({
+      document_type: doc.document_type,
+      file_name    : doc.file_name,
+      file_content : doc.file_url.includes('base64,')
+        ? doc.file_url.split('base64,')[1]
+        : doc.file_url,
+      mime_type    : doc.file_url.includes('data:')
+        ? doc.file_url.split(';')[0].replace('data:', '')
+        : 'application/pdf'
+    }));
 
-        // Compare name (case insensitive, partial match)
-        const campaignName = campaign.patient_full_name.toLowerCase().trim();
-        const hmsName      = hmsPatient.patient_name?.toLowerCase().trim() || '';
-        hmsResult.name_match = (
-          hmsName.includes(campaignName.split(' ')[0].toLowerCase()) ||
-          campaignName.includes(hmsName.split(' ')[0].toLowerCase())
-        );
+    console.log('\n🔍 === DOCUMENT VERIFICATION STARTED ===');
+    console.log('📋 Campaign ID:', campaignId);
+    console.log('👤 Patient Name:', campaign.patient_full_name);
+    console.log('📄 Documents to verify:', documents.length);
+    console.log('📦 Doc types:', flaskDocs.map(d => d.document_type).join(', '));
+    console.log('📏 Approx payload size:', Math.round(JSON.stringify(flaskDocs).length / 1024), 'KB');
+    console.log('🌐 Flask URL:', process.env.FLASK_BASE_URL);
+    console.log('🔑 Flask secret set:', !!process.env.FLASK_INTERNAL_SECRET);
+    console.log('📤 Sending to Flask AI Service...');
 
-        // Compare Aadhaar
-        hmsResult.aadhaar_match = (
-          hmsPatient.aadhaar_number?.replace(/\s/g, '') ===
-          campaign.patient_aadhaar?.replace(/\s/g, '')
-        );
-
-        // Compare amount (within 20% tolerance)
-        const campaignAmount = parseFloat(campaign.verified_amount || 0);
-        const hmsEstimate    = parseFloat(hmsPatient.ledger?.total_estimate || 0);
-        if (campaignAmount > 0 && hmsEstimate > 0) {
-          const diff = Math.abs(campaignAmount - hmsEstimate);
-          hmsResult.amount_match = (diff / hmsEstimate) <= 0.20;
-          hmsResult.hms_amount   = hmsEstimate;
-        }
-
-        // Payment status from HMS ledger
-        hmsResult.payment_status = {
-          total_estimate  : hmsPatient.ledger?.total_estimate   || 0,
-          amount_paid     : hmsPatient.ledger?.amount_paid      || 0,
-          outstanding     : hmsPatient.ledger?.outstanding_amount || 0,
-        };
-
-        hmsResult.patient_status = hmsPatient.status;
+    const verificationResponse = await axios.post(
+      `${process.env.FLASK_BASE_URL}/verify`,
+      {
+        patient_name: campaign.patient_full_name,
+        documents   : flaskDocs
+      },
+      {
+        headers: {
+          'x-flask-secret': process.env.FLASK_INTERNAL_SECRET,
+          'Content-Type'  : 'application/json'
+        },
+        timeout         : 120000,
+        maxBodyLength   : Infinity,
+        maxContentLength: Infinity
       }
-    } catch (hmsErr) {
-      hmsResult.error = 'HMS server unavailable: ' + hmsErr.message;
-      console.log('HMS check failed:', hmsErr.message);
+    ).catch(err => {
+      console.error('❌ Flask verification failed:', err.message);
+      return { data: { success: false, error: 'Flask AI service is not responding: ' + err.message } };
+    });
+
+    const verResult = verificationResponse.data;
+
+    // If Flask failed — return error to frontend, don't fake a result
+    if (!verResult.final_status && verResult.error) {
+      return res.status(503).json({
+        success: false,
+        error  : 'AI verification service unavailable: ' + verResult.error,
+        hint   : 'Make sure Flask is running on port 5000 (python app.py)'
+      });
+    }
+    console.log('\n📥 === FLASK AI VERIFICATION RESULTS ===');
+    console.log('🎯 Final Status:', verResult.final_status);
+    console.log('⚠️  Risk Score:', verResult.risk_score);
+    console.log('🔒 Has Tampering:', verResult.has_tampering);
+    console.log('⏰ Has Expired Docs:', verResult.has_expired_docs);
+    console.log('📊 Cross-Document Issues:', verResult.cross_document_issues || []);
+    console.log('📋 Extracted Data:', JSON.stringify(verResult.extracted_data, null, 2));
+
+    // Log individual document results
+    if (verResult.document_results && verResult.document_results.length > 0) {
+      console.log('\n📄 === INDIVIDUAL DOCUMENT RESULTS ===');
+      verResult.document_results.forEach((doc, index) => {
+        console.log(`\n📋 Document ${index + 1}: ${doc.file_name}`);
+        console.log(`   Type: ${doc.document_type}`);
+        console.log(`   Status: ${doc.status}`);
+        if (doc.error) {
+          console.log(`   ❌ Error: ${doc.error}`);
+        }
+        if (doc.entities) {
+          console.log(`   🏥 Hospital: ${doc.entities.hospital_name || 'Not found'}`);
+          console.log(`   👤 Patient: ${doc.entities.patient_name || 'Not found'}`);
+          console.log(`   🩺 Disease: ${doc.entities.disease || 'Not found'}`);
+          console.log(`   💰 Amount: ${doc.entities.amount || 'Not found'}`);
+          console.log(`   📅 Date: ${doc.entities.date || 'Not found'}`);
+        }
+      });
     }
 
-    // ── 3. Verification record ───────────────
-    const verRecord = campaign.verification_records[0] || {};
+    // Map Flask status to our status
+    const statusMap = {
+      'VERIFIED'            : 'VERIFIED',
+      'PENDING'             : 'PENDING',
+      'VERIFICATION_NEEDED' : 'VERIFICATION_NEEDED',
+      'UPDATE_NEEDED'       : 'UPDATE_NEEDED'
+    };
+    const newStatus = statusMap[verResult.final_status] || 'PENDING';
 
-    // ── 4. Build response ────────────────────
+    console.log('\n🔄 === STATUS MAPPING ===');
+    console.log('📋 Flask Status:', verResult.final_status);
+    console.log('🎯 Our Status:', newStatus);
+
+    // Determine what action is needed
+    let actionRequired = 'NONE';
+    let statusMessage = '';
+
+    switch (newStatus) {
+      case 'VERIFIED':
+        statusMessage = '✅ All documents verified successfully! Campaign approved.';
+        break;
+      case 'PENDING':
+        actionRequired = 'ADMIN_REVIEW';
+        statusMessage = '⏳ Documents submitted. Minor issues detected - pending admin review.';
+        break;
+      case 'VERIFICATION_NEEDED':
+        actionRequired = 'ADMIN_REVIEW_URGENT';
+        statusMessage = '🚨 Serious issues detected! Urgent admin review required.';
+        break;
+      case 'UPDATE_NEEDED':
+        actionRequired = 'PATIENT_UPDATE';
+        statusMessage = '📝 Some documents expired. Please upload updated documents.';
+        break;
+      default:
+        statusMessage = '❓ Unknown status. Please contact support.';
+    }
+
+    console.log('⚡ Action Required:', actionRequired);
+    console.log('💬 Status Message:', statusMessage);
+
+    // Save verification record
+    const verificationRecord = await prisma.verificationRecord.create({
+      data: {
+        campaign_id   : campaignId,
+        status        : newStatus,
+        extracted_data: verResult.extracted_data || {},
+        issues        : verResult.cross_document_issues || [],
+        risk_score    : verResult.risk_score || 0,
+        has_expired   : verResult.has_expired_docs || false,
+        has_tampering : verResult.has_tampering || false
+      }
+    });
+
+    console.log('\n💾 === DATABASE SAVED ===');
+    console.log('📋 Verification Record ID:', verificationRecord.id);
+    console.log('🎯 Campaign Status Updated:', newStatus);
+
+    // Update campaign with extracted data from documents
+    const extracted = verResult.extracted_data || {};
+    const updatedCampaign = await prisma.campaign.update({
+      where: { id: campaignId },
+      data : {
+        status          : newStatus,
+        verified_amount : extracted.amount
+          ? parseFloat(extracted.amount.toString().replace(/[^0-9.]/g, ''))
+          : null
+      }
+    });
+
+    console.log('\n💰 === EXTRACTED FINANCIAL DATA ===');
+    console.log('💵 Verified Amount:', extracted.amount || 'Not found');
+    console.log('🏥 Hospital:', extracted.hospital_name || 'Not found');
+    console.log('👤 Patient Name Match:', extracted.patient_name === campaign.patient_full_name ? '✅ MATCH' : '❌ MISMATCH');
+
+    console.log('\n🎉 === VERIFICATION COMPLETE ===');
+    console.log('📊 Final Summary:');
+    console.log(`   - Status: ${newStatus}`);
+    console.log(`   - Risk Score: ${verResult.risk_score}`);
+    console.log(`   - Documents Processed: ${verResult.document_results?.length || 0}`);
+    console.log(`   - Issues Found: ${verResult.cross_document_issues?.length || 0}`);
+    console.log(`   - Action Required: ${actionRequired}`);
+    console.log('=====================================\n');
+
     res.json({
-      success : true,
-      campaign: {
-        id                       : campaign.id,
-        title                    : campaign.title,
-        status                   : campaign.status,
-        created_at               : campaign.created_at,
-        verified_amount          : campaign.verified_amount,
-        relationship_to_fundraiser: campaign.relationship_to_fundraiser,
+      success   : true,
+      status    : newStatus,
+      risk_score: verResult.risk_score,
+      action_required: actionRequired,
+      message   : statusMessage,
+      verification_details: {
+        final_status          : verResult.final_status,
+        has_tampering         : verResult.has_tampering,
+        has_expired_docs      : verResult.has_expired_docs,
+        cross_document_issues : verResult.cross_document_issues || [],
+        document_results      : verResult.document_results || [],
+        extracted_data        : verResult.extracted_data || {}
       },
-      patient: {
-        full_name   : campaign.patient_full_name,
-        age         : campaign.patient_age,
-        gender      : campaign.patient_gender,
-        aadhaar     : campaign.patient_aadhaar,
-        city        : campaign.patient_city,
-        state       : campaign.patient_state,
-        languages   : campaign.patient_languages,
-        email       : campaign.patient?.email,
-        phone       : campaign.patient?.phone,
-      },
-      documents: campaign.documents.map(doc => ({
-        id           : doc.id,
-        document_type: doc.document_type,
-        file_name    : doc.file_name,
-        created_at   : doc.created_at,
-      })),
-      ai_verification: {
-        status        : verRecord.status,
-        risk_score    : verRecord.risk_score,
-        extracted_data: verRecord.extracted_data,
-        issues        : verRecord.issues,
-        has_tampering : verRecord.has_tampering,
-        has_expired   : verRecord.has_expired,
-        verified_at   : verRecord.verified_at,
-      },
-      hms: hmsResult
+      extracted_data: extracted
     });
 
   } catch (error) {
-    console.error('Campaign review error:', error);
-    res.status(500).json({ success: false, error: 'Failed to get campaign review' });
+    console.error('Verify documents error:', error);
+    res.status(500).json({ success: false, error: 'Document verification failed' });
   }
 });
-
+ // Notification disabled temporarily
+// await notifyFlask('/notify/verification-status', {...});
 // ─────────────────────────────────────────
-// GET PENDING CASES
+// STEP 4 — Go LIVE (after story approved)
 // ─────────────────────────────────────────
-router.get('/pending', verifyAdmin, async (req, res) => {
-  try {
-    const campaigns = await prisma.campaign.findMany({
-      where  : { status: { in: ['PENDING', 'PENDING_VERIFICATION', 'VERIFICATION_NEEDED', 'VERIFIED'] } },
-      include: {
-        patient            : { select: { name: true, email: true } },
-        verification_records: { orderBy: { verified_at: 'desc' }, take: 1 },
-        documents          : true
-      },
-      orderBy: { created_at: 'desc' }
-    });
-
-    res.json({ success: true, campaigns });
-
-  } catch (error) {
-    console.error('Get pending error:', error);
-    res.status(500).json({ success: false, error: 'Failed to get pending cases' });
-  }
-});
-
-// ─────────────────────────────────────────
-// GET VERIFICATION NEEDED CASES
-// ─────────────────────────────────────────
-router.get('/verification-needed', verifyAdmin, async (req, res) => {
-  try {
-    const campaigns = await prisma.campaign.findMany({
-      where  : { status: 'VERIFICATION_NEEDED' },
-      include: {
-        patient            : { select: { name: true, email: true } },
-        verification_records: { orderBy: { verified_at: 'desc' }, take: 1 },
-        documents          : true
-      },
-      orderBy: { created_at: 'desc' }
-    });
-
-    res.json({ success: true, campaigns });
-
-  } catch (error) {
-    console.error('Get verification needed error:', error);
-    res.status(500).json({ success: false, error: 'Failed to get cases' });
-  }
-});
-
-// ─────────────────────────────────────────
-// ADMIN VERIFY CAMPAIGN
-// ─────────────────────────────────────────
-router.put('/campaigns/:id/verify', verifyAdmin, async (req, res) => {
+router.post('/:id/go-live', verifyToken, async (req, res) => {
   try {
     const campaignId = parseInt(req.params.id);
-    const { notes } = req.body;
 
     const campaign = await prisma.campaign.findUnique({
       where  : { id: campaignId },
       include: { patient: true }
     });
 
-    if (!campaign) {
+    if (!campaign || campaign.patient_id !== req.user.id) {
       return res.status(404).json({ success: false, error: 'Campaign not found' });
     }
 
-    // Generate UPI ID and QR code
-    const { v4: uuidv4 } = require('uuid');
-    const QRCode          = require('qrcode');
+    if (campaign.status !== 'VERIFIED' || !campaign.story_approved) {
+      return res.status(400).json({
+        success: false,
+        error: 'Campaign must be verified and story approved before going live'
+      });
+    }
 
-    const publicUrl  = `meditrust.in/campaign/${uuidv4().split('-')[0]}`;
-    const upiId      = `meditrust.${campaignId}@ybl`;
-    const qrCodeUrl  = await QRCode.toDataURL(
+    // Generate unique public URL
+    const publicUrl = `meditrust.in/campaign/${uuidv4().split('-')[0]}`;
+
+    // Generate UPI ID
+    const upiId = `meditrust.${campaignId}@ybl`;
+
+    // Generate QR code
+    const qrCodeUrl = await QRCode.toDataURL(
       `upi://pay?pa=${upiId}&pn=MediTrust&tn=Campaign-${campaignId}`
     );
-    const expiresAt  = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
 
-    // Update campaign → LIVE directly
+    // Set expiry — 90 days from now
+    const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
+
+    // Update campaign to LIVE
     await prisma.campaign.update({
       where: { id: campaignId },
       data : {
-        status      : 'LIVE_CAMPAIGN',
-        story_approved: true,
-        public_url  : publicUrl,
-        upi_id      : upiId,
-        qr_code_url : qrCodeUrl,
-        expires_at  : expiresAt
+        status    : 'LIVE_CAMPAIGN',
+        public_url: publicUrl,
+        upi_id    : upiId,
+        qr_code_url: qrCodeUrl,
+        expires_at: expiresAt
       }
     });
 
-    // Update verification record
-    await prisma.verificationRecord.updateMany({
-      where: { campaign_id: campaignId },
-      data : { status: 'VERIFIED', admin_notes: notes, verified_by: req.admin.id }
-    });
-
-    // Log admin action
-    await prisma.adminAuditLog.create({
-      data: {
-        admin_id    : req.admin.id,
-        action      : 'CAMPAIGN_VERIFIED',
-        target_type : 'campaign',
-        target_id   : campaignId,
-        notes       : notes || 'Admin approved — campaign now LIVE'
-      }
-    });
-
-    // Send campaign LIVE email to patient
-    await axios.post(`${process.env.FLASK_BASE_URL}/notify/campaign-live`, {
+    // Notify patient
+    await notifyFlask('/notify/campaign-live', {
       to_email       : campaign.patient.email,
       patient_name   : campaign.patient_full_name,
       campaign_title : campaign.title,
       public_url     : publicUrl,
       upi_id         : upiId
-    }, {
-      headers: { 'x-flask-secret': process.env.FLASK_INTERNAL_SECRET }
-    }).catch(err => console.log('Live notification failed:', err.message));
+    });
 
     res.json({
       success   : true,
-      message   : 'Campaign approved and is now LIVE!',
+      message   : 'Campaign is now LIVE!',
       public_url: publicUrl,
-      upi_id    : upiId
+      upi_id    : upiId,
+      expires_at: expiresAt
     });
 
   } catch (error) {
-    console.error('Verify campaign error:', error);
-    res.status(500).json({ success: false, error: 'Failed to verify campaign' });
-  }
-});
-
-// ─────────────────────────────────────────
-// ADMIN CANCEL CAMPAIGN
-// ─────────────────────────────────────────
-router.put('/campaigns/:id/cancel', verifyAdmin, async (req, res) => {
-  try {
-    const campaignId = parseInt(req.params.id);
-    const { reason } = req.body;
-
-    if (!reason) {
-      return res.status(400).json({ success: false, error: 'Cancellation reason required' });
-    }
-
-    const campaign = await prisma.campaign.findUnique({
-      where  : { id: campaignId },
-      include: { patient: true }
-    });
-
-    if (!campaign) {
-      return res.status(404).json({ success: false, error: 'Campaign not found' });
-    }
-
-    // ── Send rejection email BEFORE deleting data ──────────────
-    await axios.post(`${process.env.FLASK_BASE_URL}/notify/campaign-rejected`, {
-      to_email       : campaign.patient.email,
-      patient_name   : campaign.patient_full_name,
-      campaign_title : campaign.title,
-      reason
-    }, {
-      headers: { 'x-flask-secret': process.env.FLASK_INTERNAL_SECRET }
-    }).catch(err => console.log('Rejection email failed:', err.message));
-
-    // ── Delete all campaign data from DB ─────────────────────────
-    // Order matters — delete children before parent
-    await prisma.verificationRecord.deleteMany({ where: { campaign_id: campaignId } });
-    await prisma.campaignDocument.deleteMany({  where: { campaign_id: campaignId } });
-    await prisma.campaignUpdate.deleteMany({    where: { campaign_id: campaignId } });
-    await prisma.nGOMatch.deleteMany({          where: { campaign_id: campaignId } });
-    await prisma.fundRelease.deleteMany({       where: { campaign_id: campaignId } });
-    await prisma.donation.deleteMany({          where: { campaign_id: campaignId } });
-
-    // Delete FundNeeder if exists
-    try {
-      await prisma.fundNeeder.delete({ where: { campaign_id: campaignId } });
-    } catch(e) { /* may not exist */ }
-
-    // Delete campaign itself
-    await prisma.campaign.delete({ where: { id: campaignId } });
-    console.log(`✅ Campaign ${campaignId} deleted from DB`);
-
-    // Blacklist aadhaar only if fraud detected
-    const isFraud = reason.toLowerCase().includes('fraud') ||
-                    reason.toLowerCase().includes('fake') ||
-                    reason.toLowerCase().includes('tamper');
-
-    if (isFraud && campaign.patient_aadhaar) {
-      await prisma.blacklist.upsert({
-        where : { aadhaar_number: campaign.patient_aadhaar },
-        update: { reason, blacklisted_by: req.admin.id },
-        create: {
-          aadhaar_number : campaign.patient_aadhaar,
-          reason,
-          blacklisted_by : req.admin.id
-        }
-      });
-      await prisma.user.update({
-        where: { id: campaign.patient_id },
-        data : { is_blacklisted: true, blacklist_reason: reason }
-      });
-      console.log(`🚫 Patient blacklisted for fraud: ${campaign.patient_aadhaar}`);
-    }
-
-    // Log admin action
-    await prisma.adminAuditLog.create({
-      data: {
-        admin_id    : req.admin.id,
-        action      : 'CAMPAIGN_CANCELLED',
-        target_type : 'campaign',
-        target_id   : campaignId,
-        notes       : reason
-      }
-    });
-
-    res.json({
-      success : true,
-      message : 'Campaign rejected, data deleted, patient notified by email',
-      fraud_blacklisted: isFraud
-    });
-
-  } catch (error) {
-    console.error('Cancel campaign error:', error);
-    res.status(500).json({ success: false, error: 'Failed to cancel campaign' });
-  }
-});
-
-// ─────────────────────────────────────────
-// GET AUDIT LOG
-// ─────────────────────────────────────────
-router.get('/audit-log', verifyAdmin, async (req, res) => {
-  try {
-    const page  = parseInt(req.query.page  || '1');
-    const limit = parseInt(req.query.limit || '20');
-    const skip  = (page - 1) * limit;
-
-    const [logs, total] = await Promise.all([
-      prisma.adminAuditLog.findMany({
-        skip,
-        take   : limit,
-        include: { admin: { select: { name: true, email: true } } },
-        orderBy: { performed_at: 'desc' }
-      }),
-      prisma.adminAuditLog.count()
-    ]);
-
-    res.json({ success: true, logs, total, page, limit });
-
-  } catch (error) {
-    console.error('Audit log error:', error);
-    res.status(500).json({ success: false, error: 'Failed to get audit log' });
-  }
-});
-
-// ─────────────────────────────────────────
-// SEED FIRST ADMIN — only works if no admin exists
-// ─────────────────────────────────────────
-router.post('/seed', async (req, res) => {
-  try {
-    const { secret } = req.body;
-
-    // Must provide seed secret
-    if (secret !== process.env.ADMIN_SECRET_KEY) {
-      return res.status(403).json({ success: false, error: 'Invalid secret' });
-    }
-
-    // Check if admin already exists
-    const existing = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
-    if (existing) {
-      return res.status(400).json({ success: false, error: 'Admin already exists' });
-    }
-
-    const password_hash = await bcrypt.hash('Admin@MediTrust2026', 12);
-
-    const admin = await prisma.user.create({
-      data: {
-        name         : 'MediTrust Admin',
-        email        : process.env.EMAIL_USER,
-        password_hash,
-        role         : 'ADMIN',
-        otp_verified : true
-      }
-    });
-
-    res.status(201).json({
-      success  : true,
-      message  : 'Admin seeded successfully',
-      email    : admin.email,
-      password : 'Admin@MediTrust2026',
-      note     : 'Please change password after first login'
-    });
-
-  } catch (error) {
-    console.error('Seed error:', error);
-    res.status(500).json({ success: false, error: 'Failed to seed admin' });
-  }
-});
-
-// ─────────────────────────────────────────
-// GET SINGLE DOCUMENT CONTENT (base64) — Admin viewing
-// ─────────────────────────────────────────
-router.get('/documents/:id', verifyAdmin, async (req, res) => {
-  try {
-    const doc = await prisma.campaignDocument.findUnique({
-      where: { id: parseInt(req.params.id) }
-    });
-    if (!doc) return res.status(404).json({ success: false, error: 'Document not found' });
-
-    // file_url is stored as base64 data URL: "data:application/pdf;base64,..."
-    const fileUrl = doc.file_url || '';
-
-    if (fileUrl.startsWith('data:')) {
-      // Extract mime type and base64 data
-      const matches = fileUrl.match(/^data:([^;]+);base64,(.+)$/);
-      if (matches) {
-        const mimeType = matches[1];
-        const base64Data = matches[2];
-        
-        // Return base64 data directly for frontend to handle
-        return res.json({
-          success: true,
-          document_data: base64Data,
-          file_name: doc.file_name,
-          document_type: doc.document_type,
-          mime_type: mimeType
-        });
-      }
-    }
-
-    // Fallback — return error if not base64
-    res.status(400).json({ success: false, error: 'Document data not found' });
-
-  } catch (error) {
-    console.error('Get document error:', error);
-    res.status(500).json({ success: false, error: 'Failed to get document' });
-  }
-});
-
-// ─────────────────────────────────────────
-// GET ALL CAMPAIGNS — Admin (all statuses)
-// ─────────────────────────────────────────
-router.get('/campaigns', verifyAdmin, async (req, res) => {
-  try {
-    const { status, page = 1, limit = 20 } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    const where = status ? { status } : {};
-
-    const [campaigns, total] = await Promise.all([
-      prisma.campaign.findMany({
-        where,
-        skip,
-        take   : parseInt(limit),
-        include: {
-          patient            : { select: { name: true, email: true, phone: true } },
-          verification_records: { orderBy: { verified_at: 'desc' }, take: 1 }
-        },
-        orderBy: { created_at: 'desc' }
-      }),
-      prisma.campaign.count({ where })
-    ]);
-
-    res.json({ success: true, campaigns, total, page: parseInt(page), limit: parseInt(limit) });
-
-  } catch (error) {
-    console.error('Get all campaigns error:', error);
-    res.status(500).json({ success: false, error: 'Failed to get campaigns' });
-  }
-});
-
-// ─────────────────────────────────────────
-// GET BLACKLIST — Admin
-// ─────────────────────────────────────────
-router.get('/blacklist', verifyAdmin, async (req, res) => {
-  try {
-    const blacklist = await prisma.blacklist.findMany({
-      orderBy: { blacklisted_at: 'desc' }
-    });
-
-    res.status(201).json({
-      success  : true,
-      message  : 'Admin seeded successfully',
-      email    : admin.email,
-      password : 'Admin@MediTrust2026',
-      note     : 'Please change password after first login'
-    });
-
-  } catch (error) {
-    console.error('Get blacklist error:', error);
-    res.status(500).json({ success: false, error: 'Failed to get blacklist' });
+    console.error('Go live error:', error);
+    res.status(500).json({ success: false, error: 'Failed to go live' });
   }
 });
 
 // ─────────────────────────────────────────
 // GET MY CAMPAIGNS (Patient)
 // ─────────────────────────────────────────
-router.get('/my/campaigns', async (req, res) => {
+router.get('/my/campaigns', verifyToken, async (req, res) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    if (!token) {
-      return res.status(401).json({ success: false, error: 'Token required' });
-    }
-
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
-    if (!user || user.role !== 'PATIENT') {
-      return res.status(403).json({ success: false, error: 'Patient access required' });
-    }
-
-    // Get user's campaigns
+    console.log('Getting campaigns for user:', req.user.id);
+    
+    // Get user's campaigns - simplified query
     const campaigns = await prisma.campaign.findMany({
-      where: { patient_id: user.id },
-      include: {
-        hospital: { select: { name: true, city: true } }
-      },
+      where: { patient_id: req.user.id },
       orderBy: { created_at: 'desc' }
     });
+
+    console.log('Found campaigns:', campaigns.length);
 
     res.json({
       success: true,
@@ -787,17 +561,486 @@ router.get('/my/campaigns', async (req, res) => {
         patient_full_name: c.patient_full_name,
         public_url: c.public_url,
         upi_id: c.upi_id,
-        qr_code_url: c.qr_code_url,
-        hospital: c.hospital
+        qr_code_url: c.qr_code_url
       }))
     });
 
   } catch (error) {
     console.error('Get my campaigns error:', error);
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({ success: false, error: 'Invalid token' });
-    }
     res.status(500).json({ success: false, error: 'Failed to get campaigns' });
+  }
+});
+
+// ─────────────────────────────────────────
+// GET SINGLE CAMPAIGN (Public)
+// ─────────────────────────────────────────
+
+// GET ALL LIVE CAMPAIGNS (Public)
+// ─────────────────────────────────────────
+router.get('/', async (req, res) => {
+  try {
+    const page   = parseInt(req.query.page  || '1');
+    const limit  = parseInt(req.query.limit || '10');
+    const skip   = (page - 1) * limit;
+    const search = req.query.search || '';
+
+    const where = {
+      status: 'LIVE_CAMPAIGN',
+      ...(search && {
+        OR: [
+          { title             : { contains: search } },
+          { patient_full_name : { contains: search } }
+        ]
+      })
+    };
+
+    const [campaigns, total] = await Promise.all([
+      prisma.campaign.findMany({
+        where,
+        skip,
+        take   : limit,
+        select : {
+          id               : true,
+          title            : true,
+          patient_full_name: true,
+          verified_amount  : true,
+          collected_amount : true,
+          released_amount  : true,
+          public_url       : true,
+          upi_id           : true,
+          qr_code_url      : true,
+          story_gemini     : true,
+          status           : true,
+          created_at       : true,
+          hospital         : true
+        },
+        orderBy: { created_at: 'desc' }
+      }),
+      prisma.campaign.count({ where })
+    ]);
+
+    res.json({ success: true, campaigns, total, page, limit });
+
+  } catch (error) {
+    console.error('Get campaigns error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get campaigns' });
+  }
+});
+
+// ─────────────────────────────────────────
+// SAVE DOCUMENTS — uses Step 3 preview result
+// No Flask re-call — just saves docs + verification record
+// ─────────────────────────────────────────
+router.post('/:id/save-documents', verifyToken, async (req, res) => {
+  try {
+    const campaignId = parseInt(req.params.id);
+    const { documents, verification_result } = req.body;
+
+    if (!documents || documents.length === 0) {
+      return res.status(400).json({ success: false, error: 'Documents required' });
+    }
+
+    const campaign = await prisma.campaign.findUnique({ where: { id: campaignId } });
+    if (!campaign || campaign.patient_id !== req.user.id) {
+      return res.status(404).json({ success: false, error: 'Campaign not found' });
+    }
+
+    // Save documents to DB
+    await prisma.campaignDocument.createMany({
+      data: documents.map(doc => ({
+        campaign_id  : campaignId,
+        document_type: doc.document_type,
+        file_url     : doc.file_url,
+        file_name    : doc.file_name
+      }))
+    });
+    console.log(`✅ Saved ${documents.length} documents for campaign ${campaignId}`);
+
+    // Use pre-computed verification result from Step 3
+    let finalStatus = 'PENDING';
+    let riskScore   = 50;
+    let extracted   = {};
+
+    if (verification_result && verification_result.final_status) {
+      const statusMap = {
+        'VERIFIED'           : 'VERIFIED',
+        'PENDING'            : 'PENDING',
+        'VERIFICATION_NEEDED': 'VERIFICATION_NEEDED',
+        'UPDATE_NEEDED'      : 'UPDATE_NEEDED'
+      };
+      finalStatus = statusMap[verification_result.final_status] || 'PENDING';
+      riskScore   = verification_result.risk_score   || 0;
+      extracted   = verification_result.extracted_data || {};
+
+      console.log('✅ Using Step 3 preview result — no Flask re-call needed');
+      console.log('   Status:', finalStatus, '| Risk:', riskScore);
+    } else {
+      // No preview result — fallback to PENDING
+      console.log('⚠️ No preview result found — defaulting to PENDING');
+    }
+
+    // Save verification record
+    await prisma.verificationRecord.create({
+      data: {
+        campaign_id   : campaignId,
+        status        : finalStatus,
+        extracted_data: extracted,
+        issues        : verification_result?.cross_document_issues || [],
+        risk_score    : riskScore,
+        has_expired   : verification_result?.has_expired_docs  || false,
+        has_tampering : verification_result?.has_tampering     || false
+      }
+    });
+
+    // Update campaign status + verified amount
+    const verifiedAmount = extracted.amount
+      ? parseFloat(extracted.amount.toString().replace(/[^0-9.]/g, ''))
+      : null;
+
+    await prisma.campaign.update({
+      where: { id: campaignId },
+      data : {
+        status         : finalStatus,
+        verified_amount: verifiedAmount
+      }
+    });
+
+    console.log(`✅ Campaign ${campaignId} updated → ${finalStatus}`);
+
+    res.json({
+      success       : true,
+      status        : finalStatus,
+      risk_score    : riskScore,
+      extracted_data: extracted,
+      message       : `Documents saved. Status: ${finalStatus}`
+    });
+
+  } catch (error) {
+    console.error('Save documents error:', error);
+    res.status(500).json({ success: false, error: 'Failed to save documents' });
+  }
+});
+
+// ─────────────────────────────────────────
+// GET PATIENT'S OWN CAMPAIGNS
+// ─────────────────────────────────────────
+
+router.get('/:id', async (req, res) => {
+  try {
+    const campaign = await prisma.campaign.findUnique({
+      where  : { id: parseInt(req.params.id) },
+      include: {
+        hospital : true,
+        donations: {
+          where  : { status: 'SUCCESS' },
+          select : {
+            donor_name  : true,
+            is_anonymous: true,
+            amount      : true,
+            donated_at  : true
+          },
+          orderBy: { donated_at: 'desc' },
+          take   : 20
+        },
+        updates  : {
+          orderBy: { created_at: 'desc' }
+        },
+        fund_releases: {
+          where  : { status: 'COMPLETED' },
+          orderBy: { released_at: 'desc' }
+        }
+      }
+    });
+
+    if (!campaign) {
+      return res.status(404).json({ success: false, error: 'Campaign not found' });
+    }
+
+    // Hide anonymous donor names
+    campaign.donations = campaign.donations.map(d => ({
+      ...d,
+      donor_name: d.is_anonymous ? 'Anonymous Donor' : d.donor_name
+    }));
+
+    res.json({ success: true, campaign });
+
+  } catch (error) {
+    console.error('Get campaign error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get campaign' });
+  }
+});
+
+// ─────────────────────────────────────────
+// PATIENT ANALYTICS
+// ─────────────────────────────────────────
+router.get('/:id/analytics', verifyToken, async (req, res) => {
+  try {
+    const campaignId = parseInt(req.params.id);
+
+    const campaign = await prisma.campaign.findUnique({
+      where: { id: campaignId }
+    });
+
+    if (!campaign || campaign.patient_id !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const [
+      totalDonations,
+      donorCount,
+      fundReleases,
+      ngoMatches,
+      updates
+    ] = await Promise.all([
+      prisma.donation.aggregate({
+        where: { campaign_id: campaignId, status: 'SUCCESS' },
+        _sum : { amount: true },
+        _count: true
+      }),
+      prisma.donation.count({
+        where: { campaign_id: campaignId, status: 'SUCCESS' }
+      }),
+      prisma.fundRelease.findMany({
+        where  : { campaign_id: campaignId },
+        orderBy: { released_at: 'desc' }
+      }),
+      prisma.nGOMatch.findMany({
+        where  : { campaign_id: campaignId },
+        include: { ngo: { select: { name: true, email: true } } }
+      }),
+      prisma.campaignUpdate.count({
+        where: { campaign_id: campaignId }
+      })
+    ]);
+
+    res.json({
+      success  : true,
+      analytics: {
+        total_raised    : totalDonations._sum.amount || 0,
+        donor_count     : donorCount,
+        fund_releases   : fundReleases,
+        ngo_matches     : ngoMatches,
+        updates_posted  : updates,
+        collected_amount: campaign.collected_amount,
+        released_amount : campaign.released_amount,
+        verified_amount : campaign.verified_amount
+      }
+    });
+
+  } catch (error) {
+    console.error('Analytics error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get analytics' });
+  }
+});
+
+// ─────────────────────────────────────────
+// POST CAMPAIGN UPDATE
+// ─────────────────────────────────────────
+router.post('/:id/updates', verifyToken, async (req, res) => {
+  try {
+    const campaignId               = parseInt(req.params.id);
+    const { update_text, is_milestone } = req.body;
+
+    const campaign = await prisma.campaign.findUnique({
+      where  : { id: campaignId },
+      include: { patient: true }
+    });
+
+    if (!campaign || campaign.patient_id !== req.user.id) {
+      return res.status(403).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const update = await prisma.campaignUpdate.create({
+      data: {
+        campaign_id : campaignId,
+        update_text,
+        is_milestone: is_milestone || false,
+        notify_donors: is_milestone || false
+      }
+    });
+
+    // Only notify donors on milestone updates
+    if (is_milestone) {
+      const donors = await prisma.donation.findMany({
+        where: { campaign_id: campaignId, status: 'SUCCESS', is_anonymous: false }
+      });
+
+      for (const donor of donors) {
+        await notifyFlask('/notify/campaign-update', {
+          to_email       : donor.donor_email,
+          donor_name     : donor.donor_name,
+          campaign_title : campaign.title,
+          update_text
+        });
+      }
+    }
+
+    res.status(201).json({ success: true, update });
+
+  } catch (error) {
+    console.error('Post update error:', error);
+    res.status(500).json({ success: false, error: 'Failed to post update' });
+  }
+});
+
+
+// ─────────────────────────────────────────
+// HOSPITAL CHANGE FLOW
+// OTP required → suspend payouts → re-verify
+// ─────────────────────────────────────────
+router.put('/:id/hospital-change', verifyToken, async (req, res) => {
+  try {
+    const campaignId = parseInt(req.params.id);
+    const { otp_code, new_hospital_name, new_hospital_id, documents } = req.body;
+
+    // Verify OTP
+    // OTP DISABLED FOR DEVELOPMENT — re-enable before production
+    // const otpResult = await verifyOTP(req.user.id, otp_code, 'HOSPITAL_CHANGE');
+    // if (!otpResult.valid) {
+    //   return res.status(400).json({ success: false, error: otpResult.error });
+    // }
+
+    const campaign = await prisma.campaign.findUnique({
+      where  : { id: campaignId },
+      include: { patient: true }
+    });
+
+    if (!campaign || campaign.patient_id !== req.user.id) {
+      return res.status(404).json({ success: false, error: 'Campaign not found' });
+    }
+
+    if (!['LIVE_CAMPAIGN', 'LIVE_UPDATED'].includes(campaign.status)) {
+      return res.status(400).json({
+        success: false,
+        error  : 'Hospital change only allowed on live campaigns'
+      });
+    }
+
+    if (!documents || documents.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error  : 'New hospital documents required for hospital change'
+      });
+    }
+
+    // Save new documents
+    await prisma.campaignDocument.createMany({
+      data: documents.map(doc => ({
+        campaign_id  : campaignId,
+        document_type: doc.document_type,
+        file_url     : doc.file_url,
+        file_name    : doc.file_name
+      }))
+    });
+
+    // Suspend payouts — status → HOSPITAL_CHANGE_REQUESTED
+    await prisma.campaign.update({
+      where: { id: campaignId },
+      data : {
+        status     : 'HOSPITAL_CHANGE_REQUESTED',
+        hospital_id: new_hospital_id ? parseInt(new_hospital_id) : campaign.hospital_id
+      }
+    });
+
+    // Run AI re-verification on new documents
+    const flaskDocs = documents.map(doc => ({
+      document_type: doc.document_type,
+      file_name    : doc.file_name,
+      file_content : doc.file_url.includes('base64,')
+        ? doc.file_url.split('base64,')[1]
+        : doc.file_url,
+      mime_type    : doc.file_url.includes('data:')
+        ? doc.file_url.split(';')[0].replace('data:', '')
+        : 'application/pdf'
+    }));
+
+    // Update status to REVERIFYING
+    await prisma.campaign.update({
+      where: { id: campaignId },
+      data : { status: 'REVERIFYING' }
+    });
+
+    // Call Flask AI for re-verification
+    const verificationResponse = await axios.post(
+      `${process.env.FLASK_BASE_URL}/verify`,
+      { patient_name: campaign.patient_full_name, documents: flaskDocs },
+      {
+        headers : { 'x-flask-secret': process.env.FLASK_INTERNAL_SECRET },
+        timeout : 120000,
+        maxBodyLength   : Infinity,
+        maxContentLength: Infinity
+      }
+    ).catch(err => {
+      console.error('Flask re-verification failed:', err.message);
+      return { data: { final_status: 'PENDING', risk_score: 50, extracted_data: {}, document_results: [] } };
+    });
+
+    const verResult = verificationResponse.data;
+
+    // Save new verification record
+    await prisma.verificationRecord.create({
+      data: {
+        campaign_id   : campaignId,
+        status        : verResult.final_status || 'PENDING',
+        extracted_data: verResult.extracted_data || {},
+        issues        : verResult.cross_document_issues || [],
+        risk_score    : verResult.risk_score || 0,
+        has_expired   : verResult.has_expired_docs || false,
+        has_tampering : verResult.has_tampering || false
+      }
+    });
+
+    // If VERIFIED — resume campaign as LIVE_UPDATED
+    if (verResult.final_status === 'VERIFIED') {
+      await prisma.campaign.update({
+        where: { id: campaignId },
+        data : { status: 'LIVE_UPDATED' }
+      });
+
+      // Notify patient — hospital change approved
+      await notifyFlask('/notify/verification-status', {
+        to_email      : campaign.patient.email,
+        patient_name  : campaign.patient_full_name,
+        status        : 'HOSPITAL_CHANGE_APPROVED',
+        campaign_title: campaign.title
+      });
+
+      return res.json({
+        success: true,
+        message: 'Hospital change verified. Campaign is now LIVE with new hospital.',
+        status : 'LIVE_UPDATED'
+      });
+    }
+
+    // If PENDING or VERIFICATION_NEEDED — admin must review
+    res.json({
+      success: true,
+      message: `Hospital change submitted. Status: ${verResult.final_status}. Admin will review.`,
+      status : verResult.final_status
+    });
+
+  } catch (error) {
+    console.error('Hospital change error:', error);
+    res.status(500).json({ success: false, error: 'Hospital change failed' });
+  }
+});
+
+// ─────────────────────────────────────────
+// REQUEST OTP FOR HOSPITAL CHANGE
+// ─────────────────────────────────────────
+router.post('/:id/hospital-change-otp', verifyToken, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+
+    await createOTP(req.user.id, user.email, 'HOSPITAL_CHANGE');
+
+    res.json({
+      success: true,
+      message: 'OTP sent to your email. Enter OTP to confirm hospital change.'
+    });
+  } catch (error) {
+    console.error('Hospital change OTP error:', error);
+    res.status(500).json({ success: false, error: 'Failed to send OTP' });
   }
 });
 

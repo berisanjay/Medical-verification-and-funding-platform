@@ -292,13 +292,28 @@
   // ── LOAD CAMPAIGNS — always fresh from server ──
   async function loadMyCampaigns() {
     try {
+      // Check if user is logged in
+      if (!token) {
+        console.log('No token found, user not logged in');
+        showToast('Please login to view campaigns', 'error');
+        setTimeout(() => window.location.href = 'login.html', 1500);
+        return;
+      }
+
+      console.log('Fetching campaigns from:', `${API}/campaigns/my/campaigns`);
+      console.log('Using token:', token.substring(0, 20) + '...');
+      
       // ✅ FIX 1: Always fetch fresh — NO localStorage cache
       const res  = await authFetch(`${API}/campaigns/my/campaigns`);
+      console.log('Response status:', res.status);
+      
       const data = await res.json();
+      console.log('Response data:', data);
 
       if (!data.success) {
         if (res.status === 401) { doLogout(); return; }
         showToast('Failed to load campaigns', 'error');
+        console.error('API Error:', data.error);
         return;
       }
 
