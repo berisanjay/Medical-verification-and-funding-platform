@@ -533,37 +533,20 @@ router.post('/:id/go-live', verifyToken, async (req, res) => {
 });
 
 // ─────────────────────────────────────────
-// GET MY CAMPAIGNS (Patient)
-// ─────────────────────────────────────────
+
 router.get('/my/campaigns', verifyToken, async (req, res) => {
   try {
-    console.log('Getting campaigns for user:', req.user.id);
-    
-    // Get user's campaigns - simplified query
     const campaigns = await prisma.campaign.findMany({
-      where: { patient_id: req.user.id },
+      where  : { patient_id: req.user.id },
+      include: {
+        verification_records: { orderBy: { verified_at: 'desc' }, take: 1 },
+        fund_releases       : { orderBy: { released_at: 'desc' } },
+        donations           : { where: { status: 'SUCCESS' } }
+      },
       orderBy: { created_at: 'desc' }
     });
 
-    console.log('Found campaigns:', campaigns.length);
-
-    res.json({
-      success: true,
-      campaigns: campaigns.map(c => ({
-        id: c.id,
-        title: c.title,
-        status: c.status,
-        created_at: c.created_at,
-        expires_at: c.expires_at,
-        verified_amount: c.verified_amount,
-        collected_amount: c.collected_amount,
-        released_amount: c.released_amount,
-        patient_full_name: c.patient_full_name,
-        public_url: c.public_url,
-        upi_id: c.upi_id,
-        qr_code_url: c.qr_code_url
-      }))
-    });
+    res.json({ success: true, campaigns });
 
   } catch (error) {
     console.error('Get my campaigns error:', error);

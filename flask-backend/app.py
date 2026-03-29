@@ -254,6 +254,12 @@ def verify_documents():
         risk_score     = 0
         doc_results    = []
 
+        # Sort documents so ESTIMATE is always processed first
+        # This ensures amount comes from ESTIMATE not ADMISSION_SUMMARY
+        priority_order = ['ESTIMATE', 'BILL', 'AADHAAR', 'INCOME_CERTIFICATE', 'RATION_CARD', 'ADMISSION_SUMMARY', 'DISCHARGE_SUMMARY']
+        documents = sorted(documents, key=lambda d: priority_order.index(d.get('document_type','UNKNOWN')) if d.get('document_type','UNKNOWN') in priority_order else 99)
+        logger.info(f"Document processing order: {[d.get('document_type') for d in documents]}")
+
         for doc in documents:
             doc_type    = doc.get('document_type', 'UNKNOWN')
             # Frontend sends file_url (data URL) OR file_content (raw base64)
@@ -354,12 +360,17 @@ def verify_documents():
                 # Merge extracted data
                 logger.info(f" === MERGING DATA FOR {file_name} ({doc_type}) ===")
 
-                if entities.get('hospital_name'):
+                # Hospital name — prefer ESTIMATE or ADMISSION_SUMMARY over other docs
+                if entities.get('hospital_name') and doc_type in ['ESTIMATE', 'ADMISSION_SUMMARY', 'BILL', 'DISCHARGE_SUMMARY']:
                     if not all_extracted.get('hospital_name'):
                         all_extracted['hospital_name'] = entities.get('hospital_name')
-                        logger.info(f"Set hospital: {entities.get('hospital_name')}")
+                        logger.info(f"Set hospital from {doc_type}: {entities.get('hospital_name')}")
                     else:
-                        logger.info(f"Hospital already set, skipping")
+                        if doc_type == 'ESTIMATE':
+                            all_extracted['hospital_name'] = entities.get('hospital_name')
+                            logger.info(f"Override hospital with ESTIMATE: {entities.get('hospital_name')}")
+                        else:
+                            logger.info(f"Hospital already set, skipping")
 
                 # Hospital pincode — ONLY from ESTIMATE or ADMISSION_SUMMARY
                 # NOT from Aadhaar (that has patient's home pincode)
@@ -368,22 +379,35 @@ def verify_documents():
                         all_extracted['hospital_pincode'] = entities.get('hospital_pincode')
                         logger.info(f"Set hospital pincode: {entities.get('hospital_pincode')}")
 
-                if entities.get('diseases') and entities.get('diseases') != []:
+                # Disease ONLY from medical documents — not from Aadhaar or Ration card
+                if entities.get('diseases') and entities.get('diseases') != [] and doc_type in ['ESTIMATE', 'ADMISSION_SUMMARY', 'BILL', 'DISCHARGE_SUMMARY']:
                     if not all_extracted.get('disease'):
-                        # Store as single string — use first/primary diagnosis only
                         primary = entities.get('diseases')[0] if entities.get('diseases') else ''
                         all_extracted['disease'] = primary
-                        logger.info(f"Set disease: {primary}")
+                        logger.info(f"Set disease from {doc_type}: {primary}")
                     else:
-                        logger.info(f"Disease already set, skipping")
+                        # Prefer ESTIMATE disease over ADMISSION_SUMMARY
+                        if doc_type == 'ESTIMATE':
+                            primary = entities.get('diseases')[0] if entities.get('diseases') else ''
+                            all_extracted['disease'] = primary
+                            logger.info(f"Override disease with ESTIMATE: {primary}")
+                        else:
+                            logger.info(f"Disease already set, skipping")
 
-                # Amount from hospital documents only — not income cert
-                if entities.get('amount') and doc_type in ['ESTIMATE', 'BILL', 'ADMISSION_SUMMARY']:
+                # Amount ONLY from ESTIMATE or BILL — not from ADMISSION_SUMMARY
+                # ESTIMATE is processed first due to sorting above
+                # This prevents deposit/partial amounts from ADMISSION_SUMMARY overriding total estimate
+                if entities.get('amount') and doc_type in ['ESTIMATE', 'BILL']:
                     if not all_extracted.get('amount'):
                         all_extracted['amount'] = entities.get('amount')
-                        logger.info(f"Set amount: {entities.get('amount')}")
+                        logger.info(f"Set amount from {doc_type}: {entities.get('amount')}")
                     else:
-                        logger.info(f"Amount already set, skipping")
+                        # If ESTIMATE found later and amount already set from BILL — prefer ESTIMATE
+                        if doc_type == 'ESTIMATE':
+                            all_extracted['amount'] = entities.get('amount')
+                            logger.info(f"Overriding amount with ESTIMATE: {entities.get('amount')}")
+                        else:
+                            logger.info(f"Amount already set from ESTIMATE, skipping {doc_type}")
 
                 # Annual income — ONLY from INCOME_CERTIFICATE
                 if entities.get('amount') and doc_type == 'INCOME_CERTIFICATE':

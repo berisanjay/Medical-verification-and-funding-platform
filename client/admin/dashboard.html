@@ -713,31 +713,8 @@
   }
 
   async function viewDocument(docId, fileName) {
-    try {
-      const res = await authFetch(`${API}/admin/documents/${docId}`);
-      const data = await res.json();
-      if (!data.success) {
-        showToast('Failed to load document', 'error');
-        return;
-      }
-      
-      // Create a blob from the base64 data and open in new tab
-      const byteCharacters = atob(data.document_data);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'application/pdf' });
-      
-      const url = URL.createObjectURL(blob);
-      const newWindow = window.open(url, '_blank');
-      newWindow.onload = () => URL.revokeObjectURL(url);
-      
-    } catch(e) {
-      showToast('Error loading document', 'error');
-      console.error('Document view error:', e);
-    }
+    // Implementation for viewing documents
+    window.open(`${API}/admin/documents/${docId}`, '_blank');
   }
 
   // ── DASHBOARD ─────────────────────────────
@@ -785,11 +762,11 @@
           <div class="priority-info"><h4>${c.title}</h4><p>${c.patient_full_name} • ${formatDate(c.created_at)}</p></div>
           <div style="display:flex;gap:6px;">
             <button class="btn btn-review" onclick="openReviewModal(${c.id})">🔍 Review</button>
+            <button class="btn" style="background:#3B82F6;color:white;margin-right:4px;" onclick="openReviewModal(${c.id})">🔍 Review</button>
             <button class="btn btn-verify" onclick="openVerifyModal(${c.id})">✅ Verify</button>
-            <button class="btn btn-cancel" onclick="openCancelModal(${c.id})">✕ Cancel</button>
+            <button class="btn btn-cancel" onclick="openCancelModal(${c.id})">✕</button>
           </div>
-        </div>
-      `).join('');
+        </div>`).join('');
     } catch(e) { document.getElementById('pendingList').innerHTML = `<div class="empty"><p>Failed to load</p></div>`; }
   }
 
@@ -807,7 +784,8 @@
           <div class="priority-info"><h4>${c.title}</h4><p>🚨 Tampering / Mismatch detected</p></div>
           <div style="display:flex;gap:6px;">
             <button class="btn btn-review" onclick="openReviewModal(${c.id})">🔍</button>
-            <button class="btn btn-verify" onclick="openVerifyModal(${c.id})">✅ Verify</button>
+            <button class="btn" style="background:#3B82F6;color:white;margin-right:4px;" onclick="openReviewModal(${c.id})">🔍 Review</button>
+              <button class="btn btn-verify" onclick="openVerifyModal(${c.id})">✅ Verify</button>
             <button class="btn btn-cancel" onclick="openCancelModal(${c.id})">✕</button>
           </div>
         </div>`).join('');
@@ -846,6 +824,7 @@
           <td>${formatDate(c.created_at)}</td>
           <td style="display:flex;gap:6px;">
             <button class="btn btn-review" onclick="openReviewModal(${c.id})">🔍 Review</button>
+            <button class="btn" style="background:#3B82F6;color:white;margin-right:4px;" onclick="openReviewModal(${c.id})">🔍 Review</button>
             <button class="btn btn-verify" onclick="openVerifyModal(${c.id})">✅ Verify</button>
             <button class="btn btn-cancel" onclick="openCancelModal(${c.id})">✕ Cancel</button>
           </td>
@@ -874,7 +853,8 @@
             <td>${formatDate(c.created_at)}</td>
             <td style="display:flex;gap:6px;">
               <button class="btn btn-review" onclick="openReviewModal(${c.id})">🔍 Review</button>
-              <button class="btn btn-verify" onclick="openVerifyModal(${c.id})">✅ Verify</button>
+              <button class="btn" style="background:#3B82F6;color:white;margin-right:4px;" onclick="openReviewModal(${c.id})">🔍 Review</button>
+            <button class="btn btn-verify" onclick="openVerifyModal(${c.id})">✅ Verify</button>
               <button class="btn btn-cancel" onclick="openCancelModal(${c.id})">✕ Cancel</button>
             </td>
           </tr>`;
@@ -1008,11 +988,6 @@
               <p style="font-size:11px;color:${has?'#16A34A':'#DC2626'};margin-top:3px;">
                 ${has ? '✅ '+doc.file_name : req ? '❌ Missing (mandatory)' : '— Not uploaded'}
               </p>
-              ${has ? `<button onclick="viewDocument(${doc.id}, '${doc.file_name}')"
-                style="margin-top:8px;padding:4px 10px;background:#3B82F6;color:white;
-                border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;">
-                👁️ View
-              </button>` : ''}
             </div>`;
         }).join('')}
       </div>
