@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>MediTrust — NGO Response</title>
+<style>
+  body { font-family:'Segoe UI',sans-serif; background:#F0F4F8; min-height:100vh; display:flex; align-items:center; justify-content:center; }
+  .card { background:#fff; border-radius:16px; padding:40px; max-width:480px; width:100%; box-shadow:0 4px 24px rgba(0,0,0,0.10); text-align:center; }
+  .logo { font-size:40px; margin-bottom:12px; }
+  h1 { font-size:22px; font-weight:800; color:#1E3A5F; margin-bottom:8px; }
+  p  { color:#6B7280; font-size:14px; line-height:1.6; margin-bottom:20px; }
+  .campaign-box { background:#F0FDF4; border:1px solid #BBF7D0; border-radius:10px; padding:16px; margin-bottom:24px; text-align:left; }
+  .campaign-box h3 { font-size:15px; font-weight:700; color:#15803D; margin-bottom:6px; }
+  .campaign-box p  { font-size:13px; color:#374151; margin:0; }
+  .btn-accept { background:#15803D; color:#fff; border:none; padding:14px 32px; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; width:100%; margin-bottom:10px; }
+  .btn-accept:hover { background:#166534; }
+  .btn-reject { background:#FEE2E2; color:#DC2626; border:none; padding:14px 32px; border-radius:10px; font-size:15px; font-weight:700; cursor:pointer; width:100%; }
+  .btn-reject:hover { background:#FECACA; }
+  .result { padding:20px; border-radius:10px; margin-top:16px; display:none; }
+  .result.accepted { background:#DCFCE7; color:#15803D; }
+  .result.rejected { background:#FEE2E2; color:#DC2626; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">🤝</div>
+  <h1>MediTrust NGO Portal</h1>
+  <p>A patient case has been matched to your NGO. Please review and respond below.</p>
+
+  <div class="campaign-box" id="campaignBox">
+    <div style="text-align:center;color:#9CA3AF;font-size:13px">Loading case details…</div>
+  </div>
+
+  <div id="actionButtons">
+    <button class="btn-accept" onclick="respond('ACCEPTED')">✅ Accept — We Will Support This Case</button>
+    <button class="btn-reject" onclick="respond('REJECTED')">❌ Cannot Support At This Time</button>
+  </div>
+
+  <div class="result" id="resultBox"></div>
+</div>
+
+<script>
+  const API     = 'http://localhost:3000';
+  const params  = new URLSearchParams(window.location.search);
+  const matchId = params.get('match_id');
+  const ngoName = params.get('ngo') || 'Your NGO';
+
+  window.onload = () => {
+    if (!matchId) {
+      document.getElementById('campaignBox').innerHTML = 
+        '<p style="color:#DC2626">Invalid link — match ID missing</p>';
+      return;
+    }
+    document.getElementById('campaignBox').innerHTML = `
+      <h3>🏥 Case #${matchId}</h3>
+      <p>NGO: <strong>${decodeURIComponent(ngoName)}</strong></p>
+      <p style="margin-top:6px;font-size:12px;color:#6B7280">
+        Please click Accept or Reject below to respond to this case.
+        MediTrust will notify the patient of your decision.
+      </p>`;
+  };
+
+  async function respond(status) {
+    const btns = document.getElementById('actionButtons');
+    btns.style.opacity = '0.5';
+    btns.style.pointerEvents = 'none';
+
+    try {
+      const res  = await fetch(`${API}/api/ngo/respond/${matchId}`, {
+        method : 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify({ status })
+      });
+      const data = await res.json();
+
+      const resultBox = document.getElementById('resultBox');
+      resultBox.style.display = 'block';
+
+      if (data.success) {
+        resultBox.className = `result ${status.toLowerCase()}`;
+        resultBox.innerHTML = status === 'ACCEPTED'
+          ? `<strong>✅ Thank you for accepting!</strong><br/>
+             MediTrust will coordinate with you for fund disbursement.
+             Please verify patient admission at the hospital before releasing any funds.`
+          : `<strong>❌ Response recorded.</strong><br/>
+             Thank you for letting us know. We will continue to find support for this patient.`;
+        btns.style.display = 'none';
+      } else {
+        resultBox.className = 'result rejected';
+        resultBox.innerHTML = `Error: ${data.error || 'Failed to record response'}`;
+        btns.style.opacity = '1';
+        btns.style.pointerEvents = 'auto';
+      }
+    } catch(err) {
+      const resultBox = document.getElementById('resultBox');
+      resultBox.style.display = 'block';
+      resultBox.className = 'result rejected';
+      resultBox.innerHTML = 'Server error — please try again';
+      btns.style.opacity = '1';
+      btns.style.pointerEvents = 'auto';
+    }
+  }
+</script>
+</body>
+</html>

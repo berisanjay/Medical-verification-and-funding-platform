@@ -1,0 +1,5 @@
+{
+    "livePreview.defaultPreviewPath": "/client/dashboard.html",
+    "livePreview.portNumber": 3,
+    "livePreview.tasks.runTaskWithExternalPreview": true
+}

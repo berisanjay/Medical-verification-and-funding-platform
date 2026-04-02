@@ -1,0 +1,1802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediTrust — Create Campaign</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green-deep:  #14342B;
+      --green-mid:   #1F5C47;
+      --green-light: #2E8B62;
+      --green-muted: #D6EDE4;
+      --saffron:     #E07B39;
+      --saffron-lt:  #FBF0E8;
+      --cream:       #F7F4EF;
+      --white:       #FFFFFF;
+      --ink:         #1A1A18;
+      --ink-mid:     #4A4A46;
+      --ink-soft:    #8A8A84;
+      --border:      #E4E0D8;
+      --red-soft:    #E05050;
+      --red-lt:      #FDF0F0;
+      --blue-soft:   #3B82C4;
+      --blue-lt:     #EFF5FD;
+      --radius:      12px;
+      --shadow-sm:   0 1px 4px rgba(0,0,0,.06);
+      --shadow-md:   0 4px 20px rgba(0,0,0,.08);
+      --shadow-lg:   0 8px 40px rgba(0,0,0,.13);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; }
+
+    /* ── NAV ── */
+    .topnav { background: var(--green-deep); padding: 0 36px; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .nav-logo-icon { width: 32px; height: 32px; background: var(--saffron); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .nav-logo-text { font-family: 'Lora', serif; font-size: 18px; font-weight: 700; color: var(--white); }
+    .nav-logo-text span { color: var(--saffron); }
+    .nav-back { color: rgba(255,255,255,.65); font-size: 13px; text-decoration: none; transition: color .2s; }
+    .nav-back:hover { color: white; }
+
+    /* ── SCREENS ── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ════════════════════════════════════════
+       RULES SCREEN
+    ════════════════════════════════════════ */
+    .rules-screen { max-width: 780px; margin: 0 auto; padding: 48px 24px 80px; }
+
+    .rules-hero {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .rules-hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--saffron-lt); color: var(--saffron);
+      border: 1px solid #F0C4A0;
+      padding: 6px 16px; border-radius: 99px;
+      font-size: 12px; font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .rules-hero h1 {
+      font-family: 'Lora', serif;
+      font-size: 32px; font-weight: 700;
+      color: var(--green-deep);
+      margin-bottom: 10px;
+      line-height: 1.25;
+    }
+    .rules-hero p {
+      font-size: 15px; color: var(--ink-soft);
+      max-width: 500px; margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    .rules-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .rules-card-header {
+      background: linear-gradient(135deg, var(--green-deep), var(--green-mid));
+      padding: 20px 28px;
+    }
+    .rules-card-header h2 {
+      font-family: 'Lora', serif;
+      font-size: 17px; color: white; font-weight: 600;
+      margin-bottom: 3px;
+    }
+    .rules-card-header p { font-size: 12px; color: rgba(255,255,255,.6); }
+
+    .rules-list { padding: 8px 0; }
+
+    .rule-row {
+      display: flex; align-items: flex-start; gap: 16px;
+      padding: 18px 28px;
+      border-bottom: 1px solid var(--border);
+      transition: background .15s;
+    }
+    .rule-row:last-child { border-bottom: none; }
+    .rule-row:hover { background: var(--cream); }
+
+    .rule-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--green-deep); color: white;
+      font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+
+    .rule-icon {
+      font-size: 22px; flex-shrink: 0; margin-top: 1px;
+      width: 28px; text-align: center;
+    }
+
+    .rule-content { flex: 1; }
+    .rule-title {
+      font-size: 14px; font-weight: 600; color: var(--ink);
+      margin-bottom: 3px;
+    }
+    .rule-desc {
+      font-size: 12px; color: var(--ink-soft);
+      line-height: 1.6;
+    }
+
+    .rule-tag {
+      margin-top: 6px;
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10px; font-weight: 700; padding: 3px 9px;
+      border-radius: 99px; text-transform: uppercase; letter-spacing: .4px;
+    }
+    .tag-auto   { background: var(--blue-lt);    color: var(--blue-soft); }
+    .tag-strict { background: var(--red-lt);     color: var(--red-soft); }
+    .tag-ai     { background: var(--green-muted);color: var(--green-mid); }
+
+    .accept-block {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: var(--shadow-sm);
+      display: flex; flex-direction: column; align-items: center; gap: 18px;
+      text-align: center;
+    }
+
+    .accept-checkbox-row {
+      display: flex; align-items: flex-start; gap: 12px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .accept-checkbox-row input[type=checkbox] {
+      width: 20px; height: 20px; flex-shrink: 0;
+      accent-color: var(--green-mid); cursor: pointer;
+      margin-top: 2px;
+    }
+    .accept-checkbox-row label {
+      font-size: 14px; color: var(--ink-mid);
+      cursor: pointer; line-height: 1.5;
+    }
+    .accept-checkbox-row label strong { color: var(--ink); }
+
+    .btn-start {
+      background: var(--green-mid); color: white; border: none;
+      padding: 14px 40px; border-radius: 12px;
+      font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+      cursor: pointer; transition: background .2s, transform .15s;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .btn-start:hover { background: var(--green-light); transform: translateY(-2px); }
+    .btn-start:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+    /* ════════════════════════════════════════
+       FORM SCREEN
+    ════════════════════════════════════════ */
+    .form-screen { max-width: 900px; margin: 0 auto; padding: 36px 24px 80px; }
+
+    .page-header { text-align: center; margin-bottom: 28px; }
+    .page-header h1 { font-family: 'Lora', serif; font-size: 26px; font-weight: 700; color: var(--green-deep); margin-bottom: 6px; }
+    .page-header p { font-size: 13px; color: var(--ink-soft); }
+
+    /* STEPPER */
+    .stepper { display: flex; align-items: center; margin-bottom: 28px; position: relative; }
+    .stepper::before { content: ''; position: absolute; top: 20px; left: 20px; right: 20px; height: 2px; background: var(--border); z-index: 0; }
+    .step-progress { position: absolute; top: 20px; left: 20px; height: 2px; background: var(--green-light); z-index: 1; transition: width .5s ease; }
+    .step-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px; z-index: 2; }
+    .step-circle { width: 40px; height: 40px; border-radius: 50%; background: var(--white); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: var(--ink-soft); transition: all .3s; }
+    .step-item.active .step-circle { border-color: var(--green-light); color: var(--green-light); background: var(--green-muted); }
+    .step-item.done   .step-circle { border-color: var(--green-light); background: var(--green-light); color: white; }
+    .step-label { font-size: 10px; font-weight: 500; color: var(--ink-soft); text-align: center; white-space: nowrap; }
+    .step-item.active .step-label { color: var(--green-mid); font-weight: 600; }
+    .step-item.done   .step-label { color: var(--green-light); }
+
+    /* FORM CARD */
+    .form-card { background: var(--white); border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow-md); overflow: hidden; }
+    .card-head { background: linear-gradient(135deg, var(--green-deep), var(--green-mid)); padding: 24px 32px; }
+    .card-head h2 { font-family: 'Lora', serif; font-size: 20px; font-weight: 600; color: white; margin-bottom: 4px; }
+    .card-head p { font-size: 13px; color: rgba(255,255,255,.65); }
+    .card-body { padding: 28px 32px; }
+
+    /* FORM ELEMENTS */
+    .fg { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .s2 { grid-column: span 2; }
+    .fl { display: block; font-size: 11px; font-weight: 600; color: var(--ink-mid); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+    .fl .req { color: var(--red-soft); margin-left: 2px; }
+    .fi, .fs, .ft { width: 100%; border: 1.5px solid var(--border); border-radius: 9px; padding: 11px 14px; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--ink); background: var(--white); outline: none; transition: border-color .2s, box-shadow .2s; }
+    .fi:focus, .fs:focus, .ft:focus { border-color: var(--green-light); box-shadow: 0 0 0 3px rgba(46,139,98,.1); }
+    .fi.err { border-color: var(--red-soft); }
+    .ft { resize: vertical; min-height: 160px; }
+    .fh { font-size: 11px; color: var(--ink-soft); margin-top: 5px; }
+    .fe { font-size: 11px; color: var(--red-soft); margin-top: 4px; display: none; }
+    .fe.show { display: block; }
+    .ig { display: flex; }
+    .ipfx { background: var(--cream); border: 1.5px solid var(--border); border-right: none; border-radius: 9px 0 0 9px; padding: 11px 14px; font-size: 14px; font-weight: 600; color: var(--ink-mid); display: flex; align-items: center; white-space: nowrap; }
+    .ig .fi { border-radius: 0 9px 9px 0; }
+    .cc { text-align: right; font-size: 11px; color: var(--ink-soft); margin-top: 4px; }
+
+    /* AADHAAR */
+    .aag { display: flex; gap: 8px; align-items: center; }
+    .aag .fi { text-align: center; letter-spacing: 4px; font-weight: 700; font-size: 16px; }
+    .aasep { font-size: 22px; color: var(--ink-soft); font-weight: 300; line-height: 1; }
+
+    /* LANG CHIPS */
+    .lang-wrap { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .lchip { padding: 6px 14px; border-radius: 99px; border: 1.5px solid var(--border); font-size: 12px; cursor: pointer; background: var(--white); color: var(--ink-mid); transition: all .2s; user-select: none; }
+    .lchip.sel { background: var(--green-muted); border-color: var(--green-light); color: var(--green-mid); font-weight: 600; }
+
+    /* UPLOAD */
+    .doc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .doc-full { grid-column: span 2; }
+    .dlrow { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; }
+    .dlabel { font-size: 12px; font-weight: 600; color: var(--ink-mid); }
+    .dreq { font-size: 10px; background: var(--red-lt); color: var(--red-soft); padding: 2px 7px; border-radius: 99px; font-weight: 600; }
+    .uzone { border: 2px dashed var(--border); border-radius: 10px; padding: 18px 14px; text-align: center; cursor: pointer; transition: all .2s; background: var(--cream); position: relative; min-height: 90px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .uzone:hover, .uzone.drag { border-color: var(--green-light); background: var(--green-muted); }
+    .uzone.done { border-color: var(--green-light); background: #F0FBF6; border-style: solid; }
+    .uzone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .uicon { font-size: 22px; margin-bottom: 5px; }
+    .utitle { font-size: 12px; font-weight: 500; color: var(--ink-mid); }
+    .usub { font-size: 10px; color: var(--ink-soft); margin-top: 2px; }
+    .ufname { font-size: 11px; font-weight: 600; color: var(--green-mid); margin-top: 4px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* PHASE BLOCKS */
+    .phase { background: var(--cream); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 22px; margin-bottom: 16px; }
+    .ptitle { font-size: 13px; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .pbadge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 99px; background: var(--border); color: var(--ink-soft); }
+    .pbadge.run { background: var(--saffron-lt); color: var(--saffron); }
+    .pbadge.ok  { background: var(--green-muted); color: var(--green-mid); }
+    .pbadge.err { background: var(--red-lt); color: var(--red-soft); }
+    .exfields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .exf { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+    .exfl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--ink-soft); margin-bottom: 3px; }
+    .exfv { font-size: 13px; font-weight: 500; color: var(--ink); }
+    .exfv.dim { color: var(--ink-soft); }
+    .hmsgrid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 12px; }
+    .hmscard { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; text-align: center; }
+    .hmscl { font-size: 10px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+    .hmscv { font-size: 15px; font-weight: 700; color: var(--ink); }
+    .hmscv.hi { color: var(--green-mid); font-size: 18px; }
+    .confirmrow { background: var(--green-deep); border-radius: 10px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; margin-top: 12px; gap: 12px; }
+    .confirmrow p { color: rgba(255,255,255,.8); font-size: 13px; }
+    .confirmrow strong { color: white; }
+    .btn-confirm { background: var(--saffron); color: white; border: none; padding: 10px 22px; border-radius: 9px; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .2s; white-space: nowrap; flex-shrink: 0; }
+    .btn-confirm:hover { background: #c96a2a; }
+
+    /* ═══ STORY SECTION ═══ */
+    .story-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .btn-polish {
+      background: var(--green-deep); color: white; border: none;
+      padding: 9px 18px; border-radius: 9px;
+      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; gap: 7px;
+      transition: background .2s;
+    }
+    .btn-polish:hover { background: var(--green-mid); }
+    .btn-polish:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* Polish result */
+    .polish-panel {
+      display: none;
+      margin-top: 20px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .polish-panel.show { display: block; animation: fadeUp .35s ease; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+    .polish-header {
+      background: var(--green-deep);
+      padding: 14px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .polish-header-title {
+      font-family: 'Lora', serif;
+      font-size: 15px; color: white; font-weight: 600;
+    }
+    .polish-header-sub { font-size: 11px; color: rgba(255,255,255,.55); margin-top: 2px; }
+
+    .polish-cols {
+      display: grid; grid-template-columns: 1fr 1fr;
+    }
+
+    .polish-col {
+      padding: 20px;
+      border-right: 1px solid var(--border);
+    }
+    .polish-col:last-child { border-right: none; }
+
+    .polish-col-label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .6px; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .polish-col-label.old { color: var(--ink-soft); }
+    .polish-col-label.new { color: var(--green-mid); }
+
+    .polish-text {
+      font-size: 13px; line-height: 1.75; color: var(--ink);
+      white-space: pre-wrap;
+      max-height: 280px; overflow-y: auto;
+      background: var(--cream); border-radius: 8px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+    }
+    .polish-text.new-version { background: #F0FBF6; border-color: #A8D5C0; }
+
+    .polish-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--cream);
+      display: flex; align-items: center; gap: 10px; justify-content: flex-end;
+    }
+    .btn-use-new {
+      background: var(--green-mid); color: white; border: none;
+      padding: 10px 22px; border-radius: 9px;
+      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: background .2s;
+    }
+    .btn-use-new:hover { background: var(--green-light); }
+    .btn-keep-orig {
+      background: none; border: 1.5px solid var(--border);
+      padding: 10px 20px; border-radius: 9px;
+      font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--ink-mid);
+      cursor: pointer; transition: background .2s;
+    }
+    .btn-keep-orig:hover { background: var(--border); }
+
+    .gemini-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 10px; font-weight: 600;
+      background: #EAF3FF; color: var(--blue-soft);
+      border: 1px solid #C5DBEF;
+      padding: 3px 9px; border-radius: 99px;
+    }
+
+    /* MISC */
+    .infobox { background: var(--blue-lt); border: 1px solid #C5DBEF; border-radius: 9px; padding: 12px 16px; font-size: 12px; color: var(--blue-soft); display: flex; align-items: flex-start; gap: 8px; margin-bottom: 18px; }
+    .warnbox { background: var(--saffron-lt); border: 1px solid #F0C4A0; border-radius: 9px; padding: 12px 16px; font-size: 12px; color: #B05A20; display: flex; align-items: flex-start; gap: 8px; margin-bottom: 18px; }
+
+    .spinner { width: 16px; height: 16px; border: 2.5px solid rgba(255,255,255,.3); border-top-color: white; border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; }
+    .spinner.dark { border-color: rgba(0,0,0,.15); border-top-color: var(--green-mid); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* STEP PANELS */
+    .step-panel { display: none; }
+    .step-panel.active { display: block; }
+
+    /* PREVIEW */
+    .pvcard { background: var(--cream); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 18px; }
+    .pvbanner { background: linear-gradient(135deg, var(--green-deep), var(--green-mid)); padding: 24px; color: white; }
+    .pvbanner h3 { font-family: 'Lora', serif; font-size: 20px; margin-bottom: 6px; }
+    .pvbanner p { font-size: 13px; color: rgba(255,255,255,.7); }
+    .pvgoal { font-size: 26px; font-weight: 700; margin-top: 12px; }
+    .pvgoal span { font-size: 14px; font-weight: 400; opacity: .7; }
+    .pvbody { padding: 18px 22px; }
+    .pvrow { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .pvrow:last-child { border-bottom: none; }
+    .pvrl { color: var(--ink-soft); }
+    .pvrv { font-weight: 500; color: var(--ink); text-align: right; }
+
+    /* FOOTER */
+    .form-footer { display: flex; align-items: center; justify-content: space-between; padding: 18px 32px; border-top: 1px solid var(--border); background: var(--cream); }
+    .btn-back { background: none; border: 1.5px solid var(--border); padding: 10px 22px; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; color: var(--ink-mid); cursor: pointer; transition: background .2s; }
+    .btn-back:hover { background: var(--border); }
+    .btn-next { background: var(--green-mid); color: white; border: none; padding: 10px 26px; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background .2s, transform .15s; }
+    .btn-next:hover { background: var(--green-light); transform: translateY(-1px); }
+    .btn-next:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+    .btn-submit { background: var(--saffron); color: white; border: none; padding: 10px 28px; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background .2s, transform .15s; }
+    .btn-submit:hover { background: #c96a2a; transform: translateY(-1px); }
+    .btn-submit:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+    .stepind { font-size: 12px; color: var(--ink-soft); }
+
+    /* SUCCESS */
+    .spage { display: none; text-align: center; padding: 60px 32px; }
+    .spage.show { display: block; }
+    .spage-icon { width: 80px; height: 80px; background: var(--green-muted); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 20px; }
+    .spage h2 { font-family: 'Lora', serif; font-size: 26px; color: var(--green-deep); margin-bottom: 10px; }
+    .spage p { font-size: 14px; color: var(--ink-soft); margin-bottom: 28px; }
+
+    /* TOAST */
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--ink); color: white; padding: 12px 20px; border-radius: 10px; font-size: 13px; box-shadow: var(--shadow-lg); z-index: 999; transform: translateY(80px); opacity: 0; transition: all .35s cubic-bezier(.34,1.56,.64,1); max-width: 320px; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    @media (max-width: 640px) {
+      .fg { grid-template-columns: 1fr; }
+      .s2 { grid-column: span 1; }
+      .doc-grid { grid-template-columns: 1fr; }
+      .doc-full { grid-column: span 1; }
+      .exfields, .hmsgrid { grid-template-columns: 1fr 1fr; }
+      .card-body { padding: 18px 16px; }
+      .form-footer { padding: 14px 16px; flex-wrap: wrap; gap: 10px; }
+      .polish-cols { grid-template-columns: 1fr; }
+      .polish-col { border-right: none; border-bottom: 1px solid var(--border); }
+      .polish-col:last-child { border-bottom: none; }
+      .step-label { display: none; }
+      .aag { flex-wrap: wrap; }
+      .aasep { display: none; }
+      .confirmrow { flex-direction: column; align-items: flex-start; }
+      .rules-screen, .form-screen { padding: 24px 12px 60px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="topnav">
+  <a class="nav-logo" href="dashboard.html">
+    <div class="nav-logo-icon">🩺</div>
+    <div class="nav-logo-text">Medi<span>Trust</span></div>
+  </a>
+  <a class="nav-back" href="dashboard.html">← Dashboard</a>
+</nav>
+
+<!-- ════════════════════════════════════════
+     SCREEN 1 — RULES
+════════════════════════════════════════ -->
+<div class="screen active" id="screen-rules">
+  <div class="rules-screen">
+
+    <div class="rules-hero">
+      <div class="rules-hero-badge">📋 Before You Begin</div>
+      <h1>Platform Eligibility Rules &amp; Policies</h1>
+      <p>Please read all 10 rules carefully. You must accept them before creating a campaign. All rules are automatically enforced by our AI and HMS system.</p>
+    </div>
+
+    <div class="rules-card">
+      <div class="rules-card-header">
+        <h2>🏥 Medical &amp; Identity Verification Rules</h2>
+        <p>Enforced automatically — no exceptions</p>
+      </div>
+      <div class="rules-list">
+
+        <div class="rule-row">
+          <div class="rule-num">1</div>
+          <div class="rule-icon">🪪</div>
+          <div class="rule-content">
+            <div class="rule-title">One Active Campaign per Patient Aadhaar</div>
+            <div class="rule-desc">No two campaigns can be active simultaneously for the same patient Aadhaar number. A new campaign can only begin after the previous one is fully closed, completed, or rejected.</div>
+            <span class="rule-tag tag-auto">🤖 Auto-checked</span>
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-num">2</div>
+          <div class="rule-icon">💰</div>
+          <div class="rule-content">
+            <div class="rule-title">Annual Household Income Must Be ≤ ₹3,00,000</div>
+            <div class="rule-desc">Verified from the government-issued Income Certificate you upload. If the AI extracts an income above ₹3 lakhs per year, the campaign is automatically rejected — no exceptions.</div>
+            <span class="rule-tag tag-strict">⚡ Strict limit</span>
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-num">3</div>
+          <div class="rule-icon">✅</div>
+          <div class="rule-content">
+            <div class="rule-title">Patient Name Must Match Across All 3 Sources</div>
+            <div class="rule-desc">The patient's name as written on the Aadhaar Card, Ration Card, and Hospital Management System database must be identical. Even minor differences trigger a flag for manual review.</div>
+            <span class="rule-tag tag-ai">🧠 AI cross-checks</span>
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-num">4</div>
+          <div class="rule-icon">🏥</div>
+          <div class="rule-content">
+            <div class="rule-title">Hospital Admission Must Be Confirmed Live by HMS</div>
+            <div class="rule-desc">The patient must currently be admitted, have treatment pending, or be in active recovery. This is confirmed in real-time through the Hospital Management System. Self-reported medical details are never accepted.</div>
+            <span class="rule-tag tag-auto">🤖 Live HMS check</span>
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-num">5</div>
+          <div class="rule-icon">🎯</div>
+          <div class="rule-content">
+            <div class="rule-title">Campaign Goal = HMS Outstanding Amount — Not Self-Declared</div>
+            <div class="rule-desc">The fundraising target is pulled directly from the HMS billing system as the outstanding payable amount. You cannot set or change this figure — it is set automatically after HMS confirmation.</div>
+            <span class="rule-tag tag-strict">⚡ Cannot be changed</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="rules-card">
+      <div class="rules-card-header">
+        <h2>📎 Document &amp; Process Rules</h2>
+        <p>AI reads and verifies all documents you upload</p>
+      </div>
+      <div class="rules-list">
+
+        <div class="rule-row">
+          <div class="rule-num">6</div>
+          <div class="rule-icon">📄</div>
+          <div class="rule-content">
+            <div class="rule-title">All 5 Documents Are Mandatory — No Exceptions</div>
+            <div class="rule-desc">You must upload: Aadhaar Card, Ration Card, Income Certificate, Hospital Estimate, and Admission/Discharge Summary. Missing or unreadable documents will block the campaign from proceeding.</div>
+            <span class="rule-tag tag-strict">⚡ All 5 required</span>
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-num">7</div>
+          <div class="rule-icon">🤖</div>
+          <div class="rule-content">
+            <div class="rule-title">AI Extracts All Medical Details — You Do Not Fill Them</div>
+            <div class="rule-desc">Hospital name, pincode, diagnosis, admission date, and cost estimates are extracted automatically by AI from your uploaded documents. You only confirm the extracted data — there is no medical details form to fill manually.</div>
+            <span class="rule-tag tag-ai">🧠 Fully automated</span>
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-num">8</div>
+          <div class="rule-icon">✍️</div>
+          <div class="rule-content">
+            <div class="rule-title">Campaign Story Must Pass AI Review Before Going Live</div>
+            <div class="rule-desc">Your story is reviewed by AI for factual consistency with HMS and document data. Stories that contradict verified medical details, appear misleading, or are factually inconsistent will be flagged before the campaign goes live.</div>
+            <span class="rule-tag tag-ai">🧠 AI reviewed</span>
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-num">9</div>
+          <div class="rule-icon">👤</div>
+          <div class="rule-content">
+            <div class="rule-title">Fundraiser Must Truthfully Declare Relationship to Patient</div>
+            <div class="rule-desc">You must accurately declare whether you are the patient, a family member, a friend, an NGO representative, or hospital staff. False declarations are grounds for immediate campaign removal and account suspension.</div>
+            <span class="rule-tag tag-strict">⚡ Legal declaration</span>
+          </div>
+        </div>
+
+        <div class="rule-row">
+          <div class="rule-num">10</div>
+          <div class="rule-icon">🏦</div>
+          <div class="rule-content">
+            <div class="rule-title">Funds Released Directly to Hospital — Never to Individuals</div>
+            <div class="rule-desc">All donated funds are disbursed in tranches directly to the verified hospital's bank account, based on treatment milestones confirmed by HMS. No cash is released to the patient, fundraiser, family member, or any individual at any point.</div>
+            <span class="rule-tag tag-strict">⚡ No individual payouts</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ACCEPT -->
+    <div class="accept-block">
+      <div class="accept-checkbox-row">
+        <input type="checkbox" id="acceptCheck" onchange="onAcceptChange()" />
+        <label for="acceptCheck">I have read and understood all 10 rules. I confirm that the information I provide will be truthful, and I agree to the platform's eligibility policies and terms. I understand that <strong>false information will result in campaign removal and potential legal action.</strong></label>
+      </div>
+      <button type="button" class="btn-start" id="startBtn" onclick="startForm()" disabled>
+        Start Creating Campaign →
+      </button>
+    </div>
+
+  </div>
+</div><!-- /screen-rules -->
+
+<!-- ════════════════════════════════════════
+     SCREEN 2 — FORM
+════════════════════════════════════════ -->
+<div class="screen" id="screen-form">
+  <div class="form-screen">
+
+    <div class="page-header">
+      <h1>Create a Campaign</h1>
+      <p>All verification is automatic — AI extracts, HMS confirms, you just review</p>
+    </div>
+
+    <!-- STEPPER -->
+    <div class="stepper" id="stepper">
+      <div class="step-progress" id="stepProgress"></div>
+      <div class="step-item active"><div class="step-circle">1</div><div class="step-label">Your Details</div></div>
+      <div class="step-item"><div class="step-circle">2</div><div class="step-label">Documents</div></div>
+      <div class="step-item"><div class="step-circle">3</div><div class="step-label">AI Extract</div></div>
+      <div class="step-item"><div class="step-circle">4</div><div class="step-label">HMS Verify</div></div>
+      <div class="step-item"><div class="step-circle">5</div><div class="step-label">Story</div></div>
+      <div class="step-item"><div class="step-circle">6</div><div class="step-label">Submit</div></div>
+    </div>
+
+    <div class="form-card" id="formCard">
+
+      <!-- ═══ STEP 1 ═══ -->
+      <div class="step-panel active" id="step1">
+        <div class="card-head"><h2>👤 Fundraiser Information</h2><p>About the person creating this campaign</p></div>
+        <div class="card-body">
+          <div class="fg">
+            <div>
+              <label class="fl">Your Full Name</label>
+              <input class="fi" type="text" id="f_fname" placeholder="Loading from account…" readonly style="background:var(--cream);color:var(--ink-mid);" />
+              <div class="fh">Loaded from your account</div>
+            </div>
+            <div>
+              <label class="fl">Your Aadhaar Number</label>
+              <input class="fi" type="tel" id="f_faadh" maxlength="14" placeholder="Loading from account…" readonly style="background:var(--cream);color:var(--ink-mid);cursor:default;" />
+              <div class="fh">Your identity — loaded from account</div>
+              <div class="fe" id="e_faadh">Aadhaar not found in account — please update profile</div>
+            </div>
+            <div><label class="fl">Phone <span class="req">*</span></label><div class="ig"><span class="ipfx">+91</span><input class="fi" type="tel" id="f_fphone" maxlength="10" placeholder="9XXXXXXXXX" /></div><div class="fe" id="e_fphone">10-digit number required</div></div>
+            <div>
+              <label class="fl">Email Address</label>
+              <input class="fi" type="email" id="f_femail" placeholder="Loading from account…" readonly style="background:var(--cream);color:var(--ink-mid);" />
+              <div class="fh">Campaign updates sent here</div>
+            </div>
+            <div class="s2"><label class="fl">Relationship to Patient <span class="req">*</span></label>
+              <select class="fs" id="f_rel">
+                <option value="">Select…</option>
+                <option value="self">Self (I am the patient)</option>
+                <option value="spouse">Spouse</option>
+                <option value="parent">Parent</option>
+                <option value="child">Child</option>
+                <option value="sibling">Brother / Sister</option>
+                <option value="relative">Other Relative</option>
+                <option value="friend">Friend</option>
+                <option value="ngo">NGO / Organisation Representative</option>
+                <option value="hospital">Hospital Staff</option>
+              </select>
+              <div class="fe" id="e_rel">Please select relationship</div>
+            </div>
+          </div>
+        </div>
+        <div class="form-footer"><span class="stepind">Step 1 of 6</span><button type="button" class="btn-next" onclick="goNext(1)">Continue →</button></div>
+      </div>
+
+      <!-- ═══ STEP 2 — UPLOAD DOCUMENTS ═══ -->
+      <div class="step-panel" id="step2">
+        <div class="card-head"><h2>📎 Upload Documents</h2><p>All 5 are mandatory — AI will extract all patient &amp; medical details from these automatically</p></div>
+        <div class="card-body">
+          <div class="warnbox"><span style="font-size:15px;flex-shrink:0">⚠️</span><span>Upload clear, unedited scans. Edited or blurred documents are detected by AI and will result in rejection. Max 10MB · PDF, JPG, PNG.</span></div>
+          <div class="doc-grid">
+            <div>
+              <div class="dlrow"><span class="dlabel">Patient Aadhaar Card</span><span class="dreq">MANDATORY</span></div>
+              <div class="uzone" id="z_aadh" ondragover="odo(event,'z_aadh')" ondragleave="odl('z_aadh')" ondrop="odp(event,'aadh')">
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" onchange="ofs(event,'aadh')" />
+                <div class="uicon">🪪</div><div class="utitle">Aadhaar Card (Front &amp; Back)</div><div class="usub">PDF / JPG / PNG</div>
+                <div class="ufname" id="fn_aadh"></div>
+              </div>
+              <div class="fe" id="e_daadh">Required</div>
+            </div>
+            <div>
+              <div class="dlrow"><span class="dlabel">Ration Card</span><span class="dreq">MANDATORY</span></div>
+              <div class="uzone" id="z_ration" ondragover="odo(event,'z_ration')" ondragleave="odl('z_ration')" ondrop="odp(event,'ration')">
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" onchange="ofs(event,'ration')" />
+                <div class="uicon">📒</div><div class="utitle">Ration Card</div><div class="usub">PDF / JPG / PNG</div>
+                <div class="ufname" id="fn_ration"></div>
+              </div>
+              <div class="fe" id="e_dration">Required</div>
+            </div>
+            <div>
+              <div class="dlrow"><span class="dlabel">Income Certificate</span><span class="dreq">MANDATORY</span></div>
+              <div class="uzone" id="z_income" ondragover="odo(event,'z_income')" ondragleave="odl('z_income')" ondrop="odp(event,'income')">
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" onchange="ofs(event,'income')" />
+                <div class="uicon">📜</div><div class="utitle">Income Certificate</div><div class="usub">Govt. issued · must show ≤ ₹3L</div>
+                <div class="ufname" id="fn_income"></div>
+              </div>
+              <div class="fe" id="e_dincome">Required</div>
+            </div>
+            <div>
+              <div class="dlrow"><span class="dlabel">Hospital Estimate</span><span class="dreq">MANDATORY</span></div>
+              <div class="uzone" id="z_estimate" ondragover="odo(event,'z_estimate')" ondragleave="odl('z_estimate')" ondrop="odp(event,'estimate')">
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" onchange="ofs(event,'estimate')" />
+                <div class="uicon">🏥</div><div class="utitle">Hospital Cost Estimate</div><div class="usub">Official hospital letter / quote</div>
+                <div class="ufname" id="fn_estimate"></div>
+              </div>
+              <div class="fe" id="e_destimate">Required</div>
+            </div>
+            <div class="doc-full">
+              <div class="dlrow"><span class="dlabel">Admission / Discharge Summary</span><span class="dreq">MANDATORY</span></div>
+              <div class="uzone" id="z_summary" ondragover="odo(event,'z_summary')" ondragleave="odl('z_summary')" ondrop="odp(event,'summary')" style="min-height:75px">
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" onchange="ofs(event,'summary')" />
+                <div class="uicon">📋</div><div class="utitle">Hospital Admission or Discharge Summary</div><div class="usub">With doctor's signature and hospital seal</div>
+                <div class="ufname" id="fn_summary"></div>
+              </div>
+              <div class="fe" id="e_dsummary">Required</div>
+            </div>
+          </div>
+        </div>
+        <div class="form-footer"><button type="button" class="btn-back" onclick="goBack(2)">← Back</button><span class="stepind">Step 2 of 6</span><button type="button" class="btn-next" onclick="goNext(2)">Continue →</button></div>
+      </div>
+
+      <!-- ═══ STEP 3 — AI EXTRACTION ═══ -->
+      <div class="step-panel" id="step3">
+        <div class="card-head"><h2>🤖 AI Document Extraction</h2><p>AI reads all 5 documents · extracts patient &amp; medical details · you confirm</p></div>
+        <div class="card-body">
+          <div class="phase">
+            <div class="ptitle">🧠 AI Reading Documents <span class="pbadge" id="p1b">Waiting</span></div>
+            <p style="font-size:12px;color:var(--ink-soft);margin-bottom:14px">Click below — AI will read all uploaded documents and extract patient name, hospital, diagnosis, dates and amounts automatically.</p>
+            <div style="margin-bottom:16px">
+              <button type="button" class="btn-next" id="aiBtn" onclick="runAI()" style="width:auto">🤖 Start AI Extraction</button>
+            </div>
+            <div class="exfields">
+              <div class="exf"><div class="exfl">Hospital Name</div><div class="exfv dim" id="ex_hosp">—</div></div>
+              <div class="exf"><div class="exfl">Hospital Pincode</div><div class="exfv dim" id="ex_pin">—</div></div>
+              <div class="exf"><div class="exfl">Diagnosis / Disease</div><div class="exfv dim" id="ex_dis">—</div></div>
+              <div class="exf"><div class="exfl">Admission Date</div><div class="exfv dim" id="ex_adm">—</div></div>
+              <div class="exf"><div class="exfl">Hospital Estimate</div><div class="exfv dim" id="ex_est">—</div></div>
+              <div class="exf"><div class="exfl">Annual Income (from cert.)</div><div class="exfv dim" id="ex_inc">—</div></div>
+            </div>
+            <div class="exf" style="margin-top:10px"><div class="exfl">Name Match — Aadhaar vs Ration Card vs HMS</div><div class="exfv dim" id="ex_nm">—</div></div>
+
+            <!-- Languages — only thing AI cannot extract -->
+            <div style="margin-top:16px">
+              <label class="fl">Languages Patient Speaks <span class="req">*</span></label>
+              <div class="fh" style="margin-bottom:8px">Select all that apply — used to match local NGO volunteers</div>
+              <div class="lang-wrap">
+                <span class="lchip" onclick="toggleLang(this)" data-l="Hindi">Hindi</span>
+                <span class="lchip" onclick="toggleLang(this)" data-l="Telugu">Telugu</span>
+                <span class="lchip" onclick="toggleLang(this)" data-l="Tamil">Tamil</span>
+                <span class="lchip" onclick="toggleLang(this)" data-l="Kannada">Kannada</span>
+                <span class="lchip" onclick="toggleLang(this)" data-l="Malayalam">Malayalam</span>
+                <span class="lchip" onclick="toggleLang(this)" data-l="Marathi">Marathi</span>
+                <span class="lchip" onclick="toggleLang(this)" data-l="Bengali">Bengali</span>
+                <span class="lchip" onclick="toggleLang(this)" data-l="Gujarati">Gujarati</span>
+                <span class="lchip" onclick="toggleLang(this)" data-l="Punjabi">Punjabi</span>
+                <span class="lchip" onclick="toggleLang(this)" data-l="Urdu">Urdu</span>
+                <span class="lchip" onclick="toggleLang(this)" data-l="Odia">Odia</span>
+                <span class="lchip" onclick="toggleLang(this)" data-l="English">English</span>
+              </div>
+              <div class="fe" id="e_lang">Select at least one language</div>
+            </div>
+          </div>
+        </div>
+        <div class="form-footer"><button type="button" class="btn-back" onclick="goBack(3)">← Back</button><span class="stepind">Step 3 of 6</span><button type="button" class="btn-next" id="s3next" onclick="goNext(3)" disabled>Continue →</button></div>
+      </div>
+
+      <!-- ═══ STEP 4 — HMS VERIFY ═══ -->
+      <div class="step-panel" id="step4">
+        <div class="card-head"><h2>🏥 HMS Verification &amp; Billing</h2><p>Platform checks hospital database · confirms billing · you set campaign goal</p></div>
+        <div class="card-body">
+          <div class="phase" id="phase2">
+            <div class="ptitle">🏥 Hospital &amp; Billing Confirmation <span class="pbadge" id="p2b">Waiting</span></div>
+            <p style="font-size:12px;color:var(--ink-soft);margin-bottom:8px">Checked automatically after AI extraction completes in Step 3</p>
+            <div class="hmsgrid">
+              <div class="hmscard"><div class="hmscl">Admission Status</div><div class="hmscv" id="h_status">—</div></div>
+              <div class="hmscard"><div class="hmscl">Treatment Type</div><div class="hmscv" id="h_treat">—</div></div>
+              <div class="hmscard"><div class="hmscl">Total Estimate</div><div class="hmscv" id="h_total">—</div></div>
+              <div class="hmscard"><div class="hmscl">Already Paid</div><div class="hmscv" id="h_paid">—</div></div>
+              <div class="hmscard" style="grid-column:span 2"><div class="hmscl">⭐ Outstanding — Becomes Campaign Goal</div><div class="hmscv hi" id="h_out">—</div></div>
+            </div>
+            <div class="confirmrow" id="confirmRow" style="display:none">
+              <div><p>Campaign goal confirmed: <strong id="confirmAmt">—</strong></p><p style="font-size:11px;color:rgba(255,255,255,.5);margin-top:3px">Set from hospital billing — cannot be changed</p></div>
+              <button type="button" class="btn-confirm" onclick="confirmIt()">✅ Confirm &amp; Continue</button>
+            </div>
+          </div>
+        </div>
+        <div class="form-footer"><button type="button" class="btn-back" onclick="goBack(4)">← Back</button><span class="stepind">Step 4 of 6</span><button type="button" class="btn-next" id="s4next" onclick="goNext(4)" disabled>Continue →</button></div>
+      </div>
+
+      <!-- ═══ STEP 5: STORY ═══ -->
+      <div class="step-panel" id="step5">
+        <div class="card-head"><h2>✍️ Campaign Story</h2><p>Write your story in your own words — then optionally let Gemini polish it</p></div>
+        <div class="card-body">
+
+          <div class="infobox">
+            <span style="font-size:15px;flex-shrink:0">💡</span>
+            <span>Write freely and honestly about the patient's situation. Once done, you can optionally send it to Gemini AI to correct grammar, spelling and flow — while keeping all the emotion intact.</span>
+          </div>
+
+          <!-- Story input -->
+          <div class="story-toolbar">
+            <label class="fl" style="margin:0">Your Campaign Story <span class="req">*</span></label>
+            <button type="button" class="btn-polish" id="polishBtn" onclick="polishStory()">
+              ✨ Correct &amp; Improve
+            </button>
+          </div>
+          <textarea class="ft" id="f_story" maxlength="3000" rows="9"
+            placeholder="Write your story here in your own words. Tell donors who the patient is, what condition they are facing, how it has impacted their life and family, what treatment they need, and how the funds will be used. Write from the heart — donors connect with genuine, honest stories."
+            oninput="document.getElementById('sc').textContent=this.value.length"></textarea>
+          <div class="cc"><span id="sc">0</span> / 3000</div>
+          <div class="fe" id="e_story">Please write a story of at least 100 characters</div>
+
+          <!-- Polish result panel -->
+          <div class="polish-panel" id="polishPanel">
+            <div class="polish-header">
+              <div>
+                <div class="polish-header-title">📝 Story Comparison</div>
+                <div class="polish-header-sub">Choose which version you want to use for your campaign</div>
+              </div>
+              <span class="gemini-badge">✦ Gemini AI</span>
+            </div>
+            <div class="polish-cols">
+              <div class="polish-col">
+                <div class="polish-col-label old">📄 Your Original</div>
+                <div class="polish-text" id="origText"></div>
+              </div>
+              <div class="polish-col">
+                <div class="polish-col-label new">✨ Gemini Polished</div>
+                <div class="polish-text new-version" id="polishedText"></div>
+              </div>
+            </div>
+            <div class="polish-footer">
+              <button type="button" class="btn-keep-orig" onclick="keepOriginal()">Keep My Original</button>
+              <button type="button" class="btn-use-new" onclick="usePolished()">✅ Use Gemini Version</button>
+            </div>
+          </div>
+
+        </div>
+        <div class="form-footer"><button type="button" class="btn-back" onclick="goBack(5)">← Back</button><span class="stepind">Step 5 of 6</span><button type="button" class="btn-next" onclick="goNext(5)">Continue →</button></div>
+      </div>
+
+      <!-- ═══ STEP 6 ═══ -->
+      <div class="step-panel" id="step6">
+        <div class="card-head"><h2>👁️ Preview &amp; Submit</h2><p>Review everything before submitting for admin approval</p></div>
+        <div class="card-body">
+          <div class="pvcard" id="pvcard"></div>
+          <div class="infobox" style="margin-top:0"><span style="font-size:15px;flex-shrink:0">⏳</span><span>Admin reviews within 24–48 hours. All funds are disbursed directly to the verified hospital — never to individuals.</span></div>
+        </div>
+        <div class="form-footer"><button type="button" class="btn-back" onclick="goBack(6)">← Back</button><span class="stepind">Step 6 of 6</span><button type="button" class="btn-submit" id="subBtn" onclick="submitIt()">🚀 Submit Campaign</button></div>
+      </div>
+
+      <!-- SUCCESS -->
+      <div class="spage" id="spage">
+        <div class="spage-icon">🎉</div>
+        <h2>Campaign Submitted!</h2>
+        <p>Under admin review — you'll be notified within 24–48 hours.<br>Funds will be released directly to <strong id="sucHosp">the hospital</strong>.</p>
+        <button type="button" class="btn-next" onclick="window.location.href='dashboard.html'">Go to Dashboard</button>
+      </div>
+
+    </div><!-- /form-card -->
+  </div><!-- /form-screen -->
+</div><!-- /screen-form -->
+
+<div class="toast" id="toast"></div>
+
+<!-- ════════════════ SCRIPT ════════════════ -->
+<script>
+  const API   = 'http://localhost:3000/api';
+  const HMS   = 'http://localhost:4000/api';
+  const FLASK = 'http://localhost:5000';
+
+  // ── Gemini API via Anthropic proxy (Claude in Claude pattern)
+  // Replace with your actual Gemini API key or route through your backend
+  const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+  const GEMINI_KEY = 'YOUR_GEMINI_API_KEY'; // set in your backend env
+
+  let docs      = { aadh: null, ration: null, income: null, estimate: null, summary: null };
+  let langs     = [];
+  let exData    = {};
+  let hmsData   = {};
+  let confirmed = false;
+  let polishedStory = '';
+
+  // ── Utilities ─────────────────────────────────────────
+  const $   = id => document.getElementById(id);
+  const gv  = id => { const e = $('f_' + id) || $(id); return e ? e.value.trim() : ''; };
+  const fmt = n  => { if (!n) return '₹0'; if (n >= 100000) return '₹' + (n/100000).toFixed(1) + 'L'; if (n >= 1000) return '₹' + (n/1000).toFixed(1) + 'K'; return '₹' + n; };
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+
+  function toast(msg, d = 3500) {
+    const t = $('toast'); t.textContent = msg;
+    t.classList.add('show'); setTimeout(() => t.classList.remove('show'), d);
+  }
+  function err(id, s = true) {
+    const e = $('e_' + id); if (e) e.classList.toggle('show', s);
+    const i = $('f_' + id); if (i) i.classList.toggle('err', s);
+  }
+  function clr(...ids) { ids.forEach(id => err(id, false)); }
+
+  // ── Rules screen ─────────────────────────────────────
+  function onAcceptChange() {
+    $('startBtn').disabled = !$('acceptCheck').checked;
+  }
+
+  function startForm() {
+    $('screen-rules').classList.remove('active');
+    $('screen-form').classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    updateStepper(1);
+    loadAccountDetails();
+  }
+
+  // Load fundraiser details from localStorage (set at login)
+  function loadAccountDetails() {
+    const user = JSON.parse(localStorage.getItem('patientUser') || '{}');
+    if (!user.id) {
+      toast('⚠️ Not logged in — please login first');
+      setTimeout(() => window.location.href = 'login.html', 1500); return;
+    }
+    // Pre-fill Step 1 read-only fields
+    const nameEl  = $('f_fname');
+    const emailEl = $('f_femail');
+    const phoneEl = $('f_fphone');
+    const aadhEl  = $('f_faadh');
+    if (nameEl  && user.name)           nameEl.value  = user.name;
+    if (emailEl && user.email)          emailEl.value = user.email;
+    if (phoneEl && user.phone)          phoneEl.value = user.phone.replace('+91','');
+    if (aadhEl  && user.aadhaar_number) {
+      // format as XXXX XXXX XXXX
+      const a = user.aadhaar_number.replace(/\D/g,'');
+      aadhEl.value = a.replace(/(\d{4})(\d{4})(\d{4})/, '$1 $2 $3');
+    }
+    // Store for use in submitIt
+    window._accountUser = user;
+  }
+
+  // ── DOB → Age (only if field exists) ──────────────────
+  const dobEl = document.getElementById('f_dob');
+  if (dobEl) {
+    dobEl.addEventListener('change', function () {
+      const a = Math.floor((Date.now() - new Date(this.value)) / (365.25 * 864e5));
+      const ageEl = document.getElementById('f_age');
+      if (ageEl) ageEl.value = isNaN(a) || a < 0 ? '' : a;
+    });
+  }
+
+  // ── Aadhaar ───────────────────────────────────────────
+  function fmtAadhaar(el) {
+    let v = el.value.replace(/\D/g, '').slice(0, 12);
+    el.value = v.replace(/(\d{4})(\d{0,4})(\d{0,4})/, (_, a, b, c) => [a, b, c].filter(Boolean).join(' '));
+  }
+  function fullAadhaar() {
+    // Try old split fields first (aa1/aa2/aa3) — fallback to exData from AI extraction
+    const a1 = document.getElementById('aa1');
+    const a2 = document.getElementById('aa2');
+    const a3 = document.getElementById('aa3');
+    if (a1 && a2 && a3) {
+      return (a1.value + a2.value + a3.value).replace(/\D/g, '');
+    }
+    // Use aadhaar extracted by AI from Aadhaar document
+    return (exData.patientAadhaar || '').replace(/\D/g, '');
+  }
+
+  // ── Languages ─────────────────────────────────────────
+  function toggleLang(chip) {
+    chip.classList.toggle('sel');
+    const l = chip.dataset.l;
+    langs = chip.classList.contains('sel') ? [...langs, l] : langs.filter(x => x !== l);
+  }
+
+  // ── File upload ───────────────────────────────────────
+  function odo(e, z) { e.preventDefault(); $(z).classList.add('drag'); }
+  function odl(z) { $(z).classList.remove('drag'); }
+  function odp(e, t) { e.preventDefault(); odl('z_' + t); setF(e.dataTransfer.files[0], t); }
+  function ofs(e, t) { setF(e.target.files[0], t); }
+  function setF(f, t) {
+    if (!f) return;
+    if (f.size > 10 * 1024 * 1024) { toast('⚠️ ' + f.name + ' exceeds 10MB'); return; }
+    docs[t] = f;
+    $('fn_' + t).textContent = '✅ ' + f.name;
+    $('z_' + t).classList.add('done');
+    const de = $('e_d' + t); if (de) de.classList.remove('show');
+  }
+
+  // ── Stepper ───────────────────────────────────────────
+  function updateStepper(s) {
+    document.querySelectorAll('.step-item').forEach((el, i) => {
+      const n = i + 1; el.classList.remove('active', 'done');
+      const c = el.querySelector('.step-circle');
+      if (n < s)      { el.classList.add('done');   c.textContent = '✓'; }
+      else if (n === s){ el.classList.add('active'); c.textContent = n; }
+      else              c.textContent = n;
+    });
+    $('stepProgress').style.width = ((s - 1) / 5 * 100) + '%';
+  }
+
+  function showStep(n) {
+    document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+    const p = $('step' + n); if (p) p.classList.add('active');
+    updateStepper(n);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (n === 6) buildPreview();
+  }
+
+  function goBack(f) { showStep(f - 1); }
+  function goNext(f) { if (!validate(f)) return; showStep(f + 1); }
+
+  // ── Validation ────────────────────────────────────────
+  function validate(s) {
+    let ok = true;
+    if (s === 1) {
+      // Name and email are read-only from account — only validate editable fields
+      clr('fphone', 'rel');
+      if (gv('fphone').length !== 10) { err('fphone'); ok = false; }
+      if (!gv('rel'))                 { err('rel');   ok = false; }
+      // Aadhaar is readonly — skip validation, it loads from account
+
+      // If phone or aadhaar is new — save to profile for next time
+      if (ok) {
+        const user = window._accountUser || {};
+        const needUpdate = (!user.phone && gv('fphone')) || (!user.aadhaar_number && gv('faadh'));
+        if (needUpdate) {
+          const token = localStorage.getItem('patientToken');
+          fetch(`${API}/auth/profile`, {
+            method : 'PUT',
+            headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+            body   : JSON.stringify({
+              phone          : gv('fphone') ? '+91' + gv('fphone') : undefined,
+              aadhaar_number : gv('faadh').replace(/\s/g,'') || undefined
+            })
+          }).then(r => r.json()).then(d => {
+            if (d.success) {
+              localStorage.setItem('patientUser', JSON.stringify(d.user));
+              window._accountUser = d.user;
+              console.log('✅ Profile updated with phone/aadhaar');
+            }
+          }).catch(e => console.warn('Profile update failed:', e.message));
+        }
+      }
+    }
+    if (s === 2) {
+      // Step 2 is now document upload — validate all 5 docs
+      ['aadh','ration','income','estimate','summary'].forEach(t => {
+        if (!docs[t]) { const el = document.getElementById('e_d' + t); if (el) el.classList.add('show'); ok = false; }
+      });
+      if (!ok) toast('⚠️ Please upload all 5 mandatory documents');
+    }
+    if (s === 3) {
+      // Only block if AI extraction has NOT been run at all
+      // Name mismatch / missing entities / income > 3L = PENDING not block
+      if (!langs.length) {
+        const el = document.getElementById('e_lang'); if (el) el.classList.add('show');
+        toast('⚠️ Please select at least one language'); ok = false;
+      }
+      if (!window._previewVerification && $('s3next').disabled) {
+        toast('⚠️ Please click "Start AI Extraction" first'); ok = false;
+      }
+    }
+    if (s === 4) {
+      // No blocking here — HMS not found / name mismatch = PENDING not block
+      // s4next is always enabled after HMS runs
+    }
+    if (s === 5) {
+      if (gv('story').length < 100) { err('story'); toast('⚠️ Story must be at least 100 characters'); ok = false; }
+      else err('story', false);
+    }
+    // Individual field validations show their own toasts above
+    return ok;
+  }
+
+  // ── Step 4: AI + HMS ──────────────────────────────────
+  // ── Step 4: AI Extraction via Node /preview-verify ──────
+  async function runAI() {
+    const btn = $('aiBtn');
+    btn.disabled  = true;
+    btn.innerHTML = '<span class="spinner"></span> Analysing…';
+    $('p1b').className   = 'pbadge run';
+    $('p1b').textContent = 'Running…';
+    ['ex_hosp','ex_pin','ex_dis','ex_adm','ex_est','ex_inc','ex_nm'].forEach(id => {
+      $(id).textContent = 'Reading…'; $(id).className = 'exfv dim';
+    });
+
+    const token = localStorage.getItem('patientToken');
+    if (!token) { toast('⚠️ Not logged in. Please login first.'); return; }
+    if (!docs.aadh || !docs.estimate) {
+      toast('⚠️ Please upload at least Aadhaar Card + Hospital Estimate in Step 3');
+      btn.disabled = false; btn.innerHTML = '🤖 Start AI Extraction'; return;
+    }
+
+    try {
+      // Convert files to base64
+      btn.innerHTML = '<span class="spinner"></span> Reading documents…';
+      const docEntries = [
+        { key:'aadh',     type:'AADHAAR'           },
+        { key:'ration',   type:'RATION_CARD'        },
+        { key:'income',   type:'INCOME_CERTIFICATE' },
+        { key:'estimate', type:'ESTIMATE'            },
+        { key:'summary',  type:'ADMISSION_SUMMARY'  },
+      ];
+      const documents = [];
+      for (const entry of docEntries) {
+        const file = docs[entry.key];
+        if (!file) continue;
+        const b64 = await toBase64(file);
+        documents.push({ document_type: entry.type, file_url: b64, file_name: file.name });
+      }
+      window._docsBase64 = documents;
+
+      btn.innerHTML = '<span class="spinner"></span> AI extracting… (30–90 sec)';
+
+      // Call Node.js preview-verify → Node calls Flask /verify
+      const controller = new AbortController();
+      const tid = setTimeout(() => controller.abort(), 180000);
+      const vRes = await fetch(`${API}/campaigns/preview-verify`, {
+        method : 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+        body   : JSON.stringify({ documents, patient_name: (window._accountUser && window._accountUser.name) || 'Patient' }),
+        signal : controller.signal
+      });
+      clearTimeout(tid);
+      const vData = await vRes.json();
+      console.log('📥 Preview result:', vData);
+
+      if (!vData.success || vData.error) {
+        toast('❌ ' + (vData.error || 'AI extraction failed. Is Flask running?'), 6000);
+        $('p1b').className = 'pbadge err'; $('p1b').textContent = 'Failed';
+        btn.disabled = false; btn.innerHTML = '🔄 Retry AI Extraction'; return;
+      }
+
+      // ── HARD STOP: Tampering / Fake documents detected ────────────────
+      if (vData.status === 'FAKE_DETECTED') {
+        $('p1b').className = 'pbadge err'; $('p1b').textContent = '🚨 Fake Document';
+        btn.disabled = false; btn.innerHTML = '🔄 Retry';
+
+        // Show hard stop error — go back to upload step
+        const tamperIssues = (vData.cross_document_issues || []).join('\n• ');
+        $('aiResultBlock').innerHTML = `
+          <div style="background:#FEE2E2;border:2px solid #FCA5A5;border-radius:14px;
+                      padding:24px;margin-top:20px;text-align:center;">
+            <div style="font-size:48px;margin-bottom:12px;">🚨</div>
+            <h3 style="color:#991B1B;font-size:18px;font-weight:800;margin-bottom:10px;">
+              Document Tampering Detected
+            </h3>
+            <p style="color:#7F1D1D;font-size:14px;margin-bottom:16px;line-height:1.6;">
+              One or more documents appear to have been digitally edited or forged.
+              Please upload original, unedited documents issued directly by the hospital or government authority.
+            </p>
+            ${tamperIssues ? `<div style="background:#FCA5A5;border-radius:8px;padding:12px;
+                              text-align:left;font-size:12px;color:#7F1D1D;margin-bottom:16px;">
+              <b>Issues found:</b><br>• ${tamperIssues.replace(/\n/g,'<br>• ')}
+            </div>` : ''}
+            <button type="button" onclick="goBack(3)"
+              style="background:#991B1B;color:white;border:none;padding:12px 28px;
+                     border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
+              ← Go Back and Upload Original Documents
+            </button>
+          </div>`;
+        $('aiResultBlock').style.display = 'block';
+        return;  // HARD STOP — cannot proceed
+      }
+
+      // Map extracted_data to display
+      const ext = vData.extracted_data || {};
+      let bestDisease = ext.disease || '';
+      if (!bestDisease && Array.isArray(ext.diseases) && ext.diseases.length)
+        bestDisease = ext.diseases.reduce((a,b) => a.length >= b.length ? a : b, '');
+
+      exData = {
+        // Hospital & medical
+        hospitalName   : ext.hospital_name    || '',
+        hospitalPincode: ext.hospital_pincode  || '',
+        disease        : bestDisease,
+        admissionDate  : ext.admission_date    || '',
+        estimatedAmount: parseFloat(ext.amount || 0),
+        annualIncome   : parseFloat(ext.annual_income || 0),
+        namesMatch     : !(vData.cross_document_issues || []).some(i =>
+                           typeof i === 'string' && i.toLowerCase().includes('name')),
+        // Patient details extracted from Aadhaar card
+        patientName    : ext.patient_name   || '',
+        patientAadhaar : ext.aadhaar_number || '',
+        patientAge     : ext.age            || '',
+        patientGender  : ext.gender         || '',
+        patientCity    : ext.city           || ext.address || '',
+        patientState   : ext.state          || ''
+      };
+      window._previewVerification = vData;
+
+      $('ex_hosp').textContent = exData.hospitalName    || '— Not found'; $('ex_hosp').className = 'exfv';
+      $('ex_pin').textContent  = exData.hospitalPincode || '— Not found'; $('ex_pin').className  = 'exfv';
+      $('ex_dis').textContent  = exData.disease         || '— Not found'; $('ex_dis').className  = 'exfv';
+      $('ex_adm').textContent  = exData.admissionDate   || '— Not found'; $('ex_adm').className  = 'exfv';
+      $('ex_est').textContent  = exData.estimatedAmount > 0 ? fmt(exData.estimatedAmount) : '— Not found';
+      $('ex_est').className    = 'exfv';
+
+      const incOk = exData.annualIncome <= 300000 || exData.annualIncome === 0;
+      $('ex_inc').textContent = exData.annualIncome > 0
+        ? fmt(exData.annualIncome) + (incOk ? ' ✅' : ' ❌ Exceeds ₹3L limit')
+        : '— Not found';
+      $('ex_inc').className   = 'exfv';
+      $('ex_inc').style.color = incOk ? 'var(--green-mid)' : 'var(--red-soft)';
+
+      $('ex_nm').textContent = exData.namesMatch
+        ? '✅ Names consistent across documents'
+        : '⚠️ Name mismatch — admin will review';
+      $('ex_nm').className   = 'exfv';
+      $('ex_nm').style.color = exData.namesMatch ? 'var(--green-mid)' : 'var(--red-soft)';
+
+      $('p1b').className   = 'pbadge ok'; $('p1b').textContent = 'Done ✓';
+      btn.innerHTML        = '✅ Extraction Complete'; btn.style.background = 'var(--green-mid)';
+
+      // ✅ Extraction done — unlock Step 3 Continue button always
+      // (income > 3L just sets PENDING — does not block flow)
+      const s3btn = $('s3next');
+      if (s3btn) s3btn.disabled = false;
+
+      // Show result toast — never block regardless of income or name mismatch
+      if (!incOk && exData.annualIncome > 0) {
+        toast('ℹ️ Income noted — admin will review campaign before going live', 4000);
+      } else if (!exData.namesMatch) {
+        toast('ℹ️ Name mismatch noted — admin will review before going live', 4000);
+      } else {
+        toast('✅ Extraction complete! Select languages then click Continue.', 4000);
+      }
+
+      // Pre-run HMS in background so Step 4 loads fast
+      runHMS(exData);
+
+    } catch(e) {
+      if (e.name === 'AbortError') {
+        toast('⚠️ Timed out — is Flask running on port 5000?', 6000);
+      } else {
+        toast('❌ AI extraction failed: ' + e.message, 6000);
+        console.error('runAI error:', e);
+      }
+      $('p1b').className = 'pbadge err'; $('p1b').textContent = 'Failed';
+      btn.disabled = false; btn.innerHTML = '🔄 Retry AI Extraction';
+    }
+  }
+
+  // ── Step 4: HMS Check ─────────────────────────────────
+  // 1. Search hospital in AccessibleHospital table
+  // 2. If found & has API → call their HMS
+  // 3. If not found / no API → use estimate amount from documents
+  async function runHMS(ex) {
+    $('p2b').className = 'pbadge run'; $('p2b').textContent = 'Checking hospital…';
+
+    let billing = null;
+    let hospitalSource = 'DOC_EXTRACTED';
+    let hmsHospitalId  = null;
+
+    try {
+      // Step 1: Search hospital in our accessible hospitals DB
+      const searchRes = await fetch(
+        `${API}/hospitals/search?name=${encodeURIComponent(ex.hospitalName || '')}`,
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+      const searchData = await searchRes.json();
+      console.log('🏥 Hospital search:', searchData);
+
+      if (searchData.found && searchData.hospital) {
+        const hosp = searchData.hospital;
+        hmsHospitalId = hosp.id;
+        $('p2b').textContent = hosp.is_hms_connected ? 'Calling HMS API…' : 'Hospital found — loading estimate…';
+
+        // Step 2: Check patient in this hospital
+        const patientRes = await fetch(`${API}/hospitals/${hosp.id}/check-patient`, {
+          method : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body   : JSON.stringify({
+            patient_name    : gv('pname'),
+            patient_aadhaar : fullAadhaar(),
+            estimated_amount: ex.estimatedAmount
+          })
+        });
+        const patientData = await patientRes.json();
+        console.log('👤 Patient check:', patientData);
+
+        billing       = patientData.billing;
+        hospitalSource = billing?.source || 'DOC_EXTRACTED';
+        window._hmsPatientId = patientData.hms_patient_id || null;
+
+        if (hosp.is_hms_connected && patientData.found) {
+          toast('✅ Patient found in hospital HMS system!', 3000);
+        } else if (hosp.is_hms_connected && !patientData.found) {
+          toast('⚠️ Hospital registered but patient not in HMS yet — using estimate amount', 4000);
+        } else {
+          toast('ℹ️ Hospital found — using document estimate (no HMS API)', 3000);
+        }
+      } else {
+        // Hospital NOT in our system — use document data
+        toast('ℹ️ Hospital not in our database — using document estimate. Admin will verify.', 5000);
+        billing = {
+          source          : 'DOC_EXTRACTED',
+          total_estimate  : ex.estimatedAmount,
+          amount_paid     : 0,
+          outstanding     : ex.estimatedAmount,
+          admission_status: '⚠️ Not in our database — admin will verify'
+        };
+      }
+    } catch(e) {
+      console.warn('Hospital check failed:', e.message);
+      billing = {
+        source          : 'DOC_EXTRACTED',
+        total_estimate  : ex.estimatedAmount,
+        amount_paid     : 0,
+        outstanding     : ex.estimatedAmount,
+        admission_status: '⚠️ Could not verify — admin will check'
+      };
+    }
+
+    // Display billing data
+    hmsData = {
+      admissionStatus: billing.admission_status || billing.admissionStatus || '—',
+      treatmentType  : ex.disease || '—',
+      totalEstimate  : parseFloat(billing.total_estimate || ex.estimatedAmount || 0),
+      amountPaid     : parseFloat(billing.amount_paid   || 0),
+      outstanding    : parseFloat(billing.outstanding   || ex.estimatedAmount || 0),
+      source         : billing.source || 'DOC_EXTRACTED',
+      hospitalId     : hmsHospitalId
+    };
+
+    $('h_status').textContent = hmsData.admissionStatus;
+    const treatDisplay = hmsData.treatmentType.includes(',')
+      ? hmsData.treatmentType.split(',').reduce((a,b) => a.length >= b.length ? a : b,'').trim()
+      : hmsData.treatmentType;
+    $('h_treat').textContent  = treatDisplay;
+    $('h_total').textContent  = fmt(hmsData.totalEstimate);
+    $('h_paid').textContent   = fmt(hmsData.amountPaid);
+    $('h_out').textContent    = fmt(hmsData.outstanding);
+
+    // Show source badge
+    const sourceBadge = hmsData.source === 'HMS_API'
+      ? '✅ Live HMS Data' : '📄 From Document Estimate';
+    $('p2b').className   = 'pbadge ok';
+    $('p2b').textContent = 'Done ✓';
+
+    $('confirmAmt').textContent = fmt(hmsData.outstanding);
+    $('confirmRow').style.display = 'flex';
+    // Always auto-confirm so user is never blocked
+    confirmed = true;
+    $('s4next').disabled = false;
+
+    // Show source info in confirm row
+    const confirmP = $('confirmRow').querySelector('p:last-child');
+    if (confirmP) confirmP.textContent = hospitalSource === 'HMS_API'
+      ? 'Live from hospital HMS system — most accurate'
+      : 'Based on hospital estimate document — admin will verify before fund release';
+
+    // Always enable s4next after HMS runs — name mismatch/HMS not found = PENDING not BLOCK
+    $('s4next').disabled = false;
+  }
+
+  function confirmIt() {
+    confirmed = true; $('s4next').disabled = false;
+    $('confirmRow').style.background = 'var(--green-mid)';
+    const confirmBtn = $('confirmRow').querySelector('.btn-confirm');
+    if (confirmBtn) { confirmBtn.textContent = '✓ Confirmed'; confirmBtn.disabled = true; }
+    toast('✅ Confirmed! Campaign goal set to ' + fmt(hmsData.outstanding));
+  }
+
+  // ── Base64 helper ─────────────────────────────────────
+  function toBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload  = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('FileReader failed'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ── Step 5: Gemini Story Polish ───────────────────────
+  async function polishStory() {
+    const original = $('f_story').value.trim();
+    if (original.length < 50) {
+      toast('⚠️ Please write your story first before polishing it');
+      return;
+    }
+
+    const btn = $('polishBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Sending to Gemini…';
+
+    // Hide previous result
+    $('polishPanel').classList.remove('show');
+
+    const prompt = `You are a compassionate editor helping with a medical crowdfunding campaign on MediTrust, a platform that helps underprivileged patients in India raise funds for genuine medical treatment.
+
+The fundraiser has written the following campaign story. Your task is to:
+1. Correct all spelling mistakes and grammatical errors
+2. Improve sentence flow and readability
+3. Keep the EXACT same emotional tone, personal feelings, and heart of the original — do not make it sound corporate or formal
+4. Preserve all specific details (names, places, amounts, conditions, relationships)
+5. Keep it in the same person's voice — if they wrote in first person, keep it first person
+6. Do NOT add any new facts, claims, or embellishments that were not in the original
+7. Keep approximately the same length
+
+Original story:
+"""
+${original}
+"""
+
+Return ONLY the polished story text — no introductory lines, no commentary, no explanations. Just the improved story.`;
+
+    let polished = '';
+
+    try {
+      // PRIMARY: Route through Node.js backend (uses Vertex AI / Gemini)
+      const token = localStorage.getItem('patientToken');
+      const campaignId = localStorage.getItem('campaignId') || localStorage.getItem('draftCampaignId');
+
+      if (token && campaignId) {
+        // Save story first, then generate via backend
+        const saveRes = await fetch(`${API}/story/generate`, {
+          method : 'POST',
+          headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+          body   : JSON.stringify({
+            campaign_id   : parseInt(campaignId),
+            story_original: original,
+            language      : 'en'
+          })
+        });
+        const saveData = await saveRes.json();
+        if (saveData.success && saveData.story_gemini) {
+          polished = saveData.story_gemini;
+        } else if (saveData.success && !saveData.story_gemini) {
+          // Gemini not configured on backend — use basic polish
+          throw new Error('backend_no_gemini');
+        }
+      } else {
+        throw new Error('no_token');
+      }
+    } catch(backendErr) {
+      // FALLBACK: Direct Gemini API call (if key is set)
+      if (GEMINI_KEY && GEMINI_KEY !== 'YOUR_GEMINI_API_KEY') {
+        try {
+          const res = await fetch(`${GEMINI_URL}?key=${GEMINI_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { temperature: 0.4, maxOutputTokens: 1500 }
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            polished = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          }
+        } catch(e) {
+          console.log('Direct Gemini failed:', e.message);
+        }
+      }
+
+      // FINAL FALLBACK: Basic local polish (always works, no API needed)
+      if (!polished) {
+        polished = original
+          .replace(/i/g, 'I')
+          .replace(/\s{2,}/g, ' ')
+          .replace(/\.([A-Za-z])/g, '. $1')
+          .replace(/ur/g, 'your')
+          .replace(/u/g, 'you')
+          .replace(/thnk/gi, 'thank')
+          .replace(/pls/gi, 'please')
+          .replace(/wud/gi, 'would')
+          .replace(/cud/gi, 'could')
+          .replace(/shud/gi, 'should')
+          .replace(/ruppess/gi, 'rupees')
+          .replace(/affrod/gi, 'afford')
+          .trim();
+        // Capitalize first letter
+        polished = polished.charAt(0).toUpperCase() + polished.slice(1);
+        toast('ℹ️ Basic corrections applied. Gemini not configured on backend.', 4000);
+      }
+    }
+
+    if (!polished) {
+      toast('❌ Could not polish story — please try again');
+      btn.disabled = false;
+      btn.innerHTML = '✨ Correct &amp; Improve';
+      return;
+    }
+
+    polishedStory = polished.trim();
+
+    // Show comparison panel
+    $('origText').textContent     = original;
+    $('polishedText').textContent = polishedStory;
+    $('polishPanel').classList.add('show');
+
+    btn.disabled = false;
+    btn.innerHTML = '✨ Correct &amp; Improve';
+
+    // Scroll to comparison
+    setTimeout(() => $('polishPanel').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  }
+
+  function usePolished() {
+    $('f_story').value = polishedStory;
+    $('sc').textContent = polishedStory.length;
+    $('polishPanel').classList.remove('show');
+    toast('✅ Gemini version applied to your story');
+  }
+
+  function keepOriginal() {
+    $('polishPanel').classList.remove('show');
+    toast('✅ Keeping your original story');
+  }
+
+  // ── Preview ───────────────────────────────────────────
+  function buildPreview() {
+    // Use exData (from AI extraction) since patient form fields no longer exist
+    const pName   = exData.patientName   || '—';
+    const pAge    = exData.patientAge    || '—';
+    const pGender = exData.patientGender || '—';
+    const pCity   = exData.patientCity   || '—';
+    const pState  = exData.patientState  || '—';
+    const pAadh   = (exData.patientAadhaar || fullAadhaar() || '').replace(/^(\d{8})(\d{4})$/, 'XXXX-XXXX-$2');
+    const fName   = gv('fname') || (window._accountUser && window._accountUser.name) || '—';
+    const rel     = gv('rel') || '—';
+
+    $('pvcard').innerHTML = `
+      <div class="pvbanner">
+        <div style="font-size:11px;opacity:.6;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">${rel} · ${pState}</div>
+        <h3>${pName}'s Medical Campaign</h3>
+        <p>${($('f_story').value || '').slice(0, 130)}…</p>
+        <div class="pvgoal">${fmt(hmsData.outstanding)} <span>— set by HMS</span></div>
+      </div>
+      <div class="pvbody">
+        <div class="pvrow"><span class="pvrl">Patient</span><span class="pvrv">${pName}, ${pAge} yrs · ${pGender}</span></div>
+        <div class="pvrow"><span class="pvrl">Aadhaar</span><span class="pvrv">${pAadh || '—'}</span></div>
+        <div class="pvrow"><span class="pvrl">Location</span><span class="pvrv">${pCity}, ${pState}</span></div>
+        <div class="pvrow"><span class="pvrl">Languages</span><span class="pvrv">${langs.join(', ') || '—'}</span></div>
+        <div class="pvrow"><span class="pvrl">Diagnosis</span><span class="pvrv">${exData.disease || '—'}</span></div>
+        <div class="pvrow"><span class="pvrl">Hospital</span><span class="pvrv">${exData.hospitalName || '—'} · ${exData.hospitalPincode || ''}</span></div>
+        <div class="pvrow"><span class="pvrl">HMS Status</span><span class="pvrv" style="color:var(--green-mid)">✅ ${hmsData.admissionStatus || 'Confirmed'}</span></div>
+        <div class="pvrow"><span class="pvrl">Treatment</span><span class="pvrv">${hmsData.treatmentType || '—'}</span></div>
+        <div class="pvrow"><span class="pvrl">Total Estimate</span><span class="pvrv">${fmt(hmsData.totalEstimate)}</span></div>
+        <div class="pvrow"><span class="pvrl">Already Paid</span><span class="pvrv">${fmt(hmsData.amountPaid)}</span></div>
+        <div class="pvrow"><span class="pvrl">Campaign Goal</span><span class="pvrv" style="color:var(--green-mid);font-weight:700">${fmt(hmsData.outstanding)}</span></div>
+        <div class="pvrow"><span class="pvrl">Name Match</span><span class="pvrv" style="color:var(--green-mid)">✅ Aadhaar + Ration + HMS</span></div>
+        <div class="pvrow"><span class="pvrl">Income Eligibility</span><span class="pvrv" style="color:var(--green-mid)">✅ Below ₹3L</span></div>
+        <div class="pvrow"><span class="pvrl">Documents</span><span class="pvrv">5 / 5 uploaded ✅</span></div>
+        <div class="pvrow"><span class="pvrl">Fundraiser</span><span class="pvrv">${fName} (${rel})</span></div>
+      </div>`;
+  }
+
+  // ── Submit ────────────────────────────────────────────
+  async function submitIt() {
+    const btn   = $('subBtn');
+    btn.disabled  = true;
+    btn.innerHTML = '<span class="spinner"></span> Creating campaign…';
+
+    const token = localStorage.getItem('patientToken');
+    if (!token) {
+      toast('⚠️ Not logged in. Please login first.');
+      setTimeout(() => window.location.href = 'login.html', 1500); return;
+    }
+
+    // ── Step 1: Create campaign in DB ─────────────────────
+    let cid = null;
+    try {
+      const res = await fetch(`${API}/campaigns`, {
+        method : 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+        body   : JSON.stringify({
+          otp_code                  : '000000',
+          title                     : exData.disease
+            ? exData.disease + ' — ' + gv('pname')
+            : gv('pname') + ' Medical Treatment Campaign',
+          patient_full_name         : exData.patientName || gv('pname'),
+          patient_age               : Number(exData.patientAge || gv('age') || 0),
+          patient_gender            : exData.patientGender || gv('gender') || 'Male',
+          patient_aadhaar           : exData.patientAadhaar || fullAadhaar(),
+          patient_city              : exData.patientCity || gv('city') || '',
+          patient_state             : exData.patientState || gv('state') || '',
+          patient_languages         : langs.length ? langs : ['Telugu'],
+          relationship_to_fundraiser: gv('rel') || 'SELF',
+        })
+      });
+      const d = await res.json();
+      if (!d.success) {
+        // Check if it is a duplicate campaign error
+        if (d.error && d.error.includes('active campaign already exists')) {
+          toast('🚫 ' + d.error, 8000);
+          // Show hard stop message
+          document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+          $('spage').innerHTML = `
+            <div style="text-align:center;padding:30px;">
+              <div style="font-size:52px;margin-bottom:16px;">🚫</div>
+              <h2 style="color:#DC2626;font-size:20px;margin-bottom:12px;">Active Campaign Already Exists</h2>
+              <div style="background:#FEE2E2;border-radius:12px;padding:16px;margin-bottom:20px;text-align:left;">
+                <p style="font-size:14px;color:#7F1D1D;line-height:1.6;">${d.error}</p>
+              </div>
+              <button type="button" class="btn-next" onclick="window.location.href='dashboard.html'">
+                📋 Go to Dashboard
+              </button>
+            </div>`;
+          $('spage').classList.add('show');
+          $('stepper').style.display = 'none';
+        } else {
+          toast('❌ ' + (d.error || 'Campaign creation failed'));
+        }
+        btn.disabled = false; btn.innerHTML = '🚀 Submit Campaign'; return;
+      }
+      cid = d.campaign_id;
+      localStorage.setItem('campaignId', String(cid));
+      console.log('✅ Campaign created:', cid);
+    } catch(e) {
+      toast('❌ Cannot reach server. Is backend running?');
+      btn.disabled = false; btn.innerHTML = '🚀 Submit Campaign'; return;
+    }
+
+    // ── Step 2: Save FundNeeder (billing details) ─────────
+    btn.innerHTML = '<span class="spinner"></span> Saving billing details…';
+    try {
+      await fetch(`${API}/hospitals/fund-needer`, {
+        method : 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+        body   : JSON.stringify({
+          campaign_id            : cid,
+          accessible_hospital_id : hmsData.hospitalId || null,
+          patient_name           : exData.patientName  || gv('pname'),
+          patient_aadhaar        : exData.patientAadhaar || fullAadhaar(),
+          patient_age            : exData.patientAge   || gv('age'),
+          patient_gender         : exData.patientGender|| gv('gender'),
+          disease                : exData.disease,
+          admission_date         : exData.admissionDate,
+          hospital_name          : exData.hospitalName,
+          hospital_pincode       : exData.hospitalPincode,
+          total_estimate         : hmsData.totalEstimate,
+          amount_paid            : hmsData.amountPaid,
+          outstanding            : hmsData.outstanding,
+          source                 : hmsData.source || 'DOC_EXTRACTED',
+          hms_patient_id         : window._hmsPatientId || null
+        })
+      });
+      console.log('✅ FundNeeder saved');
+    } catch(e) {
+      console.warn('FundNeeder save failed:', e.message);
+    }
+
+    // ── Step 3: Save documents + use Step 3 preview result ─
+    // We already verified in Step 3 (preview-verify) — NO need to call Flask again!
+    // Just save documents to DB and record the verification result we already have.
+    btn.innerHTML = '<span class="spinner"></span> Saving documents to database…';
+    try {
+      let documents = window._docsBase64 || [];
+      if (!documents.length) {
+        const docEntries = [
+          {key:'aadh',type:'AADHAAR'},{key:'ration',type:'RATION_CARD'},
+          {key:'income',type:'INCOME_CERTIFICATE'},{key:'estimate',type:'ESTIMATE'},
+          {key:'summary',type:'ADMISSION_SUMMARY'}
+        ];
+        for (const e of docEntries) {
+          if (docs[e.key]) {
+            const b64 = await toBase64(docs[e.key]);
+            documents.push({ document_type:e.type, file_url:b64, file_name:docs[e.key].name });
+          }
+        }
+      }
+
+      // Use the verification result already computed in Step 3
+      // window._previewVerification has everything Flask already returned
+      const previewResult = window._previewVerification;
+
+      const vRes = await fetch(`${API}/campaigns/${cid}/save-documents`, {
+        method : 'POST',
+        headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+        body   : JSON.stringify({
+          documents,
+          // Pass Step 3 verification result directly — no re-processing
+          verification_result: previewResult ? {
+            final_status          : previewResult.status,
+            risk_score            : previewResult.risk_score,
+            extracted_data        : previewResult.extracted_data,
+            cross_document_issues : previewResult.cross_document_issues,
+            has_tampering         : previewResult.has_tampering,
+            has_expired_docs      : previewResult.has_expired_docs,
+            document_results      : previewResult.document_results
+          } : null
+        })
+      });
+      const vData = await vRes.json();
+      console.log('✅ Documents saved:', vData.status, '| Risk:', vData.risk_score);
+
+      if (!vData.success && vData.error) {
+        toast('⚠️ ' + vData.error, 5000);
+        btn.disabled = false; btn.innerHTML = '🚀 Submit Campaign'; return;
+      }
+
+      // ── Step 4: Save story and approve it ──────────────
+      const storyText = $('f_story').value.trim();
+      if (storyText && storyText.length >= 50) {
+        try {
+          // Save story
+          const sRes = await fetch(`${API}/story/generate`, {
+            method : 'POST',
+            headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+            body   : JSON.stringify({
+              campaign_id   : cid,
+              story_original: storyText,
+              language      : 'en'
+            })
+          });
+          // Approve story (use original if Gemini not configured)
+          await fetch(`${API}/story/approve`, {
+            method : 'POST',
+            headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` },
+            body   : JSON.stringify({ campaign_id: cid, use_original: true })
+          });
+          console.log('✅ Story saved and approved');
+        } catch(sErr) {
+          console.warn('Story save failed (non-critical):', sErr.message);
+        }
+      }
+
+      // Show result screen
+      $('sucHosp').textContent = exData.hospitalName || 'the hospital';
+      document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+      $('spage').classList.add('show');
+      $('stepper').style.display = 'none';
+      showResult(vData, cid);
+
+    } catch(e) {
+      if (e.name === 'AbortError') {
+        toast('❌ Verification timed out. Is Flask running on port 5000?', 6000);
+      } else {
+        toast('❌ ' + e.message, 5000);
+      }
+      btn.disabled = false; btn.innerHTML = '🚀 Submit Campaign';
+    }
+  }
+
+  function showResult(data, cid) {
+    const status = data.status || 'PENDING';
+    const risk   = data.risk_score || 0;
+    const ext    = data.extracted_data || {};
+    const rc     = risk < 30 ? '#15803D' : risk < 60 ? '#B45309' : '#DC2626';
+
+    const cfgs = {
+      VERIFIED : {
+        icon:'✅', color:'#15803D',
+        bTitle:'✅ Campaign Submitted Successfully!',
+        bMsg :'Your documents passed AI verification. Admin will review and your campaign will go LIVE automatically. You will receive an email once it is live.',
+        btn  :'📋 Go to Dashboard',
+        act  :"window.location.href='dashboard.html'"
+      },
+      PENDING : {
+        icon:'⏳', color:'#B45309',
+        bTitle:'⏳ Campaign Needs Admin Approval',
+        bMsg :'Your campaign has been submitted. Admin will carefully review your documents and details. You will receive an email once approved or if more information is needed.',
+        btn  :'📋 Go to Dashboard',
+        act  :"window.location.href='dashboard.html'"
+      },
+      VERIFICATION_NEEDED : {
+        icon:'⏳', color:'#B45309',
+        bTitle:'⏳ Campaign Needs Admin Approval',
+        bMsg :'Your campaign has been submitted. Admin will carefully review your documents and details. You will receive an email once approved or if more information is needed.',
+        btn  :'📋 Go to Dashboard',
+        act  :"window.location.href='dashboard.html'"
+      },
+      UPDATE_NEEDED : {
+        icon:'📅', color:'#D97706',
+        bTitle:'📅 Fresh Documents Needed',
+        bMsg :'Some documents appear expired. Please upload fresh documents issued within the last 90 days.',
+        btn  :'🔄 Start Again',
+        act  :"window.location.href='create-campaign.html'"
+      }
+    };
+    const c = cfgs[status] || cfgs['PENDING'];
+
+    const entityRows = (ext.hospital_name || ext.patient_name || ext.amount || ext.disease) ? `
+      <div style="background:var(--cream);border-radius:10px;padding:14px 18px;margin-bottom:16px;">
+        <p style="font-size:12px;font-weight:700;margin-bottom:10px;color:var(--ink-mid);">📋 Extracted from your documents</p>
+        ${ext.hospital_name ? `<p style="font-size:13px;margin-bottom:6px;">🏥 <b>Hospital:</b> ${ext.hospital_name}</p>` : ''}
+        ${ext.patient_name  ? `<p style="font-size:13px;margin-bottom:6px;">👤 <b>Patient:</b> ${ext.patient_name}</p>` : ''}
+        ${ext.amount        ? `<p style="font-size:13px;margin-bottom:6px;">💰 <b>Estimate:</b> <b style="color:var(--green-mid)">₹${parseFloat(ext.amount).toLocaleString('en-IN')}</b></p>` : ''}
+        ${ext.disease       ? `<p style="font-size:13px;margin-bottom:6px;">🩺 <b>Diagnosis:</b> ${ext.disease}</p>` : ''}
+      </div>` : '';
+
+    $('spage').innerHTML = `
+      <div style="text-align:center;padding:20px;">
+        <div style="font-size:52px;margin-bottom:12px;">${c.icon}</div>
+        <h2 style="font-family:'Lora',serif;font-size:22px;color:${c.color};margin-bottom:16px;">${c.bTitle}</h2>
+        <div style="background:var(--cream);border-radius:12px;padding:16px 20px;margin-bottom:16px;text-align:left;">
+          <p style="font-size:14px;color:var(--ink-mid);line-height:1.6;">${c.bMsg}</p>
+        </div>
+        <div style="background:var(--cream);border-radius:10px;padding:14px 18px;margin-bottom:16px;text-align:left;">
+          <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:6px;">
+            <span>AI Risk Score</span><span style="color:${rc}">${risk}/100</span>
+          </div>
+          <div style="height:8px;background:var(--border);border-radius:99px;overflow:hidden;">
+            <div style="height:100%;width:${risk}%;background:${rc};border-radius:99px;transition:width 1s ease;"></div>
+          </div>
+          <p style="font-size:11px;color:var(--ink-soft);margin-top:5px;">${risk<30?'✅ Low risk — documents look authentic':risk<60?'⚠️ Medium risk — admin will review':'🚨 High risk — admin will check carefully'}</p>
+        </div>
+        ${entityRows}
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+          <button type="button" class="btn-next" onclick="${c.act}">${c.btn}</button>
+          <button type="button" class="btn-back" onclick="window.location.href='dashboard.html'">📋 Dashboard</button>
+        </div>
+      </div>`;
+
+    localStorage.removeItem('draftCampaignId');
+  }
+
+  updateStepper(1);
+</script>
+</body>
+</html>

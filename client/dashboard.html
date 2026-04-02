@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediTrust — My Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --orange: #F97316; --orange-dark: #EA580C; --orange-light: #FFF7ED; --orange-mid: #FFEDD5;
+      --white: #FFFFFF; --gray-100: #F9FAFB; --gray-200: #F3F4F6; --gray-400: #9CA3AF;
+      --gray-600: #4B5563; --gray-800: #1F2937; --green: #22C55E; --red: #EF4444;
+      --blue: #3B82F6; --yellow: #F59E0B; --sidebar-w: 240px;
+    }
+    body { font-family: 'Segoe UI', sans-serif; background: var(--gray-100); color: var(--gray-800); display: flex; min-height: 100vh; }
+    .sidebar { width: var(--sidebar-w); background: var(--white); min-height: 100vh; position: fixed; top: 0; left: 0; display: flex; flex-direction: column; border-right: 1px solid var(--gray-200); z-index: 100; }
+    .sidebar-logo { padding: 22px 20px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; gap: 10px; }
+    .logo-icon { width: 36px; height: 36px; background: var(--orange); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .logo-text span { display: block; font-size: 16px; font-weight: 800; color: var(--gray-800); }
+    .logo-text small { font-size: 11px; color: var(--gray-400); }
+    .sidebar-nav { padding: 12px 0; flex: 1; }
+    .nav-label { padding: 10px 18px 4px; font-size: 10px; font-weight: 700; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.08em; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 18px; font-size: 13px; font-weight: 500; color: var(--gray-600); cursor: pointer; border-left: 3px solid transparent; transition: all 0.15s; }
+    .nav-item:hover  { background: var(--gray-100); color: var(--gray-800); }
+    .nav-item.active { background: var(--orange-light); color: var(--orange); border-left: 3px solid var(--orange); font-weight: 600; }
+    .nav-item .icon  { font-size: 16px; width: 20px; text-align: center; }
+    .sidebar-user { padding: 16px 18px; border-top: 1px solid var(--gray-200); display: flex; align-items: center; gap: 10px; }
+    .user-avatar { width: 36px; height: 36px; background: var(--orange); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+    .user-info span  { display: block; font-size: 13px; font-weight: 600; color: var(--gray-800); }
+    .user-info small { font-size: 11px; color: var(--gray-400); }
+    .logout-btn { margin-left: auto; background: none; border: none; color: var(--gray-400); cursor: pointer; font-size: 16px; }
+    .logout-btn:hover { color: var(--red); }
+    .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
+    .topbar { background: var(--white); padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--gray-200); position: sticky; top: 0; z-index: 50; }
+    .topbar h2 { font-size: 17px; font-weight: 700; }
+    .topbar p  { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .btn-new-campaign { background: var(--orange); color: white; border: none; padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.15s; }
+    .btn-new-campaign:hover { background: var(--orange-dark); }
+    .content { padding: 24px 28px; flex: 1; }
+    .welcome-banner { background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%); border-radius: 16px; padding: 28px 32px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; color: white; }
+    .welcome-banner h2 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+    .welcome-banner p  { font-size: 14px; opacity: 0.85; }
+    .welcome-banner .banner-icon { font-size: 64px; opacity: 0.3; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--white); border-radius: 14px; padding: 20px; display: flex; align-items: center; gap: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .stat-icon { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+    .si-orange { background: var(--orange-mid); } .si-green { background: #DCFCE7; } .si-blue { background: #DBEAFE; } .si-yellow { background: #FEF9C3; }
+    .stat-info h3 { font-size: 22px; font-weight: 800; line-height: 1; }
+    .stat-info p  { font-size: 12px; color: var(--gray-400); margin-top: 4px; }
+    .card { background: var(--white); border-radius: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden; margin-bottom: 20px; }
+    .card-header { padding: 16px 22px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--gray-200); }
+    .card-header h3 { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .campaign-card { border: 1.5px solid var(--gray-200); border-radius: 14px; padding: 22px; margin-bottom: 16px; transition: border-color 0.15s; background: var(--white); }
+    .campaign-card:hover { border-color: var(--orange); }
+    .progress-section { margin: 14px 0; }
+    .progress-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--gray-400); margin-bottom: 6px; }
+    .progress-labels span:last-child { font-weight: 700; color: var(--orange); }
+    .progress-bar { height: 8px; background: var(--gray-200); border-radius: 10px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--orange), var(--orange-dark)); border-radius: 10px; transition: width 0.5s ease; }
+    .campaign-meta { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--gray-400); margin-top: 12px; }
+    .campaign-meta span { display: flex; align-items: center; gap: 4px; }
+    .campaign-actions { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+    .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; gap: 4px; }
+    .b-draft { background: var(--gray-200); color: var(--gray-600); }
+    .b-pending { background: #FEF9C3; color: #92400E; }
+    .b-verified { background: #DCFCE7; color: #15803D; }
+    .b-live { background: #DBEAFE; color: #1D4ED8; }
+    .b-verification { background: #FEE2E2; color: #991B1B; }
+    .b-update { background: var(--orange-mid); color: var(--orange-dark); }
+    .b-completed { background: #F0FDF4; color: #166534; }
+    .b-cancelled { background: var(--gray-200); color: var(--gray-600); }
+    .btn { padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; display: inline-flex; align-items: center; gap: 5px; }
+    .btn-orange { background: var(--orange); color: white; }
+    .btn-orange:hover { background: var(--orange-dark); }
+    .btn-outline { background: var(--white); color: var(--gray-600); border: 1.5px solid var(--gray-200); }
+    .btn-outline:hover { border-color: var(--orange); color: var(--orange); }
+    .btn-green { background: #DCFCE7; color: #15803D; }
+    .btn-green:hover { background: #BBF7D0; }
+    .btn-blue { background: #DBEAFE; color: #1D4ED8; }
+    .empty { text-align: center; padding: 50px 20px; }
+    .empty-icon { font-size: 48px; margin-bottom: 14px; }
+    .empty h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .empty p  { font-size: 14px; color: var(--gray-400); margin-bottom: 24px; line-height: 1.6; }
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: var(--white); border-radius: 16px; padding: 28px; width: 520px; max-width: 90vw; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
+    .modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .modal p  { color: var(--gray-600); font-size: 13px; margin-bottom: 18px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--gray-600); margin-bottom: 5px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 14px; border: 1.5px solid var(--gray-200); border-radius: 8px; font-size: 13px; outline: none; font-family: inherit; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--orange); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+    .btn-modal-cancel  { padding: 9px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--gray-200); background: var(--white); color: var(--gray-600); }
+    .btn-modal-submit  { padding: 9px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: var(--orange); color: white; }
+    .btn-modal-submit:hover    { background: var(--orange-dark); }
+    .btn-modal-submit:disabled { background: var(--gray-400); cursor: not-allowed; }
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--gray-800); color: white; padding: 14px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; z-index: 999; transform: translateY(80px); opacity: 0; transition: all 0.3s; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .toast.show    { transform: translateY(0); opacity: 1; }
+    .toast.success { border-left: 4px solid var(--green); }
+    .toast.error   { border-left: 4px solid var(--red); }
+    .toast.info    { border-left: 4px solid var(--orange); }
+    .loading { display: flex; align-items: center; justify-content: center; padding: 40px; color: var(--gray-400); gap: 10px; }
+    .spinner { width: 20px; height: 20px; border: 3px solid var(--gray-200); border-top: 3px solid var(--orange); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .qr-box { text-align: center; padding: 20px; background: var(--gray-100); border-radius: 12px; margin: 16px 0; }
+    .qr-box img { width: 160px; height: 160px; border-radius: 8px; margin-bottom: 10px; }
+    .qr-box p   { font-size: 13px; color: var(--gray-600); }
+    .upi-id     { font-size: 15px; font-weight: 700; color: var(--orange); margin-top: 6px; }
+    .section { display: none; }
+    .section.active { display: block; }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🏥</div>
+    <div class="logo-text"><span>MediTrust</span><small>Patient Portal</small></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">My Account</div>
+    <div class="nav-item active" onclick="showSection('overview', this)"><span class="icon">🏠</span> Overview</div>
+    <div class="nav-item" onclick="showSection('campaigns', this)"><span class="icon">📋</span> My Campaigns</div>
+    <div class="nav-label">Actions</div>
+    <div class="nav-item" onclick="window.location.href='create-campaign.html'"><span class="icon">➕</span> New Campaign</div>
+    <div class="nav-item" onclick="showSection('updates', this)"><span class="icon">📢</span> Post Update</div>
+    <div class="nav-label">Info</div>
+    <div class="nav-item" onclick="showSection('howit', this)"><span class="icon">❓</span> How It Works</div>
+  </nav>
+  <div class="sidebar-user">
+    <div class="user-avatar" id="userAvatar">U</div>
+    <div class="user-info"><span id="userName">Loading...</span><small>Patient</small></div>
+    <button class="logout-btn" onclick="doLogout()" title="Logout">⏻</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <h2 id="topbarTitle">My Dashboard</h2>
+      <p id="topbarSub">Welcome back!</p>
+    </div>
+    <div class="topbar-right">
+      <button class="btn btn-outline" onclick="loadMyCampaigns()" style="font-size:12px;">🔄 Refresh</button>
+      <button class="btn-new-campaign" onclick="window.location.href='create-campaign.html'">➕ New Campaign</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- OVERVIEW -->
+    <div class="section active" id="section-overview">
+      <div class="welcome-banner">
+        <div>
+          <h2 id="welcomeName">Welcome back! 👋</h2>
+          <p>Here is a summary of your campaigns and activity</p>
+        </div>
+        <div class="banner-icon">🏥</div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-icon si-orange">📋</div><div class="stat-info"><h3 id="s-total">0</h3><p>Total Campaigns</p></div></div>
+        <div class="stat-card"><div class="stat-icon si-green">🟢</div><div class="stat-info"><h3 id="s-live">0</h3><p>Live Campaigns</p></div></div>
+        <div class="stat-card"><div class="stat-icon si-blue">💰</div><div class="stat-info"><h3 id="s-raised">₹0</h3><p>Total Raised</p></div></div>
+        <div class="stat-card"><div class="stat-icon si-yellow">⏳</div><div class="stat-info"><h3 id="s-pending">0</h3><p>Under Review</p></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3>📋 My Campaigns</h3>
+          <button class="btn btn-outline" onclick="showSection('campaigns', null)">View All →</button>
+        </div>
+        <div style="padding:20px;" id="overviewCampaigns">
+          <div class="loading"><div class="spinner"></div> Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CAMPAIGNS -->
+    <div class="section" id="section-campaigns">
+      <div id="campaignsList">
+        <div class="loading"><div class="spinner"></div> Loading campaigns...</div>
+      </div>
+    </div>
+
+    <!-- UPDATES -->
+    <div class="section" id="section-updates">
+      <div class="card">
+        <div class="card-header"><h3>📢 Post Campaign Update</h3></div>
+        <div style="padding:22px;">
+          <div class="form-group">
+            <label>Select Campaign</label>
+            <select id="updateCampaignSelect"><option value="">-- Select a campaign --</option></select>
+          </div>
+          <div class="form-group">
+            <label>Update Message</label>
+            <textarea id="updateText" rows="4" placeholder="Share the latest news..."></textarea>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+            <input type="checkbox" id="isMilestone" />
+            <label for="isMilestone" style="font-size:13px;color:var(--gray-600);cursor:pointer;">🏆 This is a milestone update (notify all donors)</label>
+          </div>
+          <button class="btn btn-orange" onclick="postUpdate()">📢 Post Update</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <div class="section" id="section-howit">
+      <div class="card">
+        <div class="card-header"><h3>❓ How MediTrust Works</h3></div>
+        <div style="padding:28px;">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+            <div style="text-align:center;padding:20px;"><div style="font-size:40px;margin-bottom:12px;">📝</div><h4 style="font-size:15px;font-weight:700;margin-bottom:8px;">1. Create Campaign</h4><p style="font-size:13px;color:var(--gray-400);line-height:1.6;">Register and create a campaign with patient details and medical documents</p></div>
+            <div style="text-align:center;padding:20px;"><div style="font-size:40px;margin-bottom:12px;">🤖</div><h4 style="font-size:15px;font-weight:700;margin-bottom:8px;">2. AI Verification</h4><p style="font-size:13px;color:var(--gray-400);line-height:1.6;">Our AI engine verifies all documents for authenticity and tampering</p></div>
+            <div style="text-align:center;padding:20px;"><div style="font-size:40px;margin-bottom:12px;">✅</div><h4 style="font-size:15px;font-weight:700;margin-bottom:8px;">3. Admin Approval</h4><p style="font-size:13px;color:var(--gray-400);line-height:1.6;">MediTrust admin reviews AI results and approves or rejects</p></div>
+            <div style="text-align:center;padding:20px;"><div style="font-size:40px;margin-bottom:12px;">✍️</div><h4 style="font-size:15px;font-weight:700;margin-bottom:8px;">4. Write Your Story</h4><p style="font-size:13px;color:var(--gray-400);line-height:1.6;">Write your story — Gemini AI polishes it for you</p></div>
+            <div style="text-align:center;padding:20px;"><div style="font-size:40px;margin-bottom:12px;">🚀</div><h4 style="font-size:15px;font-weight:700;margin-bottom:8px;">5. Go Live</h4><p style="font-size:13px;color:var(--gray-400);line-height:1.6;">Campaign goes live with UPI QR code</p></div>
+            <div style="text-align:center;padding:20px;"><div style="font-size:40px;margin-bottom:12px;">🏥</div><h4 style="font-size:15px;font-weight:700;margin-bottom:8px;">6. Funds to Hospital</h4><p style="font-size:13px;color:var(--gray-400);line-height:1.6;">Funds released directly to hospital. 100% transparent.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- New Campaign → navigates to create-campaign.html -->
+
+<!-- STORY MODAL -->
+<div class="modal-overlay" id="storyModal">
+  <div class="modal">
+    <h3>✍️ Write Your Story</h3>
+    <p>Write in your own words. Gemini AI will polish it for you.</p>
+    <div class="form-group">
+      <label>Your Story *</label>
+      <textarea id="storyText" rows="6" placeholder="Tell donors about the patient's situation..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Language</label>
+      <select id="storyLanguage">
+        <option value="en">English</option>
+        <option value="te">తెలుగు (Telugu)</option>
+        <option value="hi">हिंदी (Hindi)</option>
+        <option value="ta">தமிழ் (Tamil)</option>
+      </select>
+    </div>
+    <div id="geminiResult" style="display:none;margin-top:16px;">
+      <div style="background:var(--gray-100);border-radius:10px;padding:14px;margin-bottom:14px;">
+        <p style="font-size:12px;font-weight:700;color:var(--orange);margin-bottom:8px;">✨ Gemini Polished Version:</p>
+        <p id="geminiStoryText" style="font-size:13px;color:var(--gray-800);line-height:1.7;margin:0;"></p>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <button class="btn btn-green" onclick="approveStory(false)">✅ Approve This Story</button>
+        <button class="btn btn-outline" onclick="approveStory(true)">Use My Original</button>
+      </div>
+    </div>
+    <div class="modal-actions" id="storyActions">
+      <button class="btn-modal-cancel" onclick="closeModal('storyModal')">Cancel</button>
+      <button class="btn-modal-submit" id="generateStoryBtn" onclick="generateStory()">✨ Polish with Gemini →</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = 'http://localhost:3000/api';
+  let token  = localStorage.getItem('patientToken');
+  let user   = JSON.parse(localStorage.getItem('patientUser') || '{}');
+  let myCampaigns        = [];
+  let selectedCampaignId = null;
+
+  // ── INIT ──────────────────────────────────
+  window.onload = async () => {
+    if (!token) { window.location.href = 'login.html'; return; }
+
+    // ✅ FIX 1: Clear any stale campaign cache on load
+    localStorage.removeItem('cachedCampaigns');
+    localStorage.removeItem('campaignsLastUpdate');
+
+    document.getElementById('userName').textContent    = user.name || 'Patient';
+    document.getElementById('userAvatar').textContent  = (user.name || 'U').charAt(0).toUpperCase();
+    document.getElementById('welcomeName').textContent = `Welcome back, ${user.name?.split(' ')[0] || 'there'}! 👋`;
+
+    await loadMyCampaigns();
+  };
+
+  // ── LOAD CAMPAIGNS — always fresh from server ──
+  async function loadMyCampaigns() {
+    try {
+      // ✅ FIX 1: Always fetch fresh — NO localStorage cache
+      const res  = await authFetch(`${API}/campaigns/my/campaigns`);
+      const data = await res.json();
+
+      if (!data.success) {
+        if (res.status === 401) { doLogout(); return; }
+        showToast('Failed to load campaigns', 'error');
+        return;
+      }
+
+      myCampaigns = data.campaigns || [];
+      console.log('Loaded', myCampaigns.length, 'campaigns from server');
+
+      updateStats();
+      renderOverviewCampaigns();
+      renderCampaignsList();
+      populateUpdateSelect();
+
+    } catch (err) {
+      console.error('Load campaigns error:', err);
+      showToast('Server error loading campaigns', 'error');
+    }
+  }
+
+  // ── STATS ──────────────────────────────────
+  function updateStats() {
+    const total   = myCampaigns.length;
+    const live    = myCampaigns.filter(c => c.status === 'LIVE_CAMPAIGN').length;
+    const pending = myCampaigns.filter(c =>
+      ['PENDING','PENDING_VERIFICATION','VERIFICATION_NEEDED'].includes(c.status)
+    ).length;
+    const raised = myCampaigns.reduce((s,c) => s + parseFloat(c.collected_amount||0), 0);
+
+    document.getElementById('s-total').textContent   = total;
+    document.getElementById('s-live').textContent    = live;
+    document.getElementById('s-pending').textContent = pending;
+    document.getElementById('s-raised').textContent  = '₹' + formatAmount(raised);
+  }
+
+  // ── RENDER ─────────────────────────────────
+  function renderOverviewCampaigns() {
+    const el = document.getElementById('overviewCampaigns');
+    if (!myCampaigns.length) {
+      el.innerHTML = `<div class="empty"><div class="empty-icon">🏥</div><h3>No campaigns yet</h3><p>Create your first campaign</p><button class="btn btn-orange" onclick="window.location.href='create-campaign.html'">➕ Create Campaign</button></div>`;
+      return;
+    }
+    el.innerHTML = myCampaigns.slice(0,3).map(c => campaignCardHTML(c)).join('');
+  }
+
+  function renderCampaignsList() {
+    const el = document.getElementById('campaignsList');
+    if (!myCampaigns.length) {
+      el.innerHTML = `<div class="empty"><div class="empty-icon">🏥</div><h3>No campaigns yet</h3><p>Start your first campaign</p><button class="btn btn-orange" onclick="window.location.href='create-campaign.html'">➕ Create My First Campaign</button></div>`;
+      return;
+    }
+    el.innerHTML = myCampaigns.map(c => `<div class="campaign-card">${campaignCardHTML(c)}</div>`).join('');
+  }
+
+  function campaignCardHTML(c) {
+    const collected = parseFloat(c.collected_amount||0);
+    const target    = parseFloat(c.verified_amount||0);
+    const percent   = target > 0 ? Math.min(100, Math.round((collected/target)*100)) : 0;
+    const record    = c.verification_records?.[0];
+
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+        <div>
+          <h3 style="font-size:16px;font-weight:700;margin-bottom:4px;">${c.title}</h3>
+          <p style="font-size:12px;color:var(--gray-400);">Patient: ${c.patient_full_name} • ${c.relationship_to_fundraiser}</p>
+        </div>
+        ${statusBadge(c.status)}
+      </div>
+      ${target > 0 ? `
+        <div class="progress-section">
+          <div class="progress-labels"><span>₹${formatAmount(collected)} raised</span><span>${percent}% of ₹${formatAmount(target)}</span></div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
+        </div>` : ''}
+      ${record?.risk_score ? `
+        <div style="display:flex;gap:16px;font-size:12px;color:var(--gray-400);margin-top:10px;">
+          <span>🎯 Risk Score: <strong style="color:${record.risk_score>60?'var(--red)':'var(--green)'}">${record.risk_score}/100</strong></span>
+          ${record.has_tampering ? '<span style="color:var(--red)">🚨 Tampering</span>' : ''}
+          ${record.has_expired   ? '<span style="color:var(--yellow)">📅 Expired</span>' : ''}
+        </div>` : ''}
+      <div class="campaign-meta">
+        <span>📅 ${formatDate(c.created_at)}</span>
+        ${c.expires_at ? `<span>⏰ Expires: ${formatDate(c.expires_at)}</span>` : ''}
+        ${c.donations?.length ? `<span>❤️ ${c.donations.length} donors</span>` : ''}
+      </div>
+      <div class="campaign-actions">${getActionButtons(c)}</div>`;
+  }
+
+  function getActionButtons(c) {
+    let btns = '';
+
+    // DRAFT — still needs documents uploaded
+    if (c.status === 'DRAFT') {
+      btns += `<button class="btn btn-orange"
+        onclick="window.location.href='upload.html?campaign_id=${c.id}'">
+        📤 Upload Documents
+      </button>`;
+    }
+
+    // LIVE — show QR + UPI + Post Update
+    if (c.status === 'LIVE_CAMPAIGN') {
+      btns += `
+        <button class="btn btn-blue"    onclick="showQR(${c.id})">📱 QR Code</button>
+        <button class="btn btn-outline" onclick="copyUPI('${c.upi_id}')">📋 Copy UPI</button>
+        <button class="btn btn-outline" onclick="showSection('updates',null)">📢 Post Update</button>`;
+    }
+
+    // UNDER REVIEW — waiting for admin
+    if (['PENDING_VERIFICATION','PENDING','VERIFICATION_NEEDED'].includes(c.status)) {
+      btns += `<div style="font-size:12px;color:var(--gray-400);padding:6px 0;">
+        ⏳ Under admin review — you will be notified by email
+      </div>`;
+    }
+
+    // VERIFIED (admin approved but not live yet — transitional)
+    if (c.status === 'VERIFIED') {
+      btns += `<div style="font-size:12px;color:var(--green);padding:6px 0;">
+        ✅ Approved by admin — campaign going live soon
+      </div>`;
+    }
+
+    return btns;
+  }
+
+  // ── CREATE CAMPAIGN (OTP disabled) ─────────
+  function openNewCampaignModal() {
+    // Navigate to full 6-step campaign creation page
+    window.location.href = 'create-campaign.html';
+  }
+
+  // createCampaign() removed — use create-campaign.html
+
+    // ── STORY MODAL ────────────────────────────
+  function openStoryModal(campaignId) {
+    selectedCampaignId = campaignId;
+    document.getElementById('storyText').value = '';
+    document.getElementById('geminiResult').style.display = 'none';
+    document.getElementById('storyActions').style.display = 'flex';
+    document.getElementById('storyModal').classList.add('show');
+  }
+
+  async function generateStory() {
+    const text     = document.getElementById('storyText').value.trim();
+    const language = document.getElementById('storyLanguage').value;
+    const btn      = document.getElementById('generateStoryBtn');
+
+    if (!text || text.length < 50) { showToast('Write at least 50 characters', 'error'); return; }
+
+    btn.disabled = true; btn.textContent = '✨ Polishing...';
+    try {
+      const res  = await authFetch(`${API}/story/generate`, {
+        method : 'POST', headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify({ campaign_id: selectedCampaignId, story_original: text, language })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        if (data.story_gemini) {
+          document.getElementById('geminiStoryText').textContent = data.story_gemini;
+          document.getElementById('geminiResult').style.display  = 'block';
+          document.getElementById('storyActions').style.display  = 'none';
+        } else {
+          showToast(data.message || 'Approving original story.', 'info');
+          await approveStory(true);
+        }
+      } else { showToast(data.error || 'Failed', 'error'); }
+    } catch(e) { showToast('Server error', 'error'); }
+    finally { btn.disabled = false; btn.textContent = '✨ Polish with Gemini →'; }
+  }
+
+  async function approveStory(useOriginal) {
+    try {
+      const res  = await authFetch(`${API}/story/approve`, {
+        method : 'POST', headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify({ campaign_id: selectedCampaignId, use_original: useOriginal })
+      });
+      const data = await res.json();
+      if (data.success) {
+        closeModal('storyModal');
+        showToast('✅ Story approved! You can now go live.', 'success');
+        await loadMyCampaigns();
+      } else { showToast(data.error || 'Failed', 'error'); }
+    } catch(e) { showToast('Server error', 'error'); }
+  }
+
+  // ── GO LIVE ────────────────────────────────
+  async function goLive(campaignId) {
+    if (!confirm('Make this campaign live? Donors will be able to contribute.')) return;
+    try {
+      const res  = await authFetch(`${API}/campaigns/${campaignId}/go-live`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) { showToast('🚀 Campaign is now LIVE!', 'success'); await loadMyCampaigns(); }
+      else showToast(data.error || 'Failed to go live', 'error');
+    } catch(e) { showToast('Server error', 'error'); }
+  }
+
+  // ── QR CODE ────────────────────────────────
+  function showQR(campaignId) {
+    const c = myCampaigns.find(x => x.id === campaignId);
+    if (!c) return;
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay show';
+    modal.innerHTML = `
+      <div class="modal" style="max-width:360px;text-align:center;">
+        <h3>📱 Campaign QR Code</h3><p>${c.title}</p>
+        <div class="qr-box">
+          <img src="${c.qr_code_url}" alt="QR Code" />
+          <p>Scan to donate via UPI</p>
+          <div class="upi-id">${c.upi_id}</div>
+        </div>
+        <button class="btn btn-orange" style="width:100%;margin-bottom:10px;" onclick="copyUPI('${c.upi_id}')">📋 Copy UPI ID</button>
+        <button class="btn btn-outline" style="width:100%;" onclick="this.closest('.modal-overlay').remove()">Close</button>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+
+  function copyUPI(upiId) { navigator.clipboard.writeText(upiId); showToast('✅ UPI ID copied!', 'success'); }
+
+  // ── POST UPDATE ────────────────────────────
+  async function postUpdate() {
+    const campaignId  = document.getElementById('updateCampaignSelect').value;
+    const text        = document.getElementById('updateText').value.trim();
+    const isMilestone = document.getElementById('isMilestone').checked;
+    if (!campaignId) { showToast('Select a campaign', 'error'); return; }
+    if (!text)        { showToast('Enter update message', 'error'); return; }
+    try {
+      const res  = await authFetch(`${API}/campaigns/${campaignId}/updates`, {
+        method : 'POST', headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify({ update_text: text, is_milestone: isMilestone })
+      });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('updateText').value = '';
+        document.getElementById('isMilestone').checked = false;
+        showToast(isMilestone ? '✅ Milestone posted — donors notified!' : '✅ Update posted!', 'success');
+      } else showToast(data.error || 'Failed', 'error');
+    } catch(e) { showToast('Server error', 'error'); }
+  }
+
+  function populateUpdateSelect() {
+    const sel  = document.getElementById('updateCampaignSelect');
+    const live = myCampaigns.filter(c => c.status === 'LIVE_CAMPAIGN');
+    sel.innerHTML = '<option value="">-- Select a campaign --</option>';
+    live.forEach(c => { sel.innerHTML += `<option value="${c.id}">${c.title}</option>`; });
+  }
+
+  // ── NAVIGATION ─────────────────────────────
+  function showSection(name, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.getElementById(`section-${name}`).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    if (el) el.classList.add('active');
+    const titles = {
+      overview : ['My Dashboard',   'Welcome back!'],
+      campaigns: ['My Campaigns',   'Manage all your campaigns'],
+      updates  : ['Post Update',    'Keep your donors informed'],
+      howit    : ['How It Works',   'Learn about the MediTrust process']
+    };
+    if (titles[name]) {
+      document.getElementById('topbarTitle').textContent = titles[name][0];
+      document.getElementById('topbarSub').textContent   = titles[name][1];
+    }
+    // Refresh campaign list when switching to campaigns tab
+    if (name === 'campaigns') renderCampaignsList();
+  }
+
+  // ── HELPERS ────────────────────────────────
+  function authFetch(url, opts = {}) {
+    return fetch(url, { ...opts, headers: { ...opts.headers, 'Authorization': `Bearer ${token}` } });
+  }
+
+  function doLogout() {
+    // ✅ FIX 1: Clear everything on logout
+    localStorage.clear();
+    window.location.href = 'login.html';
+  }
+
+  function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+  function showCampaignError(msg) {
+    const el = document.getElementById('campaignModalError');
+    el.textContent = msg; el.style.display = 'block';
+  }
+
+  function showToast(msg, type = 'info') {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = `toast ${type} show`;
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  function formatAmount(n) { return parseFloat(n||0).toLocaleString('en-IN'); }
+
+  function formatDate(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' });
+  }
+
+  function statusBadge(s) {
+    return {
+      DRAFT               :'<span class="badge b-draft">📝 Draft</span>',
+      PENDING_VERIFICATION:'<span class="badge b-pending">⏳ Under AI Review</span>',
+      PENDING             :'<span class="badge b-pending">⏳ Pending Admin</span>',
+      VERIFIED            :'<span class="badge b-verified">✅ Verified</span>',
+      LIVE_CAMPAIGN       :'<span class="badge b-live">🟢 Live</span>',
+      VERIFICATION_NEEDED :'<span class="badge b-verification">🚨 Needs Review</span>',
+      UPDATE_NEEDED       :'<span class="badge b-update">📅 Update Needed</span>',
+      COMPLETED           :'<span class="badge b-completed">🏁 Completed</span>',
+      CANCELLED           :'<span class="badge b-cancelled">❌ Cancelled</span>',
+    }[s] || `<span class="badge b-draft">${s}</span>`;
+  }
+
+  function statusLabel(s) {
+    return {
+      DRAFT               :'Draft',
+      PENDING_VERIFICATION:'Under AI Review',
+      PENDING             :'Pending Admin Review',
+      VERIFICATION_NEEDED :'Manual Review Needed',
+      UPDATE_NEEDED       :'Update Documents'
+    }[s] || s;
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Places API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, button { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background: #007bff; color: white; cursor: pointer; margin-top: 10px; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 4px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h2>🏥 Google Places API Test</h2>
+    
+    <div class="form-group">
+        <label for="placeName">Hospital Name:</label>
+        <input type="text" id="placeName" value="Apollo Hospitals" placeholder="Enter hospital name">
+    </div>
+    
+    <div class="form-group">
+        <label for="city">City:</label>
+        <input type="text" id="city" value="Visakhapatnam" placeholder="Enter city">
+    </div>
+    
+    <div class="form-group">
+        <label for="state">State (Optional):</label>
+        <input type="text" id="state" value="Andhra Pradesh" placeholder="Enter state">
+    </div>
+    
+    <button onclick="verifyPlace()">🔍 Verify Place</button>
+    <button onclick="testKnownPlaces()">🧪 Test Known Hospitals</button>
+    
+    <div id="result"></div>
+    
+    <script>
+        async function verifyPlace() {
+            const placeName = document.getElementById('placeName').value;
+            const city = document.getElementById('city').value;
+            const state = document.getElementById('state').value;
+            
+            if (!placeName || !city) {
+                showResult('Please enter hospital name and city', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:3000/api/place-verification/verify-place', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ place_name: placeName, city, state })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.verified) {
+                    showResult(`
+                        <h3>✅ Place Verified!</h3>
+                        <p><strong>Name:</strong> ${data.place.name}</p>
+                        <p><strong>Address:</strong> ${data.place.address}</p>
+                        <p><strong>Rating:</strong> ${data.place.rating || 'N/A'}</p>
+                        <p><strong>Medical Facility:</strong> ${data.place.is_medical ? 'Yes ✅' : 'No ⚠️'}</p>
+                        <p><strong>Types:</strong> ${data.place.types.join(', ')}</p>
+                    `, 'success');
+                } else {
+                    showResult(`
+                        <h3>❌ Place Not Verified</h3>
+                        <p><strong>Error:</strong> ${data.error || 'Unknown error'}</p>
+                        <p><strong>Suggestion:</strong> Try with exact hospital name and city</p>
+                    `, 'error');
+                }
+            } catch (error) {
+                showResult(`Network error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testKnownPlaces() {
+            const knownHospitals = [
+                { name: "Apollo Hospitals", city: "Visakhapatnam", state: "Andhra Pradesh" },
+                { name: "AIIMS", city: "Delhi", state: "Delhi" },
+                { name: "Fortis Hospital", city: "Bangalore", state: "Karnataka" },
+                { name: "Lilavati Hospital", city: "Mumbai", state: "Maharashtra" }
+            ];
+            
+            let results = '<h3>🧪 Testing Known Hospitals</h3>';
+            
+            for (const hospital of knownHospitals) {
+                try {
+                    const response = await fetch('http://localhost:3000/api/place-verification/verify-place', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            place_name: hospital.name, 
+                            city: hospital.city, 
+                            state: hospital.state 
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    const status = data.verified ? '✅' : '❌';
+                    const error = data.error || '';
+                    
+                    results += `<p>${status} <strong>${hospital.name}, ${hospital.city}</strong> ${error ? `(${error})` : ''}</p>`;
+                } catch (error) {
+                    results += `<p>❌ <strong>${hospital.name}, ${hospital.city}</strong> (Network error)</p>`;
+                }
+            }
+            
+            showResult(results, 'info');
+        }
+        
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+    </script>
+</body>
+</html>
