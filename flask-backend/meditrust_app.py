@@ -650,6 +650,37 @@ def notify_donation_receipt():
         logger.error(f"Donation receipt notification error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/notify/custom-email', methods=['POST'])
+def notify_custom_email():
+    """Send admin-composed custom email to NGO"""
+    try:
+        data    = request.get_json()
+        to_email= data.get('to_email', '')
+        subject = data.get('subject', 'MediTrust NGO Support Request')
+        body    = data.get('body', '')
+        ngo_name= data.get('ngo_name', '')
+
+        if not to_email or not body:
+            return jsonify({'success':False, 'error':'to_email and body required'}), 400
+
+        # Get notification manager
+        from notifications.notification_manager import NotificationManager
+        notification_manager = NotificationManager()
+        
+        # Send custom email
+        result = notification_manager.send_custom_email(
+            to_email=to_email,
+            subject=subject,
+            body=body,
+            ngo_name=ngo_name
+        )
+        
+        return jsonify({'success': result})
+
+    except Exception as e:
+        logger.error(f"notify_custom_email error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # ==================== STATIC FILES ====================
 
 @app.route('/')

@@ -304,8 +304,24 @@
       <div id="section-ngo" class="hidden">
         <div class="card">
           <div class="card-header"><h3>🤝 NGO Matches</h3></div>
-          <div class="card-body" id="ngoMatchesContent">
-            <div class="loading"><div class="spinner"></div> Loading NGO matches...</div>
+          <div class="card-body">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Campaign</th>
+                  <th>NGO</th>
+                  <th>Status</th>
+                  <th>Notified At</th>
+                  <th>Responded At</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="ngoMatchesTable">
+                <tr><td colspan="6" style="text-align:center;padding:20px;">
+                  <div class="loading"><div class="spinner"></div> Loading NGO matches...</div>
+                </td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -385,18 +401,35 @@
   </div>
 </div>
 
-<!-- ══ NGO VIEW MODAL ══ -->
-<div class="modal-overlay" id="ngoViewModal">
+<!-- ══ NGO DETAILS MODAL ══ -->
+<div class="modal-overlay" id="ngoDetailsModal">
   <div class="modal">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-      <h3 style="font-size:18px;font-weight:800;">🤝 NGO Details</h3>
-      <button type="button" onclick="closeModal('ngoViewModal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9CA3AF;">✕</button>
+      <h3 style="font-size:18px;font-weight:800;">🤝 NGO Match Details</h3>
+      <button type="button" onclick="closeModal('ngoDetailsModal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9CA3AF;">✕</button>
     </div>
-    <div id="ngoViewContent" style="max-height:400px;overflow-y:auto;">
-      <!-- NGO details will be loaded here -->
-      <div class="modal-actions">
-        <button type="button" class="btn-modal-cancel" onclick="closeModal('ngoViewModal')">Close</button>
-      </div>
+    
+    <div id="ngoDetailsContent" style="max-height:400px;overflow-y:auto;">
+      <!-- NGO details will be populated here -->
+    </div>
+    
+    <div class="modal-actions">
+      <button type="button" class="btn-modal-cancel" onclick="closeModal('ngoDetailsModal')">Close</button>
+      <button type="button" class="btn-modal-confirm" onclick="acceptNGOMatch(currentNGOMatchId)">✅ Accept Match</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ NGO COMPOSE MODAL ══ -->
+<div class="modal-overlay" id="ngoComposeModal">
+  <div class="modal" style="max-width:900px;width:95%;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h3 style="font-size:17px;font-weight:800;">📧 Compose NGO Email</h3>
+      <button onclick="closeNGOModal()"
+        style="background:none;border:none;font-size:22px;cursor:pointer;color:#9CA3AF;">✕</button>
+    </div>
+    <div id="ngoComposeContent">
+      <div style="text-align:center;padding:40px;color:#9CA3AF;">Loading...</div>
     </div>
   </div>
 </div>
@@ -1027,130 +1060,386 @@
   }
 
   // ── NGO FUNCTIONS ──────────────────────
+  let currentNGOMatchId = null;
+  let currentNGOMatchData = null;
+
   async function loadNGOMatches() {
+    const tbody = document.getElementById('ngoMatchesTable');
     try {
       const res  = await authFetch(`${API}/ngo/all-matches`);
       const data = await res.json();
-      const el = document.getElementById('ngoMatchesContent');
-      
-      console.log('NGO matches response:', data);
-      
-      if (!data.success) {
-        el.innerHTML = `<div class="empty"><p>Failed to load NGO matches</p></div>`; 
-        return;
-      }
-      
       const matches = data.matches || [];
+
       if (!matches.length) {
-        el.innerHTML = `<div class="empty"><p>No NGO matches found</p></div>`; 
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#9CA3AF;padding:24px">No NGO matches yet. Matches are created when campaigns go LIVE.</td></tr>';
         return;
       }
-      
-      el.innerHTML = matches.map(match => `
-        <div class="priority-item">
-          <div class="priority-dot dot-green"></div>
-          <div class="priority-info">
-            <h4>${match.ngo_name}</h4>
-            <p>Matched for campaign: ${match.campaign_title} • Score: ${match.match_score}%</p>
-          </div>
-          <div style="display:flex;gap:6px;">
-            <button type="button" class="btn btn-review" onclick="viewNGOMatch(${match.id})">🔍 View</button>
-            <button type="button" class="btn btn-verify" onclick="acceptNGOMatch(${match.id})">✅ Accept</button>
-          </div>
-        </div>`).join('');
-    } catch(e) { 
-      console.error('Error loading NGO matches:', e); 
-      const el = document.getElementById('ngoMatchesContent');
-      if (el) el.innerHTML = `<div class="empty"><p>Failed to load NGO matches</p></div>`; 
+
+      const statusConfig = {
+        PENDING  : { label:'⏳ Not Yet Notified', bg:'#F3F4F6', color:'#6B7280'  },
+        NOTIFIED : { label:'📧 Email Sent',        bg:'#DBEAFE', color:'#1D4ED8'  },
+        ACCEPTED : { label:'✅ Accepted',           bg:'#DCFCE7', color:'#15803D' },
+        REJECTED : { label:'❌ Rejected',           bg:'#FEE2E2', color:'#DC2626' },
+      };
+
+      tbody.innerHTML = matches.map(m => {
+        const sc = statusConfig[m.status] || statusConfig.PENDING;
+        return `
+          <tr>
+            <td>
+              <strong>#${m.campaign_id}</strong><br/>
+              <small style="color:#6B7280;font-size:11px">
+                ${m.campaign?.title || '—'}
+              </small>
+            </td>
+            <td><strong>${m.ngo_name || 'NGO #' + m.ngo_id}</strong></td>
+            <td>
+              <span style="background:${sc.bg};color:${sc.color};
+                padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700">
+                ${sc.label}
+              </span>
+            </td>
+            <td style="font-size:12px;color:#6B7280">
+              ${m.notified_at ? formatDate(m.notified_at) : '—'}
+            </td>
+            <td style="font-size:12px;color:#6B7280">
+              ${m.responded_at ? formatDate(m.responded_at) : '—'}
+            </td>
+            <td>
+              <button class="btn btn-sm btn-outline"
+                onclick="viewNGOMatch(${m.id})">
+                📧 Compose & Send
+              </button>
+            </td>
+          </tr>`;
+      }).join('');
+
+    } catch(err) {
+      tbody.innerHTML = '<tr><td colspan="5" style="color:#DC2626;text-align:center;padding:20px">Failed to load NGO matches</td></tr>';
     }
   }
 
-  function viewNGOMatch(matchId) {
-    showToast(`Loading NGO details...`, 'info');
-    
-    // Fetch NGO match details
-    fetch(`${API}/ngo/match/${matchId}`, {
-      headers: {
-        'Authorization': `Bearer ${adminToken}`,
-        'Content-Type': 'application/json'
-      }
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.success) {
-        const match = data.match;
-        const ngo = data.ngo;
-        
-        // Display NGO details in modal
-        const content = document.getElementById('ngoViewContent');
-        content.innerHTML = `
-          <div style="background:#F9FAFB;border-radius:12px;padding:20px;margin-bottom:16px;">
-            <h4 style="color:#111827;font-size:16px;font-weight:700;margin-bottom:12px;">${ngo.ngo_name}</h4>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-              <div>
-                <p style="font-size:13px;color:#6B7280;font-weight:600;margin-bottom:4px;">📧 Contact</p>
-                <p style="font-size:13px;color:#374151;">${ngo.contact_email}</p>
-                <p style="font-size:13px;color:#374151;">${ngo.phone_number || 'Not available'}</p>
-              </div>
-              <div>
-                <p style="font-size:13px;color:#6B7280;font-weight:600;margin-bottom:4px;">📍 Location</p>
-                <p style="font-size:13px;color:#374151;">${ngo.headquarters_city}, ${ngo.state}</p>
-              </div>
-              <div>
-                <p style="font-size:13px;color:#6B7280;font-weight:600;margin-bottom:4px;">💰 Funding Capacity</p>
-                <p style="font-size:13px;color:#374151;">Max Grant: ₹${parseFloat(ngo.max_grant_per_patient_inr || 0).toLocaleString('en-IN')}</p>
-              </div>
-              <div>
-                <p style="font-size:13px;color:#6B7280;font-weight:600;margin-bottom:4px;">🌐 Website</p>
-                <a href="${ngo.website_url || '#'}" target="_blank" style="color:#3B82F6;text-decoration:none;">${ngo.website_url || 'Not available'}</a>
-              </div>
-            </div>
-          </div>
-          <div style="background:#EFF6FF;border-radius:12px;padding:16px;margin-bottom:16px;">
-            <h4 style="color:#111827;font-size:16px;font-weight:700;margin-bottom:12px;">Campaign Details</h4>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-              <div>
-                <p style="font-size:13px;color:#6B7280;font-weight:600;margin-bottom:4px;">📋 Campaign</p>
-                <p style="font-size:13px;color:#374151;">${match.campaign_title || 'N/A'}</p>
-              </div>
-              <div>
-                <p style="font-size:13px;color:#6B7280;font-weight:600;margin-bottom:4px;">👤 Patient</p>
-                <p style="font-size:13px;color:#374151;">${match.patient_full_name || 'N/A'}</p>
-              </div>
-              <div>
-                <p style="font-size:13px;color:#6B7280;font-weight:600;margin-bottom:4px;">📊 Match Score</p>
-                <p style="font-size:13px;color:#374151;">${match.match_score || 0}%</p>
-              </div>
-              <div>
-                <p style="font-size:13px;color:#6B7280;font-weight:600;margin-bottom:4px;">📅 Status</p>
-                <p style="font-size:13px;color:#374151;">${match.status || 'UNKNOWN'}</p>
-              </div>
-              <div>
-                <p style="font-size:13px;color:#6B7280;font-weight:600;margin-bottom:4px;">📅 Notified</p>
-                <p style="font-size:13px;color:#374151;">${match.notified_at ? new Date(match.notified_at).toLocaleDateString('en-IN') : 'N/A'}</p>
-              </div>
-              <div>
-                <p style="font-size:13px;color:#6B7280;font-weight:600;margin-bottom:4px;">📞 Responded</p>
-                <p style="font-size:13px;color:#374151;">${match.responded_at ? new Date(match.responded_at).toLocaleDateString('en-IN') : 'Not yet'}</p>
-              </div>
-            </div>
-          </div>
-        `;
-        
-        // Show modal
-        document.getElementById('ngoViewModal').classList.add('show');
-      } else {
-        showToast('Failed to load NGO details', 'error');
-      }
-    })
-    .catch(error => {
-      console.error('Error fetching NGO match:', error);
-      showToast('Failed to load NGO details', 'error');
-    });
+  async function sendNGOEmail(matchId) {
+  const emailBody    = document.getElementById('ngoEmailBody').value.trim();
+  const emailSubject = document.getElementById('ngoEmailSubject').value.trim();
+
+  if (!emailBody || emailBody.length < 20) {
+    showToast('Please write email content before sending', 'error'); return;
   }
+
+  // Get selected document IDs
+  const checkedDocs = Array.from(
+    document.querySelectorAll('.doc-attach-check:checked')
+  ).map(cb => parseInt(cb.value));
+
+  const btn = document.getElementById('sendNGOBtn');
+  btn.disabled    = true;
+  btn.textContent = '⏳ Sending…';
+
+  try {
+    const res  = await authFetch(`${API}/ngo/send-email/${matchId}`, {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify({
+        email_subject : emailSubject,
+        email_body    : emailBody,
+        document_ids  : checkedDocs
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showToast(`📧 Email sent successfully to ${data.ngo_email}!`, 'success');
+      closeNGOModal();
+      loadNGOMatches();
+    } else {
+      showToast(data.error || 'Failed to send email', 'error');
+      btn.disabled    = false;
+      btn.textContent = '📧 Send Email to NGO';
+    }
+  } catch(err) {
+    showToast('Server error', 'error');
+    btn.disabled    = false;
+    btn.textContent = '📧 Send Email to NGO';
+  }
+}
+
+  async function viewNGOMatch(matchId) {
+  // Open modal
+  document.getElementById('ngoComposeModal').classList.add('show');
+  document.getElementById('ngoComposeContent').innerHTML =
+    '<div style="text-align:center;padding:40px;color:#9CA3AF;">⏳ Loading match details...</div>';
+
+  try {
+    const res  = await authFetch(`${API}/ngo/match-detail/${matchId}`);
+    const data = await res.json();
+
+    if (!data.success) {
+      document.getElementById('ngoComposeContent').innerHTML =
+        '<p style="color:#DC2626;padding:20px">Failed to load match details</p>';
+      return;
+    }
+
+    const { match } = data;
+    const ngo       = match.ngo      || {};
+    const campaign  = match.campaign || {};
+    const docs      = campaign.documents || [];
+
+    // Default email content
+    const defaultEmail = `Dear ${ngo.ngo_name || 'Team'},
+
+We are writing from MediTrust — India's AI-verified medical crowdfunding platform.
+
+We have identified a patient case that matches your NGO's area of support and would like to bring it to your attention.
+
+Patient Details:
+- Name    : ${campaign.patient_name || '—'}
+- Disease : ${campaign.disease || '—'}
+- Hospital: ${campaign.hospital || '—'}
+- Amount  : Rs. ${parseFloat(campaign.verified_amount || 0).toLocaleString('en-IN')}
+
+All documents have been AI-verified by MediTrust before this notification.
+
+Please find the attached documents for your review. If you wish to support this case, kindly reply to this email or click the Accept link below.
+
+Campaign Link: http://localhost:3000/campaign.html?id=${campaign.id}
+
+With regards,
+MediTrust Team`;
+
+    document.getElementById('ngoComposeContent').innerHTML = `
+      <div style="display:grid;grid-template-columns:300px 1fr;gap:20px;min-height:500px;">
+
+        <!-- LEFT: NGO + Campaign + Docs -->
+        <div style="border-right:1px solid #E5E7EB;padding-right:20px;overflow-y:auto;max-height:70vh;">
+
+          <!-- NGO Info -->
+          <div style="margin-bottom:16px;">
+            <div style="font-size:11px;font-weight:700;color:#6B7280;
+              text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
+              🏛️ NGO Details
+            </div>
+            <div style="font-size:13px;line-height:1.8;">
+              <strong>${ngo.ngo_name || '—'}</strong><br/>
+              📧 ${ngo.contact_email || '—'}<br/>
+              📍 ${ngo.headquarters_city || ''}, ${ngo.state || ''}<br/>
+              📞 ${ngo.phone_number || '—'}<br/>
+              💰 Max Grant: <strong style="color:#15803D">
+                ₹${parseFloat(ngo.max_grant_per_patient_inr || 0).toLocaleString('en-IN')}
+              </strong>
+            </div>
+          </div>
+
+          <!-- Campaign Info -->
+          <div style="margin-bottom:16px;padding-top:12px;border-top:1px solid #F3F4F6;">
+            <div style="font-size:11px;font-weight:700;color:#6B7280;
+              text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
+              📋 Campaign Details
+            </div>
+            <div style="font-size:13px;line-height:1.8;">
+              #${campaign.id} — ${campaign.title || '—'}<br/>
+              🩺 ${campaign.disease || '—'}<br/>
+              🏥 ${campaign.hospital || '—'}<br/>
+              💰 ₹${parseFloat(campaign.verified_amount || 0).toLocaleString('en-IN')}
+            </div>
+          </div>
+
+          <!-- Documents with attach checkboxes -->
+          <div style="padding-top:12px;border-top:1px solid #F3F4F6;">
+            <div style="font-size:11px;font-weight:700;color:#6B7280;
+              text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
+              📎 Attach Documents
+            </div>
+            <div style="font-size:12px;">
+              ${docs.map(doc => `
+                <label style="display:flex;align-items:center;gap:8px;
+                  padding:6px 0;border-bottom:1px solid #F9FAFB;cursor:pointer;">
+                  <input type="checkbox" value="${doc.id}"
+                    class="doc-attach-check" checked
+                    style="width:14px;height:14px;cursor:pointer;" />
+                  <span>
+                    <strong style="font-size:11px;color:#374151">
+                      ${doc.document_type.replace(/_/g,' ')}
+                    </strong><br/>
+                    <span style="color:#9CA3AF;font-size:10px">${doc.file_name}</span>
+                  </span>
+                </label>`).join('')}
+              ${!docs.length ? '<p style="color:#9CA3AF;font-size:12px">No documents found</p>' : ''}
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Email Compose -->
+        <div style="display:flex;flex-direction:column;gap:12px;">
+
+          <!-- To field (readonly) -->
+          <div>
+            <label style="font-size:12px;font-weight:600;color:#6B7280;
+              display:block;margin-bottom:4px;">To</label>
+            <input type="text" value="${ngo.contact_email || ''}" readonly
+              style="width:100%;padding:8px 12px;border:1.5px solid #E5E7EB;
+              border-radius:7px;font-size:13px;background:#F9FAFB;color:#6B7280;" />
+          </div>
+
+          <!-- Subject -->
+          <div>
+            <label style="font-size:12px;font-weight:600;color:#6B7280;
+              display:block;margin-bottom:4px;">Subject</label>
+            <input type="text" id="ngoEmailSubject"
+              value="MediTrust — NGO Support Request: ${campaign.title || ''}"
+              style="width:100%;padding:8px 12px;border:1.5px solid #E5E7EB;
+              border-radius:7px;font-size:13px;outline:none;" />
+          </div>
+
+          <!-- Email body -->
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;
+              align-items:center;margin-bottom:4px;">
+              <label style="font-size:12px;font-weight:600;color:#6B7280;">
+                Email Content
+              </label>
+              <button onclick="polishNGOEmail()"
+                style="background:#7C3AED;color:white;border:none;
+                padding:5px 12px;border-radius:6px;font-size:11px;
+                font-weight:600;cursor:pointer;" id="polishNGOBtn">
+                ✨ Polish with Gemini
+              </button>
+            </div>
+            <textarea id="ngoEmailBody" rows="10"
+              style="width:100%;padding:10px 14px;border:1.5px solid #E5E7EB;
+              border-radius:8px;font-size:13px;line-height:1.6;outline:none;
+              resize:vertical;font-family:inherit;">${defaultEmail}</textarea>
+          </div>
+
+          <!-- Gemini comparison panel (hidden by default) -->
+          <div id="ngoPolishPanel" style="display:none;">
+            <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:8px;">
+              ✨ Gemini Polished Version — Choose one:
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+              <div>
+                <div style="font-size:11px;font-weight:700;color:#6B7280;
+                  margin-bottom:6px;text-transform:uppercase">Your Version</div>
+                <div id="ngoOriginalPreview"
+                  style="background:#F9FAFB;border:1.5px solid #E5E7EB;
+                  border-radius:8px;padding:12px;font-size:12px;
+                  white-space:pre-wrap;max-height:200px;overflow-y:auto;
+                  line-height:1.6;color:#374151;"></div>
+                <button onclick="useOriginalNGOEmail()"
+                  style="width:100%;margin-top:6px;padding:7px;background:#F3F4F6;
+                  color:#374151;border:1.5px solid #E5E7EB;border-radius:7px;
+                  font-size:12px;font-weight:600;cursor:pointer;">
+                  Use My Version
+                </button>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:700;color:#7C3AED;
+                  margin-bottom:6px;text-transform:uppercase">✨ Gemini Version</div>
+                <div id="ngoGeminiPreview"
+                  style="background:#F5F3FF;border:1.5px solid #DDD6FE;
+                  border-radius:8px;padding:12px;font-size:12px;
+                  white-space:pre-wrap;max-height:200px;overflow-y:auto;
+                  line-height:1.6;color:#374151;"></div>
+                <button onclick="useGeminiNGOEmail()"
+                  style="width:100%;margin-top:6px;padding:7px;
+                  background:#7C3AED;color:white;border:none;
+                  border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;">
+                  ✅ Use Gemini Version
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Send button -->
+          <div style="display:flex;gap:10px;justify-content:flex-end;
+            padding-top:12px;border-top:1px solid #E5E7EB;">
+            <button onclick="closeNGOModal()"
+              style="padding:9px 20px;border:1.5px solid #E5E7EB;background:white;
+              border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
+              Cancel
+            </button>
+            <button onclick="sendNGOEmail(${matchId})"
+              id="sendNGOBtn"
+              style="padding:9px 24px;background:#F97316;color:white;
+              border:none;border-radius:8px;font-size:13px;
+              font-weight:700;cursor:pointer;">
+              📧 Send Email to NGO
+            </button>
+          </div>
+        </div>
+      </div>`;
+
+    // Store match id for send function
+    window._currentNGOMatchId = matchId;
+
+  } catch(err) {
+    document.getElementById('ngoComposeContent').innerHTML =
+      '<p style="color:#DC2626;padding:20px">Server error loading details</p>';
+  }
+}
 
   function acceptNGOMatch(matchId) {
     showToast(`NGO match ${matchId} accepted!`, 'success');
+    closeModal('ngoDetailsModal');
+  }
+
+  // ── NGO EMAIL POLISH FUNCTIONS ──────────────────────
+  async function polishNGOEmail() {
+    const original = document.getElementById('ngoEmailBody').value.trim();
+    if (!original || original.length < 50) {
+      showToast('Write email content first before polishing', 'error'); return;
+    }
+
+    const btn = document.getElementById('polishNGOBtn');
+    btn.disabled    = true;
+    btn.textContent = '⏳ Polishing…';
+
+    try {
+      const res  = await authFetch(`${API}/story/generate`, {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify({
+          campaign_id   : window._currentNGOCampaignId || 1,
+          story_original: original,
+          language      : 'en'
+        })
+      });
+      const data = await res.json();
+
+      const polished = data.story_gemini || original;
+
+      document.getElementById('ngoOriginalPreview').textContent = original;
+      document.getElementById('ngoGeminiPreview').textContent   = polished;
+      document.getElementById('ngoPolishPanel').style.display   = 'block';
+
+      window._ngoGeminiEmail   = polished;
+      window._ngoOriginalEmail = original;
+
+    } catch(err) {
+      showToast('Gemini polish failed — use your original', 'error');
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = '✨ Polish with Gemini';
+    }
+  }
+
+  function useOriginalNGOEmail() {
+    document.getElementById('ngoEmailBody').value =
+      window._ngoOriginalEmail || document.getElementById('ngoEmailBody').value;
+    document.getElementById('ngoPolishPanel').style.display = 'none';
+    showToast('Using your original version', 'info');
+  }
+
+  function useGeminiNGOEmail() {
+    document.getElementById('ngoEmailBody').value =
+      window._ngoGeminiEmail || document.getElementById('ngoEmailBody').value;
+    document.getElementById('ngoPolishPanel').style.display = 'none';
+    showToast('✨ Using Gemini version', 'success');
+  }
+
+  function closeNGOModal() {
+    document.getElementById('ngoComposeModal').classList.remove('show');
+    document.getElementById('ngoPolishPanel').style.display = 'none';
   }
 
   // ── HELPERS ───────────────────────────────

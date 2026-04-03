@@ -311,7 +311,7 @@ model NGOMatch {
   id          Int           @id @default(autoincrement())
   campaign_id Int
   ngo_id      Int
-  status      NGOMatchStatus @default(NOTIFIED)
+  status      NGOMatchStatus @default(PENDING)
   notified_at DateTime      @default(now())
   responded_at DateTime?
 
@@ -411,10 +411,10 @@ enum ReleaseStatus {
 }
 
 enum NGOMatchStatus {
+  PENDING
   NOTIFIED
   ACCEPTED
   REJECTED
-  PENDING
 }
 
 enum FundNeederSource {

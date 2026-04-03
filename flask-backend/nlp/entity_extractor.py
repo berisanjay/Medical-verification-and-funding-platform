@@ -2,8 +2,15 @@ import spacy
 import re
 
 # Load models once (important for performance)
-medical_nlp = spacy.load("en_ner_bc5cdr_md")
-general_nlp = spacy.load("en_core_web_sm")
+try:
+    medical_nlp = spacy.load("en_core_sci_sm")  # Use available medical model
+except OSError:
+    medical_nlp = None  # Fallback if model not available
+
+try:
+    general_nlp = spacy.load("en_core_web_sm")  # Use available general model
+except OSError:
+    general_nlp = None  # Fallback if model not available
 
 
 def extract_entities(text):
@@ -53,7 +60,7 @@ def extract_entities(text):
                 break  # Found explicit diagnosis, stop searching
     
     # If no explicit diagnosis found, use NER fallback
-    if not entities["diseases"]:
+    if not entities["diseases"] and medical_nlp:
         for ent in medical_nlp(text).ents:
             if ent.label_ == "DISEASE":
                 clean = re.sub(r"[^a-zA-Z\s]", "", ent.text).strip().lower()
@@ -64,36 +71,37 @@ def extract_entities(text):
     entities["diseases"] = list(set(entities["diseases"]))
 
     # ---------- GENERAL NER ----------
-    for ent in general_nlp(text).ents:
-        context = text[max(0, ent.start_char - 40): ent.start_char].lower()
+    if general_nlp:
+        for ent in general_nlp(text).ents:
+            context = text[max(0, ent.start_char - 40): ent.start_char].lower()
 
-        # PERSON
-        if ent.label_ == "PERSON":
-            name = ent.text.strip()
+            # PERSON
+            if ent.label_ == "PERSON":
+                name = ent.text.strip()
 
-            # Doctor detection
-            if re.search(r"\bdr\.?\b", context):
-                if not entities["doctor_name"]:
-                    entities["doctor_name"] = name
+                # Doctor detection
+                if re.search(r"\bdr\.?\b", context):
+                    if not entities["doctor_name"]:
+                        entities["doctor_name"] = name
 
-            # Patient detection
-            elif re.search(r"\bpatient\b|\bname\b", context):
-                name = re.sub(
-                    r"\b(dob|age|yrs?|years?)\b.*",
-                    "",
-                    name,
-                    flags=re.I
-                ).strip()
-                name = clean_name(name)  # Apply name cleaning
+                # Patient detection
+                elif re.search(r"\bpatient\b|\bname\b", context):
+                    name = re.sub(
+                        r"\b(dob|age|yrs?|years?)\b.*",
+                        "",
+                        name,
+                        flags=re.I
+                    ).strip()
+                    name = clean_name(name)  # Apply name cleaning
 
-                if not entities["patient_name"]:
-                    entities["patient_name"] = name
+                    if not entities["patient_name"]:
+                        entities["patient_name"] = name
 
-        # DATE
-        if ent.label_ == "DATE":
-            clean_date = ent.text.strip()
-            if clean_date not in entities["dates"]:
-                entities["dates"].append(clean_date)
+            # DATE
+            if ent.label_ == "DATE":
+                clean_date = ent.text.strip()
+                if clean_date not in entities["dates"]:
+                    entities["dates"].append(clean_date)
 
     # ---------- HOSPITAL NAME ----------
     hospital = re.search(

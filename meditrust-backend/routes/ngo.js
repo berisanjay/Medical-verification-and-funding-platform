@@ -17,6 +17,7 @@ const router   = express.Router();
 const axios    = require('axios');
 const mysql    = require('mysql2/promise');
 const prisma   = require('../utils/prisma');
+const nodemailer = require('nodemailer');
 const { verifyToken, verifyAdmin } = require('../middleware/auth');
 
 // ─────────────────────────────────────────
@@ -268,11 +269,11 @@ router.post('/match/:campaign_id', async (req, res) => {
     console.log(`   Found ${ngos.length} matching NGOs, top ${top3.length} selected`);
     top3.forEach(n => console.log(`   → ${n.ngo_name} (score: ${n.match_score})`));
 
-    // 5. Save NGO matches to meditrust DB + send emails
+    // 5. Save NGO matches to meditrust DB (PENDING status)
     const savedMatches = [];
 
     for (const ngo of top3) {
-      // Check if already notified
+      // Check if already matched
       const existing = await prisma.nGOMatch.findFirst({
         where: {
           campaign_id: campaignId,
@@ -281,26 +282,16 @@ router.post('/match/:campaign_id', async (req, res) => {
       });
 
       if (!existing) {
-        // Save to NGOMatch table
+        // Save match with status PENDING (not NOTIFIED)
+        // Admin will review and manually send emails
         const match = await prisma.nGOMatch.create({
           data: {
             campaign_id: campaignId,
             ngo_id     : ngo.ngo_id,
-            status     : 'NOTIFIED'
+            status     : 'PENDING'   // ← PENDING not NOTIFIED
           }
         });
-
-        // Send email via Flask
-        await notifyFlask('/notify/ngo-match', {
-          to_email      : ngo.contact_email,
-          ngo_name      : ngo.ngo_name,
-          campaign_title: campaign.title,
-          patient_name  : campaign.patient_full_name,
-          disease       : diseaseText,
-          hospital_name : campaign.hospital?.name || 'Verified Hospital',
-          hospital_city : campaign.hospital?.city || campaign.patient_city,
-          documents_url : campaign.public_url || `meditrust.in/campaign/${campaignId}`
-        });
+        // Do NOT call notifyFlask here — admin sends email manually
 
         savedMatches.push({
           match_id  : match.id, // Use the created match object's ID
@@ -313,9 +304,9 @@ router.post('/match/:campaign_id', async (req, res) => {
           max_grant : ngo.max_grant_per_patient_inr
         });
 
-        console.log(`   ✅ Notified: ${ngo.ngo_name} <${ngo.contact_email}>`);
+        console.log(`   ✅ Matched: ${ngo.ngo_name} <${ngo.contact_email}> (PENDING)`);
       } else {
-        console.log(`   ⚠️  Already notified: ${ngo.ngo_name}`);
+        console.log(`   ⚠️  Already matched: ${ngo.ngo_name}`);
       }
     }
 
@@ -326,13 +317,13 @@ router.post('/match/:campaign_id', async (req, res) => {
         action      : 'NGO_MATCHED',
         target_type : 'campaign',
         target_id   : campaignId,
-        notes       : `Matched and notified ${savedMatches.length} NGOs for campaign ${campaignId}`
+        notes       : `Matched ${savedMatches.length} NGOs for campaign ${campaignId}`
       }
     }).catch(() => {}); // Non-critical
 
     res.json({
       success : true,
-      message : `${savedMatches.length} NGOs matched and notified successfully`,
+      message : `${savedMatches.length} NGOs matched successfully`,
       matched : savedMatches.length,
       disease_matched: diseaseColumn,
       ngos    : savedMatches
@@ -580,6 +571,91 @@ router.get('/search', verifyAdmin, async (req, res) => {
     res.status(500).json({ success: false, error: 'NGO search failed: ' + error.message });
   }
 });
+// ADMIN SENDS NGO EMAIL MANUALLY
+// POST /api/ngo/send-email/:match_id
+// ─────────────────────────────────────────
+router.post('/send-email/:match_id', verifyAdmin, async (req, res) => {
+  try {
+    const matchId = parseInt(req.params.match_id);
+    const { email_subject, email_body, document_ids } = req.body;
+
+    // Get match + campaign + documents
+    const match = await prisma.nGOMatch.findUnique({
+      where  : { id: matchId },
+      include: {
+        campaign: {
+          include: {
+            patient  : { select: { name:true, email:true } },
+            documents: true
+          }
+        }
+      }
+    });
+
+    if (!match)
+      return res.status(404).json({ success:false, error:'Match not found' });
+
+    // Get NGO email from ngo_db
+    const pool = getNgoPool();
+    const [rows] = await pool.execute(
+      'SELECT ngo_name, contact_email FROM ngo_identity WHERE ngo_id = ?',
+      [match.ngo_id]
+    );
+    if (!rows.length)
+      return res.status(404).json({ success:false, error:'NGO not found' });
+
+    const ngo = rows[0];
+
+    const nodemailer = require('nodemailer');
+    
+    // Create email transporter (same as OTP system)
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_APP_PASSWORD
+      }
+    });
+
+    // Send custom email directly via nodemailer
+    await transporter.sendMail({
+      from    : `MediTrust Platform <${process.env.EMAIL_USER}>`,
+      to      : ngo.contact_email,
+      subject : email_subject || `MediTrust — NGO Support Request`,
+      html    : email_body.replace(/\n/g, '<br>'), // Convert newlines to HTML
+      attachments: document_ids && document_ids.length > 0 ? 
+        // TODO: Add document attachments if needed
+        [] : []
+    });
+
+    // Update match status to NOTIFIED
+    await prisma.nGOMatch.update({
+      where: { id: matchId },
+      data : { status: 'NOTIFIED' }
+    });
+
+    // Log
+    await prisma.adminAuditLog.create({
+      data: {
+        admin_id   : req.admin.id,
+        action     : 'NGO_EMAIL_SENT',
+        target_type: 'ngo_match',
+        target_id  : matchId,
+        notes      : `Custom email sent to ${ngo.ngo_name} <${ngo.contact_email}>` 
+      }
+    });
+
+    res.json({
+      success  : true,
+      message  : `Email sent to ${ngo.ngo_name}`,
+      ngo_email: ngo.contact_email
+    });
+
+  } catch(err) {
+    console.error('Send NGO email error:', err);
+    res.status(500).json({ success:false, error: err.message });
+  }
+});
 
 // ─────────────────────────────────────────
 // GET ALL NGO MATCHES — Admin dashboard
@@ -653,9 +729,67 @@ router.get('/all-matches', verifyAdmin, async (req, res) => {
       pending : matches.filter(m => ['NOTIFIED', 'PENDING'].includes(m.status)).length
     };
 
+    res.json({ success: true, summary, matches: enriched });
   } catch (error) {
-    console.error('Get NGO match error:', error);
-    res.status(500).json({ success: false, error: 'Failed to get NGO match' });
+    console.error('Get NGO matches error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get NGO matches' });
+  }
+});
+
+// ─────────────────────────────────────────
+// GET NGO MATCH DETAIL — Admin modal view
+// GET /api/ngo/match-detail/:match_id
+// ─────────────────────────────────────────
+router.get('/match-detail/:match_id', verifyAdmin, async (req, res) => {
+  try {
+    const match = await prisma.nGOMatch.findUnique({
+      where  : { id: parseInt(req.params.match_id) },
+      include: {
+        campaign: {
+          include: {
+            documents  : { select:{ id:true, document_type:true, file_name:true } },
+            fund_needer: true,
+            patient    : { select:{ name:true, email:true } }
+          }
+        }
+      }
+    });
+
+    if (!match)
+      return res.status(404).json({ success:false, error:'Match not found' });
+
+    // Get NGO details from ngo_db
+    const pool = getNgoPool();
+    const [rows] = await pool.execute(`
+      SELECT i.ngo_name, i.contact_email, i.phone_number, 
+             i.headquarters_city, i.state, i.website_url,
+             f.max_grant_per_patient_inr
+      FROM ngo_identity i
+      JOIN ngo_funding_capacity f ON i.ngo_id = f.ngo_id
+      WHERE i.ngo_id = ?`, [match.ngo_id]);
+
+    res.json({
+      success : true,
+      match   : {
+        id          : match.id,
+        status      : match.status,
+        notified_at : match.notified_at,
+        responded_at: match.responded_at,
+        ngo         : rows[0] || null,
+        campaign    : {
+          id              : match.campaign.id,
+          title           : match.campaign.title,
+          patient_name    : match.campaign.patient_full_name,
+          patient_city    : match.campaign.patient_city,
+          disease         : match.campaign.fund_needer?.disease || '',
+          hospital        : match.campaign.fund_needer?.hospital_name || '',
+          verified_amount : match.campaign.verified_amount,
+          documents       : match.campaign.documents
+        }
+      }
+    });
+  } catch(err) {
+    res.status(500).json({ success:false, error: err.message });
   }
 });
 
