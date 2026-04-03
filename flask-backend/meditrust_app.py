@@ -595,6 +595,61 @@ def verify_documents():
         logger.error(f"Document verification error: {e}")
         return jsonify({'success': False, 'error': 'Failed to verify documents'}), 500
 
+# ==================== NOTIFICATION ENDPOINTS ====================
+
+@app.route('/notify/ngo-match', methods=['POST'])
+def notify_ngo_match():
+    """Receive NGO match notifications from Node.js backend"""
+    try:
+        data = request.get_json()
+        logger.info(f"NGO match notification received: {data}")
+        
+        # Forward to notification manager
+        from notifications.notification_manager import NotificationManager
+        notification_manager = NotificationManager()
+        
+        result = notification_manager.send_ngo_match_email(
+            to_email=data.get('to_email'),
+            ngo_name=data.get('ngo_name'),
+            campaign_title=data.get('campaign_title'),
+            patient_name=data.get('patient_name'),
+            disease=data.get('disease'),
+            hospital_name=data.get('hospital_name'),
+            hospital_city=data.get('hospital_city'),
+            documents_url=data.get('documents_url')
+        )
+        
+        return jsonify({'success': True, 'message': result})
+        
+    except Exception as e:
+        logger.error(f"NGO match notification error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/notify/donation-receipt', methods=['POST'])
+def notify_donation_receipt():
+    """Receive donation receipt notifications from Node.js backend"""
+    try:
+        data = request.get_json()
+        logger.info(f"Donation receipt notification received: {data}")
+        
+        # Forward to notification manager
+        from notifications.notification_manager import NotificationManager
+        notification_manager = NotificationManager()
+        
+        result = notification_manager.send_donation_receipt_email(
+            to_email=data.get('to_email'),
+            donor_name=data.get('donor_name'),
+            amount=data.get('amount'),
+            campaign_title=data.get('campaign_title'),
+            patient_name=data.get('patient_name')
+        )
+        
+        return jsonify({'success': True, 'message': result})
+        
+    except Exception as e:
+        logger.error(f"Donation receipt notification error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # ==================== STATIC FILES ====================
 
 @app.route('/')

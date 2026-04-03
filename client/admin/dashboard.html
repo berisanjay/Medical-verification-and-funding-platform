@@ -385,6 +385,22 @@
   </div>
 </div>
 
+<!-- ══ NGO VIEW MODAL ══ -->
+<div class="modal-overlay" id="ngoViewModal">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h3 style="font-size:18px;font-weight:800;">🤝 NGO Details</h3>
+      <button type="button" onclick="closeModal('ngoViewModal')" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9CA3AF;">✕</button>
+    </div>
+    <div id="ngoViewContent" style="max-height:400px;overflow-y:auto;">
+      <!-- NGO details will be loaded here -->
+      <div class="modal-actions">
+        <button type="button" class="btn-modal-cancel" onclick="closeModal('ngoViewModal')">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1013,13 +1029,24 @@
   // ── NGO FUNCTIONS ──────────────────────
   async function loadNGOMatches() {
     try {
-      const res  = await authFetch(`${API}/admin/ngo-matches`);
+      const res  = await authFetch(`${API}/ngo/all-matches`);
       const data = await res.json();
       const el = document.getElementById('ngoMatchesContent');
-      if (!data.success || !data.matches.length) {
-        el.innerHTML = `<div class="empty"><p>No NGO matches found</p></div>`; return;
+      
+      console.log('NGO matches response:', data);
+      
+      if (!data.success) {
+        el.innerHTML = `<div class="empty"><p>Failed to load NGO matches</p></div>`; 
+        return;
       }
-      el.innerHTML = data.matches.map(match => `
+      
+      const matches = data.matches || [];
+      if (!matches.length) {
+        el.innerHTML = `<div class="empty"><p>No NGO matches found</p></div>`; 
+        return;
+      }
+      
+      el.innerHTML = matches.map(match => `
         <div class="priority-item">
           <div class="priority-dot dot-green"></div>
           <div class="priority-info">
@@ -1031,11 +1058,95 @@
             <button type="button" class="btn btn-verify" onclick="acceptNGOMatch(${match.id})">✅ Accept</button>
           </div>
         </div>`).join('');
-    } catch(e) { console.error('Error loading NGO matches:', e); }
+    } catch(e) { 
+      console.error('Error loading NGO matches:', e); 
+      const el = document.getElementById('ngoMatchesContent');
+      if (el) el.innerHTML = `<div class="empty"><p>Failed to load NGO matches</p></div>`; 
+    }
   }
 
   function viewNGOMatch(matchId) {
-    showToast(`Viewing NGO match ${matchId}`, 'info');
+    showToast(`Loading NGO details...`, 'info');
+    
+    // Fetch NGO match details
+    fetch(`${API}/ngo/match/${matchId}`, {
+      headers: {
+        'Authorization': `Bearer ${adminToken}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        const match = data.match;
+        const ngo = data.ngo;
+        
+        // Display NGO details in modal
+        const content = document.getElementById('ngoViewContent');
+        content.innerHTML = `
+          <div style="background:#F9FAFB;border-radius:12px;padding:20px;margin-bottom:16px;">
+            <h4 style="color:#111827;font-size:16px;font-weight:700;margin-bottom:12px;">${ngo.ngo_name}</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div>
+                <p style="font-size:13px;color:#6B7280;font-weight:600;margin-bottom:4px;">📧 Contact</p>
+                <p style="font-size:13px;color:#374151;">${ngo.contact_email}</p>
+                <p style="font-size:13px;color:#374151;">${ngo.phone_number || 'Not available'}</p>
+              </div>
+              <div>
+                <p style="font-size:13px;color:#6B7280;font-weight:600;margin-bottom:4px;">📍 Location</p>
+                <p style="font-size:13px;color:#374151;">${ngo.headquarters_city}, ${ngo.state}</p>
+              </div>
+              <div>
+                <p style="font-size:13px;color:#6B7280;font-weight:600;margin-bottom:4px;">💰 Funding Capacity</p>
+                <p style="font-size:13px;color:#374151;">Max Grant: ₹${parseFloat(ngo.max_grant_per_patient_inr || 0).toLocaleString('en-IN')}</p>
+              </div>
+              <div>
+                <p style="font-size:13px;color:#6B7280;font-weight:600;margin-bottom:4px;">🌐 Website</p>
+                <a href="${ngo.website_url || '#'}" target="_blank" style="color:#3B82F6;text-decoration:none;">${ngo.website_url || 'Not available'}</a>
+              </div>
+            </div>
+          </div>
+          <div style="background:#EFF6FF;border-radius:12px;padding:16px;margin-bottom:16px;">
+            <h4 style="color:#111827;font-size:16px;font-weight:700;margin-bottom:12px;">Campaign Details</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div>
+                <p style="font-size:13px;color:#6B7280;font-weight:600;margin-bottom:4px;">📋 Campaign</p>
+                <p style="font-size:13px;color:#374151;">${match.campaign_title || 'N/A'}</p>
+              </div>
+              <div>
+                <p style="font-size:13px;color:#6B7280;font-weight:600;margin-bottom:4px;">👤 Patient</p>
+                <p style="font-size:13px;color:#374151;">${match.patient_full_name || 'N/A'}</p>
+              </div>
+              <div>
+                <p style="font-size:13px;color:#6B7280;font-weight:600;margin-bottom:4px;">📊 Match Score</p>
+                <p style="font-size:13px;color:#374151;">${match.match_score || 0}%</p>
+              </div>
+              <div>
+                <p style="font-size:13px;color:#6B7280;font-weight:600;margin-bottom:4px;">📅 Status</p>
+                <p style="font-size:13px;color:#374151;">${match.status || 'UNKNOWN'}</p>
+              </div>
+              <div>
+                <p style="font-size:13px;color:#6B7280;font-weight:600;margin-bottom:4px;">📅 Notified</p>
+                <p style="font-size:13px;color:#374151;">${match.notified_at ? new Date(match.notified_at).toLocaleDateString('en-IN') : 'N/A'}</p>
+              </div>
+              <div>
+                <p style="font-size:13px;color:#6B7280;font-weight:600;margin-bottom:4px;">📞 Responded</p>
+                <p style="font-size:13px;color:#374151;">${match.responded_at ? new Date(match.responded_at).toLocaleDateString('en-IN') : 'Not yet'}</p>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        // Show modal
+        document.getElementById('ngoViewModal').classList.add('show');
+      } else {
+        showToast('Failed to load NGO details', 'error');
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching NGO match:', error);
+      showToast('Failed to load NGO details', 'error');
+    });
   }
 
   function acceptNGOMatch(matchId) {

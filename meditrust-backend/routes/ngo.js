@@ -303,7 +303,7 @@ router.post('/match/:campaign_id', async (req, res) => {
         });
 
         savedMatches.push({
-          match_id  : match.id,
+          match_id  : match.id, // Use the created match object's ID
           ngo_id    : ngo.ngo_id,
           ngo_name  : ngo.ngo_name,
           email     : ngo.contact_email,
@@ -596,11 +596,55 @@ router.get('/all-matches', verifyAdmin, async (req, res) => {
             patient_full_name: true,
             status          : true
           }
+        },
+        ngo: {
+          select: {
+            name: true,
+            email: true,
+            city: true,
+            state: true
+          }
         }
       },
       orderBy: { notified_at: 'desc' },
       take   : 100
     });
+
+    // Also fetch NGO details from ngo_db for richer info
+    const pool = getNgoPool();
+    const enriched = await Promise.all(matches.map(async (match) => {
+      try {
+        const [rows] = await pool.execute(
+          `SELECT i.ngo_name, i.headquarters_city, i.state, i.website_url,
+                  i.phone_number, f.max_grant_per_patient_inr
+           FROM ngo_identity i
+           JOIN ngo_funding_capacity f ON i.ngo_id = f.ngo_id
+           WHERE i.ngo_id = ?`,
+          [match.ngo_id]
+        );
+        return {
+          ...match,
+          ngo_name: rows[0]?.ngo_name || 'Unknown NGO',
+          ngo_email: rows[0]?.contact_email || 'unknown@example.com',
+          city: rows[0]?.headquarters_city || 'Unknown City',
+          state: rows[0]?.state || 'Unknown State',
+          website: rows[0]?.website_url || '#',
+          phone: rows[0]?.phone_number || 'Unknown Phone',
+          max_grant: rows[0]?.max_grant_per_patient_inr || 0
+        };
+      } catch {
+        return {
+          ...match,
+          ngo_name: 'NGO',
+          ngo_email: 'unknown@example.com',
+          city: 'Unknown City',
+          state: 'Unknown State',
+          website: '#',
+          phone: 'Unknown Phone',
+          max_grant: 0
+        };
+      }
+    }));
 
     const summary = {
       total   : matches.length,
@@ -609,11 +653,9 @@ router.get('/all-matches', verifyAdmin, async (req, res) => {
       pending : matches.filter(m => ['NOTIFIED', 'PENDING'].includes(m.status)).length
     };
 
-    res.json({ success: true, summary, matches });
-
   } catch (error) {
-    console.error('Get all matches error:', error);
-    res.status(500).json({ success: false, error: 'Failed to get matches' });
+    console.error('Get NGO match error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get NGO match' });
   }
 });
 
