@@ -458,101 +458,6 @@ router.post('/:id/verify-documents', verifyToken, async (req, res) => {
     res.status(500).json({ success: false, error: 'Document verification failed' });
   }
 });
- // Notification disabled temporarily
-// await notifyFlask('/notify/verification-status', {...});
-// ─────────────────────────────────────────
-// STEP 4 — Go LIVE (after story approved)
-// ─────────────────────────────────────────
-router.post('/:id/go-live', verifyToken, async (req, res) => {
-  try {
-    const campaignId = parseInt(req.params.id);
-
-    const campaign = await prisma.campaign.findUnique({
-      where  : { id: campaignId },
-      include: { patient: true }
-    });
-
-    if (!campaign || campaign.patient_id !== req.user.id) {
-      return res.status(404).json({ success: false, error: 'Campaign not found' });
-    }
-
-    if (campaign.status !== 'VERIFIED' || !campaign.story_approved) {
-      return res.status(400).json({
-        success: false,
-        error: 'Campaign must be verified and story approved before going live'
-      });
-    }
-
-    // Generate unique public URL
-    const publicUrl = `meditrust.in/campaign/${uuidv4().split('-')[0]}`;
-
-    // Generate UPI ID
-    const upiId = `meditrust.${campaignId}@ybl`;
-
-    // Generate QR code
-    const qrCodeUrl = await QRCode.toDataURL(
-      `upi://pay?pa=${upiId}&pn=MediTrust&tn=Campaign-${campaignId}`
-    );
-
-    // Set expiry — 90 days from now
-    const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000);
-
-    // Update campaign to LIVE
-    await prisma.campaign.update({
-      where: { id: campaignId },
-      data : {
-        status    : 'LIVE_CAMPAIGN',
-        public_url: publicUrl,
-        upi_id    : upiId,
-        qr_code_url: qrCodeUrl,
-        expires_at: expiresAt
-      }
-    });
-
-    // Notify patient
-    await notifyFlask('/notify/campaign-live', {
-      to_email       : campaign.patient.email,
-      patient_name   : campaign.patient_full_name,
-      campaign_title : campaign.title,
-      public_url     : publicUrl,
-      upi_id         : upiId
-    });
-
-    res.json({
-      success   : true,
-      message   : 'Campaign is now LIVE!',
-      public_url: publicUrl,
-      upi_id    : upiId,
-      expires_at: expiresAt
-    });
-
-  } catch (error) {
-    console.error('Go live error:', error);
-    res.status(500).json({ success: false, error: 'Failed to go live' });
-  }
-});
-
-// ─────────────────────────────────────────
-
-router.get('/my/campaigns', verifyToken, async (req, res) => {
-  try {
-    const campaigns = await prisma.campaign.findMany({
-      where  : { patient_id: req.user.id },
-      include: {
-        verification_records: { orderBy: { verified_at: 'desc' }, take: 1 },
-        fund_releases       : { orderBy: { released_at: 'desc' } },
-        donations           : { where: { status: 'SUCCESS' } }
-      },
-      orderBy: { created_at: 'desc' }
-    });
-
-    res.json({ success: true, campaigns });
-
-  } catch (error) {
-    console.error('Get my campaigns error:', error);
-    res.status(500).json({ success: false, error: 'Failed to get campaigns' });
-  }
-});
 
 // ─────────────────────────────────────────
 // GET SINGLE CAMPAIGN (Public)
@@ -640,26 +545,31 @@ router.post('/:id/save-documents', verifyToken, async (req, res) => {
     console.log(`✅ Saved ${documents.length} documents for campaign ${campaignId}`);
 
     // Use pre-computed verification result from Step 3
-    let finalStatus = 'PENDING';
+    let finalStatus = 'PENDING_VERIFICATION'; // Default: always go to admin for review
     let riskScore   = 50;
     let extracted   = {};
 
     if (verification_result && verification_result.final_status) {
-      const statusMap = {
-        'VERIFIED'           : 'VERIFIED',
-        'PENDING'            : 'PENDING',
-        'VERIFICATION_NEEDED': 'VERIFICATION_NEEDED',
-        'UPDATE_NEEDED'      : 'UPDATE_NEEDED'
-      };
-      finalStatus = statusMap[verification_result.final_status] || 'PENDING';
-      riskScore   = verification_result.risk_score   || 0;
-      extracted   = verification_result.extracted_data || {};
+      // AI result is ONLY for verification record
+      // Campaign ALWAYS goes to PENDING_VERIFICATION for admin review
+      const aiStatus = verification_result.final_status;
+      riskScore = verification_result.risk_score   || 0;
+      extracted = verification_result.extracted_data || {};
+
+      // Determine campaign status based on AI result
+      if (aiStatus === 'UPDATE_NEEDED') {
+        finalStatus = 'UPDATE_NEEDED'; // expired docs → patient must re-upload
+      } else if (aiStatus === 'FAKE_DETECTED') {
+        finalStatus = 'DRAFT'; // fake docs → keep as draft, frontend already blocked
+      } else {
+        finalStatus = 'PENDING_VERIFICATION'; // everything else → wait for admin
+      }
 
       console.log('✅ Using Step 3 preview result — no Flask re-call needed');
-      console.log('   Status:', finalStatus, '| Risk:', riskScore);
+      console.log('   AI Status:', aiStatus, '| Campaign Status:', finalStatus, '| Risk:', riskScore);
     } else {
-      // No preview result — fallback to PENDING
-      console.log('⚠️ No preview result found — defaulting to PENDING');
+      // No preview result — default to PENDING_VERIFICATION
+      console.log('⚠️ No preview result found — defaulting to PENDING_VERIFICATION');
     }
 
     // Save verification record
@@ -739,13 +649,33 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Campaign not found' });
     }
 
+    // Fetch HMS data if patient_hms_id exists
+    let hmsData = null;
+    if (campaign.patient_hms_id) {
+      try {
+        const hmsRes = await axios.get(
+          process.env.HMS_BASE_URL + '/hms/patients/' + campaign.patient_hms_id
+        );
+        if (hmsRes.data.success) {
+          hmsData = hmsRes.data.patient;
+          // Override with live HMS data
+          campaign.verified_amount   = hmsData.ledger?.total_estimate    || campaign.verified_amount;
+          campaign.outstanding_amount= hmsData.ledger?.outstanding_amount|| 0;
+          campaign.hms_status        = hmsData.status;
+          campaign.hms_disease       = hmsData.disease;
+        }
+      } catch(hmsErr) {
+        console.warn('HMS fetch failed — using campaign data:', hmsErr.message);
+      }
+    }
+
     // Hide anonymous donor names
     campaign.donations = campaign.donations.map(d => ({
       ...d,
       donor_name: d.is_anonymous ? 'Anonymous Donor' : d.donor_name
     }));
 
-    res.json({ success: true, campaign });
+    res.json({ success: true, campaign, hms_data: hmsData });
 
   } catch (error) {
     console.error('Get campaign error:', error);

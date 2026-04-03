@@ -1,5 +1,9 @@
 {
     "livePreview.defaultPreviewPath": "/client/dashboard.html",
     "livePreview.portNumber": 3,
-    "livePreview.tasks.runTaskWithExternalPreview": true
+    "livePreview.tasks.runTaskWithExternalPreview": true,
+    "files.associations": {
+        "*/admin/dashboard.html": "html",
+        "*.html": "html"
+    }
 }

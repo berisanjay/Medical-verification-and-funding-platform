@@ -356,11 +356,19 @@
     const percent   = target > 0 ? Math.min(100, Math.round((collected/target)*100)) : 0;
     const record    = c.verification_records?.[0];
 
+    // Prioritize HMS data over AI-extracted data
+    const patientName = c.patient_full_name;
+    const relationship = c.relationship_to_fundraiser;
+    const disease = c.hms_disease || '';
+    const hmsStatus = c.hms_status || '';
+
     return `
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
         <div>
           <h3 style="font-size:16px;font-weight:700;margin-bottom:4px;">${c.title}</h3>
-          <p style="font-size:12px;color:var(--gray-400);">Patient: ${c.patient_full_name} • ${c.relationship_to_fundraiser}</p>
+          <p style="font-size:12px;color:var(--gray-400);">Patient: ${patientName} • ${relationship}</p>
+          ${disease ? `<p style="font-size:11px;color:var(--orange);margin-top:2px;">🩺 ${disease}</p>` : ''}
+          ${hmsStatus ? `<p style="font-size:11px;color:var(--green);margin-top:2px;">🏥 HMS Status: ${hmsStatus}</p>` : ''}
         </div>
         ${statusBadge(c.status)}
       </div>
@@ -380,7 +388,16 @@
         ${c.expires_at ? `<span>⏰ Expires: ${formatDate(c.expires_at)}</span>` : ''}
         ${c.donations?.length ? `<span>❤️ ${c.donations.length} donors</span>` : ''}
       </div>
-      <div class="campaign-actions">${getActionButtons(c)}</div>`;
+      <div class="campaign-actions">${getActionButtons(c)}</div>
+      ${c.status === 'LIVE_CAMPAIGN' ? `
+        <div id="ngo-section-${c.id}" style="margin-top:12px;">
+          <button class="btn btn-outline btn-sm" 
+            onclick="loadNGOMatches(${c.id})"
+            style="font-size:11px;">
+            🤝 View NGO Support Status
+          </button>
+          <div id="ngo-data-${c.id}" style="display:none;margin-top:10px;"></div>
+        </div>` : ''}`;
   }
 
   function getActionButtons(c) {
@@ -476,7 +493,7 @@
         closeModal('storyModal');
         showToast('✅ Story approved! You can now go live.', 'success');
         await loadMyCampaigns();
-      } else { showToast(data.error || 'Failed', 'error'); }
+      } else showToast(data.error || 'Failed', 'error');
     } catch(e) { showToast('Server error', 'error'); }
   }
 
@@ -614,6 +631,82 @@
       VERIFICATION_NEEDED :'Manual Review Needed',
       UPDATE_NEEDED       :'Update Documents'
     }[s] || s;
+  }
+
+  async function loadNGOMatches(campaignId) {
+    const btn     = document.querySelector(`#ngo-section-${campaignId} button`);
+    const dataDiv = document.getElementById(`ngo-data-${campaignId}`);
+    
+    btn.disabled    = true;
+    btn.textContent = '⏳ Loading…';
+
+    try {
+      const res  = await authFetch(`${API}/ngo/campaign/${campaignId}`);
+      const data = await res.json();
+
+      if (!data.success) {
+        dataDiv.innerHTML = '<p style="font-size:12px;color:#9CA3AF">No NGOs matched yet</p>';
+        dataDiv.style.display = 'block';
+        btn.style.display = 'none';
+        return;
+      }
+
+      const summary = data.summary;
+      const matches = data.matches || [];
+
+      const statusColor = {
+        ACCEPTED : '#15803D',
+        REJECTED : '#DC2626',
+        NOTIFIED : '#D97706',
+        PENDING  : '#D97706'
+      };
+
+      const statusEmoji = {
+        ACCEPTED : '✅',
+        REJECTED : '❌',
+        NOTIFIED : '📧',
+        PENDING  : '⏳'
+      };
+
+      dataDiv.innerHTML = `
+        <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:12px;">
+          <div style="font-size:12px;font-weight:700;color:#15803D;margin-bottom:8px;">
+            🤝 NGO Support Status
+          </div>
+          <div style="display:flex;gap:12px;margin-bottom:10px;font-size:12px;">
+            <span style="background:#DCFCE7;color:#15803D;padding:3px 8px;border-radius:99px;font-weight:700">
+              ✅ ${summary.accepted} Accepted
+            </span>
+            <span style="background:#FEF9C3;color:#854D0E;padding:3px 8px;border-radius:99px;font-weight:700">
+              📧 ${summary.pending} Notified
+            </span>
+            <span style="background:#FEE2E2;color:#DC2626;padding:3px 8px;border-radius:99px;font-weight:700">
+              ❌ ${summary.rejected} Rejected
+            </span>
+          </div>
+          ${matches.length ? matches.map(m => `
+            <div style="display:flex;justify-content:space-between;align-items:center;
+                        padding:8px 0;border-top:1px solid #D1FAE5;font-size:12px;">
+              <div>
+                <strong>${m.ngo_name || 'NGO'}</strong>
+                <span style="color:#6B7280"> • ${m.city || ''}, ${m.state || ''}</span>
+                ${m.max_grant ? `<br/><span style="color:#15803D;font-size:11px">Max grant: ₹${parseFloat(m.max_grant).toLocaleString('en-IN')}</span>` : ''}
+              </div>
+              <span style="font-weight:700;color:${statusColor[m.status]||'#D97706'}">
+                ${statusEmoji[m.status]||'⏳'} ${m.status}
+              </span>
+            </div>`).join('') : '<p style="font-size:12px;color:#9CA3AF;margin-top:6px">NGO matching in progress…</p>'}
+        </div>`;
+
+      dataDiv.style.display = 'block';
+      btn.style.display     = 'none';
+
+    } catch(err) {
+      dataDiv.innerHTML = '<p style="font-size:12px;color:#DC2626">Failed to load NGO data</p>';
+      dataDiv.style.display = 'block';
+      btn.disabled    = false;
+      btn.textContent = '🤝 View NGO Support Status';
+    }
   }
 </script>
 </body>

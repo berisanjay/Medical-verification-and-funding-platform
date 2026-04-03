@@ -113,7 +113,25 @@ const notifyFlask = async (path, data) => {
 // Called when campaign goes LIVE
 // POST /api/ngo/match/:campaign_id
 // ─────────────────────────────────────────
-router.post('/match/:campaign_id', verifyToken, async (req, res) => {
+router.post('/match/:campaign_id', async (req, res) => {
+  // Allow both patient token AND admin internal call
+  const authHeader = req.headers['authorization'];
+  const internalSecret = req.headers['x-flask-secret'];
+  
+  if (!authHeader && internalSecret !== process.env.FLASK_INTERNAL_SECRET) {
+    return res.status(401).json({ success: false, error: 'Unauthorized' });
+  }
+
+  // Set req.user if token provided
+  if (authHeader) {
+    try {
+      const token = authHeader.split(' ')[1];
+      const jwt   = require('jsonwebtoken');
+      req.user    = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+      return res.status(401).json({ success: false, error: 'Invalid token' });
+    }
+  }
   try {
     const campaignId = parseInt(req.params.campaign_id);
 
@@ -130,7 +148,8 @@ router.post('/match/:campaign_id', verifyToken, async (req, res) => {
       return res.status(404).json({ success: false, error: 'Campaign not found' });
     }
 
-    if (campaign.patient_id !== req.user.id) {
+    // Skip ownership check for internal admin calls
+    if (req.user && campaign.patient_id !== req.user.id) {
       return res.status(403).json({ success: false, error: 'Unauthorized' });
     }
 

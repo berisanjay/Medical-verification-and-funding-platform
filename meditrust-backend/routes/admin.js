@@ -474,6 +474,31 @@ router.put('/campaigns/:id/verify', verifyAdmin, async (req, res) => {
       headers: { 'x-flask-secret': process.env.FLASK_INTERNAL_SECRET }
     }).catch(err => console.log('Live notification failed:', err.message));
 
+    // ── Auto-trigger NGO matching in background ──
+    // Non-blocking — runs after response sent
+    setImmediate(async () => {
+      try {
+        const fundNeeder = await prisma.fundNeeder.findUnique({
+          where: { campaign_id: campaignId }
+        });
+        const disease = fundNeeder?.disease || campaign.title || '';
+
+        // Get patient token — use internal admin call
+        const ngoRes = await axios.post(
+          `${process.env.MEDITRUST_BASE_URL || 'http://localhost:3000'}/api/ngo/match/${campaignId}`,
+          { disease },
+          {
+            headers: {
+              'x-flask-secret': process.env.FLASK_INTERNAL_SECRET
+            }
+          }
+        );
+        console.log(`✅ NGO matching triggered for campaign ${campaignId}:`, ngoRes.data?.matched, 'NGOs matched');
+      } catch(ngoErr) {
+        console.warn(`⚠️ NGO auto-match failed for campaign ${campaignId}:`, ngoErr.message);
+      }
+    });
+
     res.json({
       success   : true,
       message   : 'Campaign approved and is now LIVE!',
@@ -623,7 +648,17 @@ router.post('/seed', async (req, res) => {
     // Check if admin already exists
     const existing = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
     if (existing) {
-      return res.status(400).json({ success: false, error: 'Admin already exists' });
+      const hash = await bcrypt.hash('Admin@MediTrust2026', 10);
+      await prisma.user.update({
+        where: { id: existing.id },
+        data : { password_hash: hash }
+      });
+      return res.json({
+        success : true,
+        message : 'Admin password reset',
+        email   : existing.email,
+        password: 'Admin@MediTrust2026'
+      });
     }
 
     const password_hash = await bcrypt.hash('Admin@MediTrust2026', 12);

@@ -28,9 +28,7 @@ const ngos = [
       income_limit: 300000,
       max_grant: 1500000
     },
-    is_active           : true,
-    is_verified         : true,
-    notes               : 'Pan India. Cardiac + General. Strong CSR network.'
+    is_verified         : true
   },
   {
     name            : 'YouWeCan Foundation',

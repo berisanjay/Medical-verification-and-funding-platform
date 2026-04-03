@@ -42,9 +42,19 @@ const callGemini = async (prompt) => {
         };
       }
     } else if (keyFile) {
-      // Service account file authentication
-      authConfig.keyFile = keyFile;
-      console.log('✅ Using service account file authentication for Gemini');
+      // Service account file authentication - check if file exists
+      const fs = require('fs');
+      if (fs.existsSync(keyFile)) {
+        authConfig.keyFile = keyFile;
+        console.log('✅ Using service account file authentication for Gemini');
+      } else {
+        console.log('❌ Service account key file not found:', keyFile);
+        return {
+          success: false,
+          gemini_story: null,
+          error: `Service account key file not found: ${keyFile}`
+        };
+      }
     } else {
       // Default authentication (ADC)
       console.log('✅ Using Application Default Credentials for Gemini');

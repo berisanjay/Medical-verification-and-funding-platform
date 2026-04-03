@@ -241,10 +241,13 @@ router.post('/fund-needer', async (req, res) => {
       return res.json({ success: true, fund_needer: null, warning: 'Run migration to enable FundNeeder' });
     }
 
-    // Also update campaign verified_amount
+    // Also update campaign verified_amount and patient_hms_id
     await prisma.campaign.update({
       where: { id: parseInt(campaign_id) },
-      data : { verified_amount: parseFloat(outstanding || 0) }
+      data : {
+        patient_hms_id : hms_patient_id ? parseInt(hms_patient_id) : null,
+        verified_amount: parseFloat(outstanding || 0)
+      }
     });
 
     res.json({ success: true, fund_needer: fundNeeder });
