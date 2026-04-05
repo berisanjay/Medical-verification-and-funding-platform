@@ -14,12 +14,12 @@ note     : Please change password after first loginflask-backend
 
 if changes are already made just observer how they act and if not make changes because we already made these changes but made something wrong at end that why iam giving again 
 
-📧 Email: gajananberi@gmail.com
-👤 Name: Gajanan Admin
-🔑 New Password: 
+## � Admin Credentials
 
+📧 **Email:** [REDACTED]
+👤 **Name:** [REDACTED]  
+🔑 **Password:** [REDACTED]
+🔐 **Admin Secret:** [REDACTED]
 
-📧 Email: gajananberi@gmail.com
-🔑 Password: admin123
-🔐 Admin Secret: MediTrustAdmin@2026SecretKey
+⚠️ **IMPORTANT:** Never commit actual credentials to version control!
 
