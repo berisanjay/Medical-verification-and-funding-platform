@@ -162,7 +162,8 @@ const buildEmailHTML = (ngoName, campaign, acceptUrl, rejectUrl) => {
     '<strong>Disease:</strong> '  + disease        + '<br>' +
     '<strong>Amount Needed:</strong> Rs. ' + Number(amount).toLocaleString('en-IN') +
     '</div>' +
-    '<p>Please review and respond:</p>' +
+    '<p><strong>📎 Supporting Documents:</strong> Patient medical records, verification documents, and hospital reports are attached to this email for your review.</p>' +
+    '<p>Please review the documents and respond:</p>' +
     '<a href="' + acceptUrl + '" class="btn accept">Accept and Support</a>' +
     '&nbsp;' +
     '<a href="' + rejectUrl + '" class="btn reject">Unable to Support</a>' +
@@ -435,12 +436,38 @@ router.post('/send-email/:match_id', verifyAdmin, async (req, res) => {
       },
     });
 
-    await transporter.sendMail({
+    // Prepare email attachments from campaign documents
+    const attachments = [];
+    if (match.campaign.documents && match.campaign.documents.length > 0) {
+      for (const doc of match.campaign.documents) {
+        // Extract base64 data from data URL if present
+        if (doc.file_url && doc.file_url.startsWith('data:')) {
+          const matches = doc.file_url.match(/^data:([^;]+);base64,(.+)$/);
+          if (matches) {
+            attachments.push({
+              filename: doc.file_name || 'document.pdf',
+              content: Buffer.from(matches[2], 'base64'),
+              contentType: matches[1]
+            });
+          }
+        }
+      }
+    }
+
+    const mailOptions = {
       from   : 'MediTrust Platform <' + process.env.EMAIL_USER + '>',
       to     : ngo.contact_email,
       subject: email_subject || 'MediTrust - NGO Support Request',
       html   : htmlContent,
-    });
+    };
+
+    // Add attachments if any documents exist
+    if (attachments.length > 0) {
+      mailOptions.attachments = attachments;
+      console.log('Attaching', attachments.length, 'documents to NGO email');
+    }
+
+    await transporter.sendMail(mailOptions);
 
     await prisma.adminAuditLog.create({
       data: {
