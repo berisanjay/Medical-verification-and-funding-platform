@@ -424,8 +424,19 @@ router.post('/send-email/:match_id', verifyAdmin, async (req, res) => {
     const acceptUrl = BASE_URL + '/api/ngo/respond?token=' + token + '&status=ACCEPTED';
     const rejectUrl = BASE_URL + '/api/ngo/respond?token=' + token + '&status=REJECTED';
 
+    // Always include response links, even with custom email body
+    const responseLinksHTML = 
+      '<hr style="margin:30px 0;border:none;border-top:1px solid #eee">' +
+      '<div style="text-align:center;padding:20px;background:#f8f9fa;border-radius:8px">' +
+      '<h3 style="color:#2c3e50;margin-bottom:15px">Please Respond to This Request</h3>' +
+      '<p style="color:#555;margin-bottom:20px">Your response helps us coordinate support for this patient.</p>' +
+      '<a href="' + acceptUrl + '" style="display:inline-block;padding:12px 28px;background:#27ae60;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;margin:0 8px">✅ Accept and Support</a>' +
+      '<a href="' + rejectUrl + '" style="display:inline-block;padding:12px 28px;background:#e74c3c;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;margin:0 8px">❌ Unable to Support</a>' +
+      '<p style="color:#888;font-size:12px;margin-top:20px">This link expires in 7 days. If you did not expect this email, please ignore it.</p>' +
+      '</div>';
+
     const htmlContent = email_body
-      ? email_body.replace(/\n/g, '<br>')
+      ? email_body.replace(/\n/g, '<br>') + responseLinksHTML
       : buildEmailHTML(ngo.ngo_name, match.campaign, acceptUrl, rejectUrl);
 
     const transporter = nodemailer.createTransport({
