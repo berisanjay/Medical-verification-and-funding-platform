@@ -121,7 +121,7 @@ router.post('/trigger', verifyAdmin, async (req, res) => {
         });
       }
     } else {
-      console.log('⚠️ No HMS ID — skipping HMS status check');
+      console.log('⚠️ No HMS ID — skipping HMS status check (using FundNeeder data)');
     }
 
     // ── PRE-RELEASE CHECK 3: Outstanding amount > 0? ──

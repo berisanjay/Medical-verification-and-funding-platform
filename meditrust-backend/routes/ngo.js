@@ -553,13 +553,13 @@ async function handleNGORespond(token, status, res) {
 
   await prisma.adminAuditLog.create({
     data: {
-      admin_id   : 1,
+      admin_id   : 3,
       action     : 'NGO_RESPONDED_' + status,
       target_type: 'ngo_match',
       target_id  : match.id,
       notes      : 'NGO responded ' + status + ' via email link',
     },
-  });
+  }).catch(() => {});
 
   const color   = status === 'ACCEPTED' ? '#27ae60' : '#e74c3c';
   const icon    = status === 'ACCEPTED' ? '&#10004;' : '&#10008;';
